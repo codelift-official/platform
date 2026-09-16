@@ -66,8 +66,7 @@ export default function StudentManager() {
   const [feeEditStudent, setFeeEditStudent] = useState(null);
   const [feeBaseAmount, setFeeBaseAmount] = useState('45000');
   const [feeConcessionAmount, setFeeConcessionAmount] = useState('0');
-  const [feeConcessionReason, setFeeConcessionReason] = useState('Merit Scholarship');
-  const [feeConcessionNotes, setFeeConcessionNotes] = useState('');
+  const [feeConcessionReason, setFeeConcessionReason] = useState('Referral Code');
 
   // Password Management State
   const [passwordEditStudent, setPasswordEditStudent] = useState(null);
@@ -170,8 +169,7 @@ export default function StudentManager() {
     setFeeEditStudent(student);
     setFeeBaseAmount(String(base));
     setFeeConcessionAmount(String(concession));
-    setFeeConcessionReason(student.concessionReason || 'Merit Scholarship');
-    setFeeConcessionNotes(student.concessionNotes || '');
+    setFeeConcessionReason(student.concessionReason || 'Referral Code');
   };
 
   const onSaveFeeConcession = (e) => {
@@ -188,7 +186,6 @@ export default function StudentManager() {
       baseFee: base,
       concessionAmount: concession,
       concessionReason: feeConcessionReason,
-      concessionNotes: feeConcessionNotes,
       totalFee: netPayable,
       feeStatus: pendingBalance <= 0 ? 'PAID' : (paid > 0 ? 'PARTIAL' : 'PENDING')
     });
@@ -824,24 +821,12 @@ export default function StudentManager() {
                 value={feeConcessionReason}
                 onChange={(e) => setFeeConcessionReason(e.target.value)}
               >
-                <option value="Merit / Entrance High Scorer Scholarship">Merit / Entrance High Scorer Scholarship</option>
-                <option value="Need-Based Financial Aid">Need-Based Financial Aid</option>
-                <option value="Early Bird Registration Concession">Early Bird Registration Concession</option>
-                <option value="Sibling / Alumni Referral Discount">Sibling / Alumni Referral Discount</option>
-                <option value="Special Faculty / Director Approval">Special Faculty / Director Approval</option>
-                <option value="Other Promotional Concession">Other Promotional Concession</option>
+                <option value="Referral Code">Referral Code</option>
+                <option value="Personal / Need-Based">Personal / Need-Based</option>
+                <option value="Merit Scholarship">Merit Scholarship</option>
+                <option value="Early Bird / Promotional">Early Bird / Promotional</option>
+                <option value="Other / Discretionary">Other / Discretionary</option>
               </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label className="small fw-semibold">Approval Notes / Remarks</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                placeholder="e.g. Approved 15% merit concession based on coding screening test score."
-                value={feeConcessionNotes}
-                onChange={(e) => setFeeConcessionNotes(e.target.value)}
-              />
             </Form.Group>
 
             {/* Live Calculation Preview Card */}

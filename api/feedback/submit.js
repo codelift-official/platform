@@ -1,6 +1,7 @@
 import { handleCors, jsonResponse, errorResponse } from '../_lib/cors.js';
 import { requireAuth } from '../_lib/auth.js';
 import { readJSON, writeJSON } from '../_lib/storage.js';
+import { supabaseAdmin } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -17,8 +18,11 @@ export default async function handler(req, res) {
         return errorResponse(res, 400, 'Missing rating or comment');
       }
 
-      const students = await readJSON('students.json').catch(() => []);
-      const student = students.find((s) => s.id === req.user.id);
+      const { data: student } = await supabaseAdmin
+        .from('students')
+        .select('name')
+        .eq('id', req.user.id)
+        .maybeSingle();
 
       const feedback = await readJSON('feedback.json').catch(() => []);
       const feedbackRecord = {

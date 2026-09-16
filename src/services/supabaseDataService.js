@@ -401,6 +401,9 @@ export async function fetchAllData() {
       reset_requested: Boolean(s.reset_requested), // password reset flag
       completedBatchIds: s.completed_batch_ids || [],
       progress: s.progress || {},
+      baseFee: Number(s.base_fee || 0),
+      concessionAmount: Number(s.concession_amount || 0),
+      concessionReason: s.concession_reason || '',
       createdAt: s.created_at,
       updatedAt: s.updated_at
     }));
@@ -654,12 +657,14 @@ export async function fetchAllData() {
 // STUDENT MUTATIONS
 // ==============================================================================
 export async function addStudent(studentData) {
+  const assignedId = isValidUUID(studentData.id) ? studentData.id : genUUID();
   const insertPayload = {
+    id: assignedId,
     legacy_id: studentData.legacyId || studentData.legacy_id || (!isValidUUID(studentData.id) ? studentData.id : null),
     name: studentData.name,
     email: studentData.email,
     phone: studentData.phone || '',
-    batch_id: isValidUUID(studentData.batchId) ? studentData.batchId : null,
+    batch_id: studentData.batchId || null,
     enrolled_date: studentData.enrolledDate || new Date().toISOString(),
     total_fee: Number(studentData.totalFee || 0),
     paid_fee: Number(studentData.paidFee || 0),
@@ -667,12 +672,12 @@ export async function addStudent(studentData) {
     is_graduated: Boolean(studentData.isGraduated),
     is_active: studentData.isActive !== false,
     completed_batch_ids: studentData.completedBatchIds || [],
-    progress: studentData.progress || {}
+    progress: studentData.progress || {},
+    base_fee: Number(studentData.baseFee || 0),
+    concession_amount: Number(studentData.concessionAmount || 0),
+    concession_reason: studentData.concessionReason || '',
+    reset_requested: Boolean(studentData.reset_requested)
   };
-
-  if (isValidUUID(studentData.id)) {
-    insertPayload.id = studentData.id;
-  }
 
   const { data, error } = await supabase
     .from('students')
@@ -689,7 +694,7 @@ export async function updateStudent(studentId, updates) {
   if (updates.name !== undefined) payload.name = updates.name;
   if (updates.email !== undefined) payload.email = updates.email;
   if (updates.phone !== undefined) payload.phone = updates.phone;
-  if (updates.batchId !== undefined) payload.batch_id = updates.batchId;
+  if (updates.batchId !== undefined) payload.batch_id = updates.batchId || null;
   if (updates.totalFee !== undefined) payload.total_fee = Number(updates.totalFee);
   if (updates.paidFee !== undefined) payload.paid_fee = Number(updates.paidFee);
   if (updates.feeStatus !== undefined) payload.fee_status = updates.feeStatus;
@@ -697,15 +702,19 @@ export async function updateStudent(studentId, updates) {
   if (updates.isActive !== undefined) payload.is_active = Boolean(updates.isActive);
   if (updates.completedBatchIds !== undefined) payload.completed_batch_ids = updates.completedBatchIds;
   if (updates.progress !== undefined) payload.progress = updates.progress;
-  // Efficient single-flag for password reset requests — no separate table needed
   if (updates.reset_requested !== undefined) payload.reset_requested = Boolean(updates.reset_requested);
+  if (updates.baseFee !== undefined) payload.base_fee = Number(updates.baseFee);
+  if (updates.concessionAmount !== undefined) payload.concession_amount = Number(updates.concessionAmount);
+  if (updates.concessionReason !== undefined) payload.concession_reason = updates.concessionReason;
 
   if (Object.keys(payload).length === 0) return null;
 
-  const { data, error } = await supabase
-    .from('students')
-    .update(payload)
-    .match(studentId.includes('-') && studentId.length === 36 ? { id: studentId } : { legacy_id: studentId })
+  const isUUID = isValidUUID(studentId);
+  const query = supabase.from('students').update(payload);
+
+  const { data, error } = await (isUUID
+    ? query.eq('id', studentId)
+    : query.or(`id.eq.${studentId},legacy_id.eq.${studentId}`))
     .select()
     .single();
 
@@ -714,10 +723,12 @@ export async function updateStudent(studentId, updates) {
 }
 
 export async function deleteStudent(studentId) {
-  const { error } = await supabase
-    .from('students')
-    .delete()
-    .match(studentId.includes('-') && studentId.length === 36 ? { id: studentId } : { legacy_id: studentId });
+  const isUUID = isValidUUID(studentId);
+  const query = supabase.from('students').delete();
+
+  const { error } = await (isUUID
+    ? query.eq('id', studentId)
+    : query.or(`id.eq.${studentId},legacy_id.eq.${studentId}`));
 
   if (error) handleSupabaseError(error, 'Failed to delete student');
   return true;

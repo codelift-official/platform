@@ -1,6 +1,7 @@
 import { handleCors, jsonResponse, errorResponse } from '../_lib/cors.js';
 import { requireAuth } from '../_lib/auth.js';
 import { readJSON, writeJSON } from '../_lib/storage.js';
+import { supabaseAdmin } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -30,11 +31,14 @@ export default async function handler(req, res) {
         const { studentId, courseTitle = 'Modern Full-Stack Web Engineering' } = req.body || {};
         const targetId = req.user.isAdmin ? (studentId || req.user.id) : req.user.id;
 
-        const students = await readJSON('students.json').catch(() => []);
-        const student = students.find((s) => s.id === targetId);
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetId);
+        const { data: student } = await (isUUID
+          ? supabaseAdmin.from('students').select('*').eq('id', targetId)
+          : supabaseAdmin.from('students').select('*').or(`id.eq.${targetId},legacy_id.eq.${targetId}`))
+          .maybeSingle();
 
         if (!student) {
-          return errorResponse(res, 404, 'Student not found');
+          return errorResponse(res, 404, 'Student not found in Supabase');
         }
 
         const certId = `CERT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;

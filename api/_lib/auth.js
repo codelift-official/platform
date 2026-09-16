@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { readJSON } from './storage.js';
+import { supabaseAdmin } from './supabase.js';
 import { errorResponse } from './cors.js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -20,8 +20,15 @@ export async function getUser(req) {
     const email = isAdmin ? (process.env.ADMIN_EMAIL || 'admin@codelift.com') : 'student@codelift.com';
     const id = isAdmin ? 'std-admin-super' : 'std-001-rahul';
 
-    const students = await readJSON('students.json').catch(() => []);
-    const student = Array.isArray(students) ? students.find((s) => s.email === email || s.id === id) : null;
+    let student = null;
+    try {
+      const { data } = await supabaseAdmin
+        .from('students')
+        .select('*')
+        .or(`id.eq.${id},email.eq.${email.toLowerCase()}`)
+        .maybeSingle();
+      student = data;
+    } catch (e) {}
 
     return {
       id,
@@ -48,13 +55,15 @@ export async function getUser(req) {
   const adminEmail = (process.env.ADMIN_EMAIL || 'admin@codelift.com').toLowerCase();
   const isAdmin = user.email?.toLowerCase() === adminEmail || user.app_metadata?.role === 'admin';
 
-  // Attach student profile from students.json
+  // Attach student profile from Supabase
   let student = null;
   try {
-    const students = await readJSON('students.json');
-    if (Array.isArray(students)) {
-      student = students.find((s) => s.id === user.id || s.email?.toLowerCase() === user.email?.toLowerCase());
-    }
+    const { data } = await supabaseAdmin
+      .from('students')
+      .select('*')
+      .or(`id.eq.${user.id},email.eq.${user.email?.toLowerCase()}`)
+      .maybeSingle();
+    student = data || null;
   } catch (e) {
     // Continue even if profile read fails
   }

@@ -395,7 +395,7 @@ export default function BatchManager() {
                   <th>Enrollment</th>
                   <th>Tuition & Schedule</th>
                   <th>Status</th>
-                  <th className="text-end">Actions</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>

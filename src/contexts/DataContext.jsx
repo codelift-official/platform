@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import * as supabaseDataService from '../services/supabaseDataService';
+import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 // Seed Fallbacks for seamless offline/initial hydration
 import usersSeed from '../../data/users.json';
@@ -92,7 +93,7 @@ export function DataProvider({ children }) {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return studentsSeed;
+    return isSupabaseConfigured ? [] : (studentsSeed || []);
   });
   // NOTE: passwordResetRequests is derived on-the-fly from students (reset_requested flag on Supabase).
   // No useState needed here — see the derived const below in this component.
@@ -149,70 +150,66 @@ export function DataProvider({ children }) {
   // Note: passwordResetRequests is derived on-the-fly from students.filter(s => s.reset_requested)
   // No localStorage persistence needed — Supabase is the single source of truth for the flag.
 
+  const syncFromSupabase = useCallback(async () => {
+    try {
+      const data = await supabaseDataService.fetchAllData();
 
-  // Hydrate all collections from Supabase on mount and window focus (no polling)
+      if (data.users?.length) setUsers(data.users);
+      if (Array.isArray(data.students)) {
+        setStudents(data.students);
+        try {
+          localStorage.setItem('codelift_students_cache', JSON.stringify(data.students));
+        } catch (e) {}
+      }
+      if (data.categories?.length) setCategories(data.categories);
+      if (data.courses?.length) setCourses(data.courses.map(normalizeCourse));
+      if (data.enrollments?.length) setEnrollments(data.enrollments);
+      if (data.coupons?.length) setCoupons(data.coupons);
+      if (data.payments?.length) setPayments(data.payments);
+      if (data.batches?.length) setBatches(data.batches);
+      if (data.fees?.length) setFees(data.fees);
+      if (data.tests?.length) setTests(data.tests);
+      if (data.testAttempts?.length) setTestAttempts(data.testAttempts);
+      if (data.assignments?.length) setAssignments(data.assignments);
+      if (data.submissions?.length) setSubmissions(data.submissions);
+      if (data.certificates?.length) setCertificates(data.certificates);
+      if (data.certificateTemplates?.length) setCertificateTemplates(data.certificateTemplates);
+      if (data.completedBatches?.length) setCompletedBatches(data.completedBatches);
+      if (data.problemAttempts?.length) setProblemAttempts(data.problemAttempts);
+      if (data.codingProblems?.length) setCodingProblems(data.codingProblems);
+      if (data.codingAttempts?.length) setCodingAttempts(data.codingAttempts);
+    } catch (err) {
+      console.warn('[DataContext] Background fetch from Supabase deferred:', err.message);
+    }
+  }, []);
+
+  // Hydrate all collections from Supabase on mount, window focus, and auth state change
   useEffect(() => {
     let isMounted = true;
 
-    async function syncFromSupabase() {
-      try {
-        const data = await supabaseDataService.fetchAllData();
-        if (!isMounted) return;
-
-        if (data.users?.length) setUsers(data.users);
-        if (data.students?.length) {
-          let localCache = [];
-          try {
-            localCache = JSON.parse(localStorage.getItem('codelift_students_cache') || '[]');
-          } catch (e) {}
-          const cacheMap = new Map(localCache.map((s) => [s.id, s]));
-          setStudents(data.students.map((s) => {
-            const cached = cacheMap.get(s.id) || {};
-            return {
-              ...s,
-              isActive: cached.isActive !== undefined ? cached.isActive : (s.isActive !== false),
-              status: cached.status || s.status || (s.isActive !== false ? 'ACTIVE' : 'SUSPENDED'),
-              password: cached.password || s.password || undefined,
-              concessionAmount: cached.concessionAmount !== undefined ? cached.concessionAmount : (s.concessionAmount || 0),
-              concessionReason: cached.concessionReason || s.concessionReason || '',
-              totalFee: cached.totalFee !== undefined ? cached.totalFee : s.totalFee,
-              // Always prefer Supabase's authoritative reset_requested flag
-              reset_requested: s.reset_requested !== undefined ? s.reset_requested : (cached.reset_requested || false)
-            };
-          }));
-        }
-        if (data.categories?.length) setCategories(data.categories);
-        if (data.courses?.length) setCourses(data.courses.map(normalizeCourse));
-        if (data.enrollments?.length) setEnrollments(data.enrollments);
-        if (data.coupons?.length) setCoupons(data.coupons);
-        if (data.payments?.length) setPayments(data.payments);
-        if (data.batches?.length) setBatches(data.batches);
-        if (data.fees?.length) setFees(data.fees);
-        if (data.tests?.length) setTests(data.tests);
-        if (data.testAttempts?.length) setTestAttempts(data.testAttempts);
-        if (data.assignments?.length) setAssignments(data.assignments);
-        if (data.submissions?.length) setSubmissions(data.submissions);
-        if (data.certificates?.length) setCertificates(data.certificates);
-        if (data.certificateTemplates?.length) setCertificateTemplates(data.certificateTemplates);
-        if (data.completedBatches?.length) setCompletedBatches(data.completedBatches);
-        if (data.problemAttempts?.length) setProblemAttempts(data.problemAttempts);
-        if (data.codingProblems?.length) setCodingProblems(data.codingProblems);
-        if (data.codingAttempts?.length) setCodingAttempts(data.codingAttempts);
-      } catch (err) {
-        console.warn('[DataContext] Background fetch from Supabase deferred:', err.message);
-      }
-    }
-
     syncFromSupabase();
 
-    const onFocus = () => syncFromSupabase();
+    const onFocus = () => {
+      if (isMounted) syncFromSupabase();
+    };
     window.addEventListener('focus', onFocus);
+
+    let authSubscription;
+    if (isSupabaseConfigured && supabase?.auth?.onAuthStateChange) {
+      try {
+        const { data: authData } = supabase.auth.onAuthStateChange(() => {
+          if (isMounted) syncFromSupabase();
+        });
+        authSubscription = authData?.subscription;
+      } catch (e) {}
+    }
 
     return () => {
       isMounted = false;
       window.removeEventListener('focus', onFocus);
+      authSubscription?.unsubscribe?.();
     };
-  }, []);
+  }, [syncFromSupabase]);
 
   // ── USER MANAGEMENT ──────────────────────────────────────────────────────────
   const addUser = (userData) => {
@@ -225,8 +222,8 @@ export function DataProvider({ children }) {
     setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updates } : u)));
   };
 
-  // ── STUDENT MANAGEMENT ───────────────────────────────────────────────────────
-  const addStudent = (studentData) => {
+  // ── STUDENT MANAGEMENT (Fully backed by Supabase) ───────────────────────────
+  const addStudent = async (studentData) => {
     const assignedId = studentData.id && isValidUUID(studentData.id) ? studentData.id : genUUID();
     const legacyId = studentData.legacyId || (studentData.id && !isValidUUID(studentData.id) ? studentData.id : undefined);
     const newStudent = {
@@ -237,22 +234,45 @@ export function DataProvider({ children }) {
       enrolledDate: new Date().toISOString().split('T')[0],
       paidFee: 0,
       feeStatus: 'Pending',
+      baseFee: 0,
+      concessionAmount: 0,
+      concessionReason: '',
       ...studentData,
       id: assignedId,
       ...(legacyId ? { legacyId } : {})
     };
     setStudents((prev) => [newStudent, ...prev]);
-    supabaseDataService.addStudent(newStudent)
-      .then((created) => {
-        if (created && created.id && created.id !== assignedId) {
-          setStudents((prev) => prev.map((s) => s.id === assignedId ? { ...s, id: created.id } : s));
-        }
-      })
-      .catch((e) => console.error('[DataContext] addStudent failed:', e));
-    return newStudent;
+
+    try {
+      const created = await supabaseDataService.addStudent(newStudent);
+      const finalized = created && created.id ? {
+        ...newStudent,
+        ...created,
+        id: created.id,
+        batchId: created.batch_id !== undefined ? (created.batch_id || '') : newStudent.batchId,
+        totalFee: created.total_fee !== undefined ? Number(created.total_fee) : newStudent.totalFee,
+        paidFee: created.paid_fee !== undefined ? Number(created.paid_fee) : newStudent.paidFee,
+        feeStatus: created.fee_status || newStudent.feeStatus,
+        baseFee: created.base_fee !== undefined ? Number(created.base_fee) : (newStudent.baseFee || 0),
+        concessionAmount: created.concession_amount !== undefined ? Number(created.concession_amount) : (newStudent.concessionAmount || 0),
+        concessionReason: created.concession_reason !== undefined ? created.concession_reason : (newStudent.concessionReason || '')
+      } : newStudent;
+
+      setStudents((prev) => {
+        const updated = prev.map((s) => s.id === assignedId ? finalized : s);
+        try {
+          localStorage.setItem('codelift_students_cache', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+      return finalized;
+    } catch (e) {
+      console.error('[DataContext] addStudent failed on Supabase:', e);
+      throw e;
+    }
   };
 
-  const updateStudent = (studentId, updates) => {
+  const updateStudent = async (studentId, updates) => {
     setStudents((prev) => {
       const updated = prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...updates } : s));
       try {
@@ -260,7 +280,12 @@ export function DataProvider({ children }) {
       } catch (e) {}
       return updated;
     });
-    supabaseDataService.updateStudent(studentId, updates).catch((e) => console.error('[DataContext] updateStudent failed:', e));
+    try {
+      await supabaseDataService.updateStudent(studentId, updates);
+    } catch (e) {
+      console.error('[DataContext] updateStudent failed on Supabase:', e);
+      throw e;
+    }
   };
 
   const toggleStudentActive = (studentId) => {
@@ -272,7 +297,7 @@ export function DataProvider({ children }) {
     });
   };
 
-  const deleteStudent = (studentId) => {
+  const deleteStudent = async (studentId) => {
     setStudents((prev) => {
       const updated = prev.filter((s) => s.id !== studentId && s.legacyId !== studentId);
       try {
@@ -280,7 +305,12 @@ export function DataProvider({ children }) {
       } catch (e) {}
       return updated;
     });
-    supabaseDataService.deleteStudent(studentId).catch((e) => console.error('[DataContext] deleteStudent failed:', e));
+    try {
+      await supabaseDataService.deleteStudent(studentId);
+    } catch (e) {
+      console.error('[DataContext] deleteStudent failed on Supabase:', e);
+      throw e;
+    }
   };
 
   // ── PASSWORD RESET FLAG MANAGEMENT (Supabase-backed, zero extra tables) ──────
@@ -1530,7 +1560,8 @@ export function DataProvider({ children }) {
         removeStudentFromBatch,
         updatePlatformSettings,
         importAllData,
-        resetToDefaults
+        resetToDefaults,
+        refreshData: syncFromSupabase
       }}
     >
       {children}
