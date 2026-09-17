@@ -93,9 +93,6 @@ export default function CourseCatalog() {
           <h1 className="cl-marketplace-title">
             Master High-Demand Software Skills
           </h1>
-          <p className="cl-marketplace-subtitle">
-            Immersive live cohort bootcamps and modular electives. Real-world projects, mentor code reviews, and industry certifications.
-          </p>
 
           {/* Top-Notch Floating Glassmorphic Search Bar */}
           <div className="cl-marketplace-search-container mx-auto">
@@ -267,120 +264,119 @@ export default function CourseCatalog() {
             {sortedCourses.map((c) => {
               const feeInfo = resolveCourseFee(c, batches);
               return (
-              <div key={c.id} className="col-md-6 col-lg-4">
-                <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden cl-course-card">
-                  {/* Thumbnail & Badges */}
-                  <div className="position-relative">
-                    <img
-                      src={c.thumbnail || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600'}
-                      alt={c.title}
-                      className="card-img-top"
-                      style={{ height: 200, objectFit: 'cover' }}
-                    />
-                    <div className="position-absolute top-0 start-0 m-3">
-                      <span
-                        className="badge rounded-pill px-2.5 py-1.5 fw-semibold shadow-sm"
-                        style={{
-                          background: c.courseType === 'cohort' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(21, 128, 61, 0.9)',
-                          color: '#ffffff',
-                          backdropFilter: 'blur(4px)',
-                          fontSize: '0.72rem'
-                        }}
-                      >
-                        {c.courseType === 'cohort' ? 'Cohort Program' : 'Elective Module'}
-                      </span>
-                    </div>
-                    <span
-                      className={`position-absolute top-0 end-0 m-3 badge rounded-pill px-3 py-1.5 font-bold shadow-sm ${
-                        feeInfo.isFree ? 'bg-success' : 'bg-primary'
-                      }`}
-                      style={{ fontSize: '0.75rem' }}
-                    >
-                      {feeInfo.feeFormatted}
-                    </span>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="card-body p-4 d-flex flex-column justify-content-between">
-                    <div>
-                      <div className="d-flex align-items-center justify-content-between mb-2">
+                <div key={c.id} className="col-md-6 col-lg-4">
+                  <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden cl-course-card">
+                    {/* Thumbnail & Badges */}
+                    <div className="position-relative">
+                      <img
+                        src={c.thumbnail || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600'}
+                        alt={c.title}
+                        className="card-img-top"
+                        style={{ height: 200, objectFit: 'cover' }}
+                      />
+                      <div className="position-absolute top-0 start-0 m-3">
                         <span
-                          className="badge rounded-pill px-2.5 py-1 fw-semibold"
+                          className="badge rounded-pill px-2.5 py-1.5 fw-semibold shadow-sm"
                           style={{
-                            background: 'var(--card-bg-alt, rgba(34, 197, 94, 0.12))',
-                            color: 'var(--bs-primary)',
+                            background: c.courseType === 'cohort' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(21, 128, 61, 0.9)',
+                            color: '#ffffff',
+                            backdropFilter: 'blur(4px)',
                             fontSize: '0.72rem'
                           }}
                         >
-                          {c.categoryId?.replace('cat-', '').toUpperCase() || 'COURSE'}
+                          {c.courseType === 'cohort' ? 'Cohort Program' : 'Elective Module'}
                         </span>
-                        <div className="d-flex align-items-center gap-1 text-warning fw-bold small" style={{ fontSize: '0.8rem' }}>
-                          <FaStar /> {c.rating || 5.0}
-                        </div>
                       </div>
-
-                      <h5 className="card-title fw-bold mb-2" style={{ fontSize: '1.1rem' }}>
-                        <Link to={`/courses/${c.slug || c.id}`} className="text-decoration-none" style={{ color: 'var(--text-primary)' }}>
-                          {c.title}
-                        </Link>
-                      </h5>
-                      <p className="card-text text-secondary small line-clamp-2 mb-3" style={{ minHeight: '38px' }}>
-                        {c.description}
-                      </p>
+                      <span
+                        className={`position-absolute top-0 end-0 m-3 badge rounded-pill px-3 py-1.5 font-bold shadow-sm ${feeInfo.isFree ? 'bg-success' : 'bg-primary'
+                          }`}
+                        style={{ fontSize: '0.75rem' }}
+                      >
+                        {feeInfo.feeFormatted}
+                      </span>
                     </div>
 
-                    <div>
-                      <hr className="my-3 opacity-25" style={{ borderColor: 'var(--border-color)' }} />
-                      <div className="d-flex align-items-center gap-2 mb-3">
-                        <div
-                          className="rounded-circle d-flex align-items-center justify-content-center fw-bold"
-                          style={{
-                            width: 28,
-                            height: 28,
-                            fontSize: '0.8rem',
-                            background: 'rgba(var(--bs-primary-rgb, 21, 128, 61), 0.15)',
-                            color: 'var(--bs-primary)'
-                          }}
-                        >
-                          <FaGraduationCap size={13} />
+                    {/* Card Body */}
+                    <div className="card-body p-4 d-flex flex-column justify-content-between">
+                      <div>
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <span
+                            className="badge rounded-pill px-2.5 py-1 fw-semibold"
+                            style={{
+                              background: 'var(--card-bg-alt, rgba(34, 197, 94, 0.12))',
+                              color: 'var(--bs-primary)',
+                              fontSize: '0.72rem'
+                            }}
+                          >
+                            {c.categoryId?.replace('cat-', '').toUpperCase() || 'COURSE'}
+                          </span>
+                          <div className="d-flex align-items-center gap-1 text-warning fw-bold small" style={{ fontSize: '0.8rem' }}>
+                            <FaStar /> {c.rating || 5.0}
+                          </div>
                         </div>
-                        <span className="small fw-semibold" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                          CodeLift Faculty
-                        </span>
+
+                        <h5 className="card-title fw-bold mb-2" style={{ fontSize: '1.1rem' }}>
+                          <Link to={`/courses/${c.slug || c.id}`} className="text-decoration-none" style={{ color: 'var(--text-primary)' }}>
+                            {c.title}
+                          </Link>
+                        </h5>
+                        <p className="card-text text-secondary small line-clamp-2 mb-3" style={{ minHeight: '38px' }}>
+                          {c.description}
+                        </p>
                       </div>
 
-                      {/* Action Buttons: View Details & Direct WhatsApp Enrollment */}
-                      <div className="d-flex gap-2">
-                        <Link
-                          to={`/courses/${c.slug || c.id}`}
-                          className="btn btn-outline-success flex-grow-1 rounded-pill fw-bold btn-sm py-2 d-inline-flex align-items-center justify-content-center"
-                          style={{ fontSize: '0.84rem', minHeight: '44px' }}
-                        >
-                          View Details
-                        </Link>
-                        <button
-                          type="button"
-                          className="btn btn-success rounded-pill fw-bold btn-sm px-3 py-2 d-inline-flex align-items-center justify-content-center gap-1.5 flex-shrink-0"
-                          style={{
-                            background: '#25D366',
-                            borderColor: '#25D366',
-                            color: '#ffffff',
-                            fontSize: '0.84rem',
-                            minHeight: '44px'
-                          }}
-                          onClick={() => setSelectedCourseForEnroll({ ...c, price: feeInfo.feeAmount, originalPrice: feeInfo.originalPrice, isFree: feeInfo.isFree })}
-                          title="Enroll via WhatsApp"
-                        >
-                          <FaWhatsapp size={15} />
-                          <span>Enroll</span>
-                        </button>
+                      <div>
+                        <hr className="my-3 opacity-25" style={{ borderColor: 'var(--border-color)' }} />
+                        <div className="d-flex align-items-center gap-2 mb-3">
+                          <div
+                            className="rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                            style={{
+                              width: 28,
+                              height: 28,
+                              fontSize: '0.8rem',
+                              background: 'rgba(var(--bs-primary-rgb, 21, 128, 61), 0.15)',
+                              color: 'var(--bs-primary)'
+                            }}
+                          >
+                            <FaGraduationCap size={13} />
+                          </div>
+                          <span className="small fw-semibold" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                            CodeLift Faculty
+                          </span>
+                        </div>
+
+                        {/* Action Buttons: View Details & Direct WhatsApp Enrollment */}
+                        <div className="d-flex gap-2">
+                          <Link
+                            to={`/courses/${c.slug || c.id}`}
+                            className="btn btn-outline-success flex-grow-1 rounded-pill fw-bold btn-sm py-2 d-inline-flex align-items-center justify-content-center"
+                            style={{ fontSize: '0.84rem', minHeight: '44px' }}
+                          >
+                            View Details
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn btn-success rounded-pill fw-bold btn-sm px-3 py-2 d-inline-flex align-items-center justify-content-center gap-1.5 flex-shrink-0"
+                            style={{
+                              background: '#25D366',
+                              borderColor: '#25D366',
+                              color: '#ffffff',
+                              fontSize: '0.84rem',
+                              minHeight: '44px'
+                            }}
+                            onClick={() => setSelectedCourseForEnroll({ ...c, price: feeInfo.feeAmount, originalPrice: feeInfo.originalPrice, isFree: feeInfo.isFree })}
+                            title="Enroll via WhatsApp"
+                          >
+                            <FaWhatsapp size={15} />
+                            <span>Enroll</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
         )}
       </main>

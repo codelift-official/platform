@@ -481,7 +481,12 @@ export function DataProvider({ children }) {
   };
 
   // ── COURSE & MARKETPLACE MANAGEMENT ─────────────────────────────────────────
-  const addCourse = (courseData) => {
+  const addCourse = async (courseData) => {
+    let resolvedCategoryId = courseData.categoryId || 'cat-web';
+    if (categories && categories.length > 0 && !categories.some((cat) => cat.id === resolvedCategoryId)) {
+      resolvedCategoryId = categories.find((c) => c.id === 'cat-web')?.id || categories[0]?.id || null;
+    }
+
     const newCourse = {
       id: courseData.id || genId('course'),
       slug: courseData.title ? courseData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : `course-${Date.now()}`,
@@ -493,23 +498,40 @@ export function DataProvider({ children }) {
       isPublished: true,
       isApproved: true,
       modules: [],
-      ...courseData
+      ...courseData,
+      categoryId: resolvedCategoryId
     };
     setCourses((prev) => [newCourse, ...prev]);
-    supabaseDataService.addCourse(newCourse).catch((e) => console.error('[DataContext] addCourse failed:', e));
+    try {
+      await supabaseDataService.addCourse(newCourse);
+    } catch (e) {
+      console.error('[DataContext] addCourse failed:', e);
+      setCourses((prev) => prev.filter((c) => c.id !== newCourse.id));
+      throw e;
+    }
     return newCourse;
   };
 
-  const updateCourse = (courseId, updates) => {
+  const updateCourse = async (courseId, updates) => {
     setCourses((prev) =>
       prev.map((c) => (c.id === courseId ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c))
     );
-    supabaseDataService.updateCourse(courseId, updates).catch((e) => console.error('[DataContext] updateCourse failed:', e));
+    try {
+      await supabaseDataService.updateCourse(courseId, updates);
+    } catch (e) {
+      console.error('[DataContext] updateCourse failed:', e);
+      throw e;
+    }
   };
 
-  const deleteCourse = (courseId) => {
+  const deleteCourse = async (courseId) => {
     setCourses((prev) => prev.filter((c) => c.id !== courseId));
-    supabaseDataService.deleteCourse(courseId).catch((e) => console.error('[DataContext] deleteCourse failed:', e));
+    try {
+      await supabaseDataService.deleteCourse(courseId);
+    } catch (e) {
+      console.error('[DataContext] deleteCourse failed:', e);
+      throw e;
+    }
   };
 
   // ── ENTITY ASSOCIATION MANAGERS (SYNCHRONIZED) ──────────────────────────────
@@ -626,7 +648,7 @@ export function DataProvider({ children }) {
     updateStudent(studentId, { batchId: '' });
   };
 
-  const createCourseFromJSON = (jsonPayload, targetCourseId = null) => {
+  const createCourseFromJSON = async (jsonPayload, targetCourseId = null) => {
     let data;
     if (typeof jsonPayload === 'string') {
       try {
@@ -666,12 +688,14 @@ export function DataProvider({ children }) {
       ? data.modules.map((m, mIdx) => ({
           id: m.id || `mod-${Date.now()}-${mIdx}-${Math.random().toString(36).slice(2, 6)}`,
           title: m.title || `Module ${mIdx + 1}`,
+          quizQuestions: Array.isArray(m.quizQuestions) ? m.quizQuestions : [],
           topics: Array.isArray(m.topics)
             ? m.topics.map((t, tIdx) => ({
                 id: t.id || `top-${Date.now()}-${mIdx}-${tIdx}-${Math.random().toString(36).slice(2, 6)}`,
                 title: t.title || `Topic ${tIdx + 1}`,
-                videoUrl: t.videoUrl || '',
-                contentMd: t.contentMd || `# ${t.title || 'Topic'}\n\nContent for this topic.`
+                videoUrl: t.videoUrl || t.video_url || '',
+                contentMd: t.contentMd || t.content_md || `# ${t.title || 'Topic'}\n\nContent for this topic.`,
+                quizQuestions: Array.isArray(t.quizQuestions) ? t.quizQuestions : []
               }))
             : []
         }))
@@ -679,18 +703,35 @@ export function DataProvider({ children }) {
 
     const { id: ignoredOldId, ...restOfData } = data;
 
+    // Resolve categoryId to ensure valid FK in Supabase
+    let resolvedCategoryId = data.categoryId || data.category_id || 'cat-web';
+    if (categories && categories.length > 0 && !categories.some((cat) => cat.id === resolvedCategoryId)) {
+      resolvedCategoryId = categories.find((c) => c.id === 'cat-web')?.id || categories[0]?.id || null;
+    }
+
+    const courseType = data.courseType || data.course_type || (data.isCohort ? 'cohort' : 'elective');
+
     if (existingCourse) {
       const updatedCourse = {
         ...existingCourse,
         ...restOfData,
         title: data.title.trim(),
         description: data.description !== undefined ? data.description : existingCourse.description,
+        categoryId: resolvedCategoryId,
+        courseType,
+        isCohort: courseType === 'cohort',
         modules: formattedModules,
         isPublished: data.isPublished !== undefined ? Boolean(data.isPublished) : existingCourse.isPublished,
         updatedAt: new Date().toISOString()
       };
       setCourses((prev) => prev.map((c) => (c.id === existingCourse.id ? updatedCourse : c)));
-      supabaseDataService.updateCourse(existingCourse.id, updatedCourse).catch((e) => console.error(e));
+      try {
+        await supabaseDataService.updateCourse(existingCourse.id, updatedCourse);
+      } catch (e) {
+        console.error('[DataContext] updateCourse failed during JSON import:', e);
+        syncFromSupabase();
+        throw e;
+      }
       return updatedCourse;
     }
 
@@ -699,13 +740,15 @@ export function DataProvider({ children }) {
       slug: uniqueSlug,
       title: data.title.trim(),
       description: data.description || '',
-      categoryId: data.categoryId || 'cat-web',
+      categoryId: resolvedCategoryId,
+      courseType,
+      isCohort: courseType === 'cohort',
       price: typeof data.price === 'number' ? data.price : 0,
       isFree: data.isFree !== undefined ? Boolean(data.isFree) : (!data.price || data.price === 0),
       isPublished: data.isPublished !== undefined ? Boolean(data.isPublished) : true,
       isApproved: true,
       thumbnail: data.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600',
-      promoVideo: data.promoVideo || '',
+      promoVideo: data.promoVideo || data.promo_video || '',
       rating: typeof data.rating === 'number' ? data.rating : 5.0,
       numReviews: typeof data.numReviews === 'number' ? data.numReviews : 0,
       studentsEnrolled: typeof data.studentsEnrolled === 'number' ? data.studentsEnrolled : 0,
@@ -716,7 +759,13 @@ export function DataProvider({ children }) {
     };
 
     setCourses((prev) => [newCourse, ...prev]);
-    supabaseDataService.addCourse(newCourse).catch((e) => console.error(e));
+    try {
+      await supabaseDataService.addCourse(newCourse);
+    } catch (e) {
+      console.error('[DataContext] addCourse failed during JSON import:', e);
+      setCourses((prev) => prev.filter((c) => c.id !== newCourse.id));
+      throw e;
+    }
     return newCourse;
   };
 

@@ -133,7 +133,7 @@ export default function StudentFees() {
             </div>
           )}
           <div style={{ marginTop: 16, padding: '12px 14px', background: 'var(--bg-body)', borderRadius: 10, border: '1px solid var(--border-color)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            For any payment discrepancies or to record a verified receipt, please contact the admin at <strong>info@codelift.in</strong> or call <strong>+91 98765 43210</strong>.
+            For any payment discrepancies or to record a verified receipt, please contact the admin at <strong>codelift.official@gmail.com</strong> or call <strong>+91 9834671940</strong>.
           </div>
         </div>
       </div>

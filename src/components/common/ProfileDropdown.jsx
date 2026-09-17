@@ -93,9 +93,6 @@ export default function ProfileDropdown() {
           <div className="fw-bold small text-truncate" style={{ color: 'var(--text-primary)' }}>
             {displayName}
           </div>
-          <div className="text-muted text-truncate" style={{ fontSize: '0.75rem' }}>
-            {displayEmail}
-          </div>
           <span
             className="badge mt-1 text-uppercase"
             style={{
@@ -105,7 +102,7 @@ export default function ProfileDropdown() {
               color: isAdmin ? '#15803D' : 'var(--bs-primary)'
             }}
           >
-            {isAdmin ? 'System Administrator' : 'Enrolled Student'}
+            {isAdmin ? 'Administrator' : 'Student'}
           </span>
         </div>
 

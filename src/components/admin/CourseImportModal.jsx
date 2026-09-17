@@ -189,10 +189,10 @@ export default function CourseImportModal({ show, onHide, onImport, courses = []
     }
 
     setIsImporting(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
         const targetId = importMode === 'update' && targetCourseId ? targetCourseId : null;
-        const result = onImport(jsonInput, targetId);
+        const result = await onImport(jsonInput, targetId);
         if (result) {
           setJsonInput('');
           setPreview(null);

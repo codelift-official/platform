@@ -316,6 +316,7 @@ export async function fetchAllData() {
             .map((t) => ({
               id: t.id,
               title: t.title,
+              videoUrl: t.video_url || '',
               contentMd: t.content_md || '',
               quizQuestions: Array.isArray(t.quiz_questions) ? t.quiz_questions : (Array.isArray(t.quizQuestions) ? t.quizQuestions : [])
             }))
@@ -927,6 +928,7 @@ export async function addCourse(courseData) {
           id: t.id,
           module_id: mod.id,
           title: t.title,
+          video_url: t.videoUrl || t.video_url || '',
           content_md: t.contentMd || '',
           order_index: tIdx
         }));
@@ -985,6 +987,7 @@ export async function updateCourse(courseId, updates) {
           id: t.id,
           module_id: mod.id,
           title: t.title,
+          video_url: t.videoUrl || t.video_url || '',
           content_md: t.contentMd || '',
           order_index: tIdx
         }));

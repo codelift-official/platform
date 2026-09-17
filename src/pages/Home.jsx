@@ -28,8 +28,8 @@ import '../styles/HomeElevated.css';
 
 /** Resolve a tech icon + colour class from the course category / title */
 function getCourseIconMeta(course) {
-  const cat   = (course.categoryId || '').toLowerCase();
-  const title = (course.title      || '').toLowerCase();
+  const cat = (course.categoryId || '').toLowerCase();
+  const title = (course.title || '').toLowerCase();
 
   if (cat.includes('python') || title.includes('python') || title.includes('fastapi') || title.includes('asyncio')) {
     return { icon: <SiPython />, boxClass: 'cat-python' };
@@ -105,11 +105,11 @@ export default function Home() {
   // Filter by selected track
   const filteredCohorts = allCohorts.filter((c) => {
     if (selectedCohortTrack === 'all') return true;
-    const cat   = (c.categoryId || '').toLowerCase();
-    const title = (c.title      || '').toLowerCase();
-    if (selectedCohortTrack === 'web')    return cat.includes('web')    || title.includes('full')   || title.includes('react');
+    const cat = (c.categoryId || '').toLowerCase();
+    const title = (c.title || '').toLowerCase();
+    if (selectedCohortTrack === 'web') return cat.includes('web') || title.includes('full') || title.includes('react');
     if (selectedCohortTrack === 'python') return cat.includes('python') || title.includes('python') || title.includes('ai');
-    if (selectedCohortTrack === 'data')   return cat.includes('data')   || title.includes('data')   || title.includes('sql');
+    if (selectedCohortTrack === 'data') return cat.includes('data') || title.includes('data') || title.includes('sql');
     return true;
   });
 
@@ -149,14 +149,11 @@ export default function Home() {
 
               <div className="d-flex flex-wrap gap-3 cl-hero-cta-group">
                 <button className="btn-explore" onClick={() => scrollTo('courses')}>
-                  Explore Cohorts <FaArrowRight style={{ fontSize: '0.8rem' }} />
+                  Explore Courses <FaArrowRight style={{ fontSize: '0.8rem' }} />
                 </button>
                 <Link to="/problems" className="btn btn-outline-success rounded-pill px-4 fw-bold d-inline-flex align-items-center gap-2" style={{ textDecoration: 'none' }}>
                   <FaTerminal size={13} /> Problem Arena
                 </Link>
-                <button className="btn-visit" onClick={() => scrollTo('contact')}>
-                  Talk to Counselor
-                </button>
               </div>
             </div>
 
@@ -199,10 +196,10 @@ export default function Home() {
             {/* Quick Track Filter Pills */}
             <div className="cl-cohort-filter-pills">
               {[
-                { id: 'all',    label: `All Cohorts (${allCohorts.length})` },
-                { id: 'web',    label: 'Full-Stack Web' },
+                { id: 'all', label: `All Cohorts (${allCohorts.length})` },
+                { id: 'web', label: 'Full-Stack Web' },
                 { id: 'python', label: 'Python & AI' },
-                { id: 'data',   label: 'Data Analytics' },
+                { id: 'data', label: 'Data Analytics' },
               ].map((pill) => (
                 <button
                   key={pill.id}
@@ -245,7 +242,7 @@ export default function Home() {
                 const { icon, boxClass } = getCourseIconMeta(c);
                 const feeInfo = resolveCourseFee(c, batches);
                 const isFree = feeInfo.isFree;
-                const tags   = Array.isArray(c.tags) ? c.tags.slice(0, 4) : [];
+                const tags = Array.isArray(c.tags) ? c.tags.slice(0, 4) : [];
                 const catLabel = c.categoryId
                   ? c.categoryId.replace('cat-', '').replace(/-/g, ' ').toUpperCase()
                   : 'COHORT';

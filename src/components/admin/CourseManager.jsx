@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, Table, Button, Badge, Modal, Form, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useData } from '../../contexts/DataContext';
 import {
@@ -31,10 +31,25 @@ export default function CourseManager() {
     createCourseFromJSON
   } = useData();
 
-  // Scope CourseManager to dynamic elective courses only (Option A)
-  const electiveCourses = courses.filter(
-    (c) => c.courseType === 'elective' || (!c.isCohort && c.courseType !== 'cohort')
-  );
+  const [courseFilter, setCourseFilter] = useState('all'); // 'all' | 'elective' | 'cohort'
+
+  const electiveCourses = useMemo(() => {
+    return courses.filter(
+      (c) => c.courseType === 'elective' || (!c.isCohort && c.courseType !== 'cohort')
+    );
+  }, [courses]);
+
+  const cohortCourses = useMemo(() => {
+    return courses.filter(
+      (c) => c.courseType === 'cohort' || c.isCohort === true
+    );
+  }, [courses]);
+
+  const displayedCourses = useMemo(() => {
+    if (courseFilter === 'elective') return electiveCourses;
+    if (courseFilter === 'cohort') return cohortCourses;
+    return courses;
+  }, [courses, courseFilter, electiveCourses, cohortCourses]);
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -86,61 +101,73 @@ export default function CourseManager() {
     setShowCreateModal(true);
   };
 
-  const handleSaveCourse = (e) => {
+  const handleSaveCourse = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
       toast.error('Course title is required');
       return;
     }
 
-    if (editingCourse) {
-      updateCourse(editingCourse.id, {
-        title,
-        description,
-        batchId,
-        courseType: 'elective',
-        isPublished
-      });
-      toast.success('Course updated successfully.');
-    } else {
-      addCourse({
-        title,
-        description,
-        batchId,
-        courseType: 'elective',
-        isPublished,
-        modules: [
-          {
-            id: `mod-${Date.now()}`,
-            title: 'Module 1: Orientation & Fundamentals',
-            topics: [
-              {
-                id: `top-${Date.now()}`,
-                title: 'Introduction & Environment Setup',
-                contentMd: '# Welcome to the Course\n\nReview environment requirements and instructions.'
-              }
-            ]
-          }
-        ]
-      });
-      toast.success('New course created successfully.');
-    }
+    try {
+      if (editingCourse) {
+        await updateCourse(editingCourse.id, {
+          title,
+          description,
+          batchId,
+          courseType: editingCourse.courseType || (editingCourse.isCohort ? 'cohort' : 'elective'),
+          isPublished
+        });
+        toast.success('Course updated successfully.');
+      } else {
+        await addCourse({
+          title,
+          description,
+          batchId,
+          courseType: 'elective',
+          isPublished,
+          modules: [
+            {
+              id: `mod-${Date.now()}`,
+              title: 'Module 1: Orientation & Fundamentals',
+              topics: [
+                {
+                  id: `top-${Date.now()}`,
+                  title: 'Introduction & Environment Setup',
+                  contentMd: '# Welcome to the Course\n\nReview environment requirements and instructions.'
+                }
+              ]
+            }
+          ]
+        });
+        toast.success('New course created successfully.');
+      }
 
-    setShowCreateModal(false);
-    resetForm();
+      setShowCreateModal(false);
+      resetForm();
+    } catch (err) {
+      toast.error(err.message || 'Failed to save course');
+    }
   };
 
-  const handleDeleteCourse = (id, courseTitle) => {
+  const handleDeleteCourse = async (id, courseTitle) => {
     if (window.confirm(`Are you sure you want to delete "${courseTitle}"? This cannot be undone.`)) {
-      deleteCourse(id);
-      toast.success('Course deleted');
+      try {
+        await deleteCourse(id);
+        toast.success('Course deleted');
+      } catch (err) {
+        toast.error(err.message || 'Failed to delete course');
+      }
     }
   };
 
-  const handleTogglePublish = (course) => {
+  const handleTogglePublish = async (course) => {
     const updatedStatus = !course.isPublished;
-    updateCourse(course.id, { isPublished: updatedStatus });
-    toast.success(updatedStatus ? 'Course published to students.' : 'Course moved to drafts.');
+    try {
+      await updateCourse(course.id, { isPublished: updatedStatus });
+      toast.success(updatedStatus ? 'Course published to students.' : 'Course moved to drafts.');
+    } catch (err) {
+      toast.error(err.message || 'Failed to update course publish status');
+    }
   };
 
   return (
@@ -174,12 +201,35 @@ export default function CourseManager() {
 
       {/* Course Cards / Ledger */}
       <Card className="shadow-sm border rounded-3">
-        <Card.Header className="bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
-          <div className="fw-bold d-flex align-items-center gap-2">
-            <span>Dynamic Elective Courses ({electiveCourses.length})</span>
+        <Card.Header className="bg-transparent py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div className="fw-bold d-flex flex-wrap align-items-center gap-2">
+            <span>Course Catalog ({displayedCourses.length})</span>
+            <div className="btn-group btn-group-sm ms-md-2" role="group">
+              <button
+                type="button"
+                className={`btn btn-sm ${courseFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setCourseFilter('all')}
+              >
+                All ({courses.length})
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${courseFilter === 'elective' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setCourseFilter('elective')}
+              >
+                Electives ({electiveCourses.length})
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${courseFilter === 'cohort' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setCourseFilter('cohort')}
+              >
+                Cohorts ({cohortCourses.length})
+              </button>
+            </div>
           </div>
           <Badge bg="primary">
-            {electiveCourses.filter(c => c.isPublished !== false).length} Published
+            {displayedCourses.filter(c => c.isPublished !== false).length} Published
           </Badge>
         </Card.Header>
         <Card.Body className="p-0">
@@ -195,14 +245,14 @@ export default function CourseManager() {
                 </tr>
               </thead>
               <tbody>
-                {electiveCourses.length === 0 ? (
+                {displayedCourses.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center py-5 text-muted">
-                      No elective courses created yet. Click "Create Course" or "Import JSON" to add an elective program.
+                      No courses found. Click "Create Course" or "Import JSON" to add a program.
                     </td>
                   </tr>
                 ) : (
-                  electiveCourses.map((course) => {
+                  displayedCourses.map((course) => {
                     const associatedBatches = batches.filter(b =>
                       b.id === course.batchId ||
                       (Array.isArray(course.batchIds) && course.batchIds.includes(b.id)) ||
@@ -216,12 +266,13 @@ export default function CourseManager() {
                     }, 0) || 0;
                     const associatedBatchIds = associatedBatches.map(b => b.id);
                     const enrolledCount = students.filter(s => associatedBatchIds.includes(s.batchId)).length;
+                    const isCohort = course.courseType === 'cohort' || course.isCohort === true;
 
                     return (
                       <React.Fragment key={course.id}>
                         <tr style={{ color: 'var(--text-primary)' }}>
                           <td>
-                            <div className="fw-bold d-flex align-items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                            <div className="fw-bold d-flex align-items-center gap-2 flex-wrap" style={{ color: 'var(--text-primary)' }}>
                               <button
                                 type="button"
                                 className="btn btn-sm btn-link p-0 text-muted"
@@ -230,6 +281,11 @@ export default function CourseManager() {
                                 {isExpanded ? <FaChevronDown size={11} /> : <FaChevronRight size={11} />}
                               </button>
                               <span>{course.title}</span>
+                              {isCohort ? (
+                                <Badge bg="info" className="border" style={{ fontSize: '0.68rem', fontWeight: 600 }}>Cohort</Badge>
+                              ) : (
+                                <Badge bg="secondary" className="border" style={{ fontSize: '0.68rem', fontWeight: 500 }}>Elective</Badge>
+                              )}
                             </div>
                             <div className="text-muted small text-truncate" style={{ maxWidth: 360 }}>
                               {course.description || 'No description'}
@@ -484,13 +540,18 @@ export default function CourseManager() {
         show={showImportModal}
         onHide={() => setShowImportModal(false)}
         courses={courses}
-        onImport={(json, targetCourseId) => {
-          const course = createCourseFromJSON(json, targetCourseId);
-          if (course) {
-            toast.success(`Course "${course.title}" saved with ${course.modules?.length || 0} modules.`);
-            return true;
+        onImport={async (json, targetCourseId) => {
+          try {
+            const course = await createCourseFromJSON(json, targetCourseId);
+            if (course) {
+              toast.success(`Course "${course.title}" saved with ${course.modules?.length || 0} modules.`);
+              return true;
+            }
+            return false;
+          } catch (err) {
+            toast.error(err.message || 'Failed to import course');
+            throw err;
           }
-          return false;
         }}
       />
     </div>

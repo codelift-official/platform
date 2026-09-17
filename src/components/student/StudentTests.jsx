@@ -213,9 +213,8 @@ export default function StudentTests() {
                                 className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2 fw-semibold"
                                 style={{ opacity: 0.7, cursor: 'not-allowed', fontSize: '0.85rem' }}
                               >
-                                Attempt Completed
+                                Attempted
                               </button>
-                              <span className="text-muted" style={{ fontSize: '0.72rem' }}>Retakes disabled</span>
                             </div>
                           ) : (
                             <button
