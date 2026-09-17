@@ -91,16 +91,13 @@ export default function ProblemCatalog() {
                 <span className="live-dot" /> 50+ Real-World Coding Challenges
               </span>
               <h1 className="cl-arena-title">Problem Solving Arena</h1>
-              <p className="cl-arena-subtitle">
-                Sharpen algorithmic thinking and master Python, DSA, Web Development, SQL queries, and Flask APIs with live instant test feedback.
-              </p>
+
 
               <div className="d-flex flex-wrap gap-3 align-items-center">
                 <button
                   type="button"
-                  className={`btn rounded-pill px-4 fw-bold d-inline-flex align-items-center gap-2 ${
-                    showLeaderboard ? 'btn-warning text-dark' : 'btn-outline-light'
-                  }`}
+                  className={`btn rounded-pill px-4 fw-bold d-inline-flex align-items-center gap-2 ${showLeaderboard ? 'btn-warning text-dark' : 'btn-outline-light'
+                    }`}
                   onClick={() => setShowLeaderboard(!showLeaderboard)}
                   style={{ minHeight: 44 }}
                 >

@@ -181,9 +181,6 @@ export default function Sidebar({
       </Modal.Header>
       <Form onSubmit={handleVerifyFeesPassword}>
         <Modal.Body className="p-4" style={{ background: 'var(--card-bg)' }}>
-          <p className="text-muted small mb-3">
-            Access to tuition fee ledgers, payment tracking, and student receipts requires administrator confirmation. Once unlocked, this session remains active for 15 minutes.
-          </p>
           {feesError && (
             <Alert variant="danger" className="py-2.5 px-3 small mb-3">
               {feesError}
@@ -252,45 +249,80 @@ export default function Sidebar({
           }}
           aria-label={title || 'Sidebar Navigation'}
         >
-        {/* ── COLLAPSED DESKTOP STATE ── */}
-        {!isOpen ? (
-          <div
-            className="d-flex flex-column align-items-center h-100 w-100"
-            style={{ width: cWidth }}
-          >
-            {/* Expand Toggle Button inside the sidebar */}
+          {/* ── COLLAPSED DESKTOP STATE ── */}
+          {!isOpen ? (
             <div
-              className="d-flex align-items-center justify-content-center w-100 border-bottom flex-shrink-0"
-              style={{
-                height: '56px',
-                borderColor: 'var(--border-color, #e5e7eb)'
-              }}
+              className="d-flex flex-column align-items-center h-100 w-100"
+              style={{ width: cWidth }}
             >
-              <OverlayTrigger
-                placement="right"
-                delay={{ show: 200, hide: 50 }}
-                overlay={<Tooltip id="tooltip-expand-sidebar">Expand sidebar</Tooltip>}
+              {/* Expand Toggle Button inside the sidebar */}
+              <div
+                className="d-flex align-items-center justify-content-center w-100 border-bottom flex-shrink-0"
+                style={{
+                  height: '56px',
+                  borderColor: 'var(--border-color, #e5e7eb)'
+                }}
               >
-                <button
-                  type="button"
-                  onClick={handleToggle}
-                  className="sidebar-toggle-btn"
-                  aria-label="Expand sidebar"
-                  style={{ width: '34px', height: '34px' }}
+                <OverlayTrigger
+                  placement="right"
+                  delay={{ show: 200, hide: 50 }}
+                  overlay={<Tooltip id="tooltip-expand-sidebar">Expand sidebar</Tooltip>}
                 >
-                  <FiChevronRight size={16} />
-                </button>
-              </OverlayTrigger>
-            </div>
+                  <button
+                    type="button"
+                    onClick={handleToggle}
+                    className="sidebar-toggle-btn"
+                    aria-label="Expand sidebar"
+                    style={{ width: '34px', height: '34px' }}
+                  >
+                    <FiChevronRight size={16} />
+                  </button>
+                </OverlayTrigger>
+              </div>
 
-            {/* Menu Icons Visible & Clickable in Collapsed State with Sleek Tooltips */}
-            <nav className="sidebar-collapsed-nav d-flex flex-column align-items-center gap-2 py-3 flex-grow-1 w-100" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
-              {items.map((item, index) => {
-                const targetPath = item.to || item.route;
-                const itemKey = item.id || targetPath || `collapsed-nav-${index}`;
-                const iconElement = typeof item.icon === 'function' ? React.createElement(item.icon) : item.icon;
+              {/* Menu Icons Visible & Clickable in Collapsed State with Sleek Tooltips */}
+              <nav className="sidebar-collapsed-nav d-flex flex-column align-items-center gap-2 py-3 flex-grow-1 w-100" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+                {items.map((item, index) => {
+                  const targetPath = item.to || item.route;
+                  const itemKey = item.id || targetPath || `collapsed-nav-${index}`;
+                  const iconElement = typeof item.icon === 'function' ? React.createElement(item.icon) : item.icon;
 
-                if (targetPath) {
+                  if (targetPath) {
+                    return (
+                      <OverlayTrigger
+                        key={itemKey}
+                        placement="right"
+                        delay={{ show: 100, hide: 50 }}
+                        overlay={<Tooltip id={`tooltip-${itemKey}`}>{item.label}</Tooltip>}
+                      >
+                        <NavLink
+                          to={targetPath}
+                          onClick={(e) => handleItemSelect(item, e)}
+                          className={({ isActive }) =>
+                            `sidebar-nav-item sidebar-collapsed-item d-flex align-items-center justify-content-center transition-all ${isActive ? 'active' : ''}`
+                          }
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            fontSize: '1.2rem',
+                            flexShrink: 0
+                          }}
+                        >
+                          <span className="d-inline-flex align-items-center justify-content-center">
+                            {iconElement}
+                          </span>
+                          {item.badge && (
+                            <span
+                              className="position-absolute top-0 end-0 translate-middle p-1 bg-danger border border-light rounded-circle"
+                              style={{ width: '8px', height: '8px', marginTop: '6px', marginRight: '6px' }}
+                            />
+                          )}
+                        </NavLink>
+                      </OverlayTrigger>
+                    );
+                  }
+
+                  const isItemActive = Boolean(item.isActive);
                   return (
                     <OverlayTrigger
                       key={itemKey}
@@ -298,12 +330,10 @@ export default function Sidebar({
                       delay={{ show: 100, hide: 50 }}
                       overlay={<Tooltip id={`tooltip-${itemKey}`}>{item.label}</Tooltip>}
                     >
-                      <NavLink
-                        to={targetPath}
+                      <button
+                        type="button"
                         onClick={(e) => handleItemSelect(item, e)}
-                        className={({ isActive }) =>
-                          `sidebar-nav-item sidebar-collapsed-item d-flex align-items-center justify-content-center transition-all ${isActive ? 'active' : ''}`
-                        }
+                        className={`sidebar-nav-item sidebar-collapsed-item btn d-flex align-items-center justify-content-center border-0 p-0 transition-all ${isItemActive ? 'active' : ''}`}
                         style={{
                           width: '42px',
                           height: '42px',
@@ -320,100 +350,90 @@ export default function Sidebar({
                             style={{ width: '8px', height: '8px', marginTop: '6px', marginRight: '6px' }}
                           />
                         )}
-                      </NavLink>
+                      </button>
                     </OverlayTrigger>
                   );
-                }
+                })}
+              </nav>
+            </div>
+          ) : (
+            /* ── EXPANDED DESKTOP STATE ── */
+            <div
+              className="d-flex flex-column h-100"
+              style={{ width: eWidth, minWidth: eWidth }}
+            >
+              {/* Sidebar Header with Collapse Button inside the sidebar */}
+              <div
+                className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom flex-shrink-0"
+                style={{
+                  height: '56px',
+                  borderColor: 'var(--border-color, #e5e7eb)'
+                }}
+              >
+                <span
+                  className="small fw-bold text-uppercase text-secondary tracking-wider"
+                  style={{ fontSize: '0.78rem', letterSpacing: '0.05em' }}
+                >
+                  Navigation
+                </span>
 
-                const isItemActive = Boolean(item.isActive);
-                return (
-                  <OverlayTrigger
-                    key={itemKey}
-                    placement="right"
-                    delay={{ show: 100, hide: 50 }}
-                    overlay={<Tooltip id={`tooltip-${itemKey}`}>{item.label}</Tooltip>}
+                {/* Collapse Toggle Button inside the sidebar */}
+                <OverlayTrigger
+                  placement="right"
+                  delay={{ show: 200, hide: 50 }}
+                  overlay={<Tooltip id="tooltip-collapse-sidebar">Collapse sidebar</Tooltip>}
+                >
+                  <button
+                    type="button"
+                    onClick={handleToggle}
+                    className="sidebar-toggle-btn"
+                    aria-label="Collapse sidebar"
+                    style={{ width: '32px', height: '32px' }}
                   >
+                    <FiChevronLeft size={16} />
+                  </button>
+                </OverlayTrigger>
+              </div>
+
+              {/* Navigation Items (Icons + Labels, Selected item preserved) */}
+              <nav className="d-flex flex-column gap-1 p-2 flex-grow-1 overflow-y-auto">
+                {items.map((item, index) => {
+                  const targetPath = item.to || item.route;
+                  const itemKey = item.id || targetPath || `expanded-nav-${index}`;
+                  const iconElement = typeof item.icon === 'function' ? React.createElement(item.icon) : item.icon;
+
+                  if (targetPath) {
+                    return (
+                      <NavLink
+                        key={itemKey}
+                        to={targetPath}
+                        onClick={(e) => handleItemSelect(item, e)}
+                        className={({ isActive }) =>
+                          `sidebar-nav-item nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3 fw-semibold transition-all ${isActive ? 'active' : ''}`
+                        }
+                      >
+                        {iconElement && (
+                          <span className="d-inline-flex align-items-center flex-shrink-0 fs-5">
+                            {iconElement}
+                          </span>
+                        )}
+                        <span className="text-truncate flex-grow-1">{item.label}</span>
+                        {item.badge && (
+                          <span className="badge rounded-pill ms-auto" style={{ background: 'var(--card-bg-alt, rgba(255,255,255,0.08))', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </NavLink>
+                    );
+                  }
+
+                  const isItemActive = Boolean(item.isActive);
+                  return (
                     <button
+                      key={itemKey}
                       type="button"
                       onClick={(e) => handleItemSelect(item, e)}
-                      className={`sidebar-nav-item sidebar-collapsed-item btn d-flex align-items-center justify-content-center border-0 p-0 transition-all ${isItemActive ? 'active' : ''}`}
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        fontSize: '1.2rem',
-                        flexShrink: 0
-                      }}
-                    >
-                      <span className="d-inline-flex align-items-center justify-content-center">
-                        {iconElement}
-                      </span>
-                      {item.badge && (
-                        <span
-                          className="position-absolute top-0 end-0 translate-middle p-1 bg-danger border border-light rounded-circle"
-                          style={{ width: '8px', height: '8px', marginTop: '6px', marginRight: '6px' }}
-                        />
-                      )}
-                    </button>
-                  </OverlayTrigger>
-                );
-              })}
-            </nav>
-          </div>
-        ) : (
-          /* ── EXPANDED DESKTOP STATE ── */
-          <div
-            className="d-flex flex-column h-100"
-            style={{ width: eWidth, minWidth: eWidth }}
-          >
-            {/* Sidebar Header with Collapse Button inside the sidebar */}
-            <div
-              className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom flex-shrink-0"
-              style={{
-                height: '56px',
-                borderColor: 'var(--border-color, #e5e7eb)'
-              }}
-            >
-              <span
-                className="small fw-bold text-uppercase text-secondary tracking-wider"
-                style={{ fontSize: '0.78rem', letterSpacing: '0.05em' }}
-              >
-                Navigation
-              </span>
-
-              {/* Collapse Toggle Button inside the sidebar */}
-              <OverlayTrigger
-                placement="right"
-                delay={{ show: 200, hide: 50 }}
-                overlay={<Tooltip id="tooltip-collapse-sidebar">Collapse sidebar</Tooltip>}
-              >
-                <button
-                  type="button"
-                  onClick={handleToggle}
-                  className="sidebar-toggle-btn"
-                  aria-label="Collapse sidebar"
-                  style={{ width: '32px', height: '32px' }}
-                >
-                  <FiChevronLeft size={16} />
-                </button>
-              </OverlayTrigger>
-            </div>
-
-            {/* Navigation Items (Icons + Labels, Selected item preserved) */}
-            <nav className="d-flex flex-column gap-1 p-2 flex-grow-1 overflow-y-auto">
-              {items.map((item, index) => {
-                const targetPath = item.to || item.route;
-                const itemKey = item.id || targetPath || `expanded-nav-${index}`;
-                const iconElement = typeof item.icon === 'function' ? React.createElement(item.icon) : item.icon;
-
-                if (targetPath) {
-                  return (
-                    <NavLink
-                      key={itemKey}
-                      to={targetPath}
-                      onClick={(e) => handleItemSelect(item, e)}
-                      className={({ isActive }) =>
-                        `sidebar-nav-item nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3 fw-semibold transition-all ${isActive ? 'active' : ''}`
-                      }
+                      className={`sidebar-nav-item btn d-flex align-items-center gap-3 px-3 py-2 rounded-3 fw-semibold border-0 text-start w-100 transition-all ${isItemActive ? 'active' : ''}`}
                     >
                       {iconElement && (
                         <span className="d-inline-flex align-items-center flex-shrink-0 fs-5">
@@ -426,45 +446,22 @@ export default function Sidebar({
                           {item.badge}
                         </span>
                       )}
-                    </NavLink>
+                    </button>
                   );
-                }
-
-                const isItemActive = Boolean(item.isActive);
-                return (
-                  <button
-                    key={itemKey}
-                    type="button"
-                    onClick={(e) => handleItemSelect(item, e)}
-                    className={`sidebar-nav-item btn d-flex align-items-center gap-3 px-3 py-2 rounded-3 fw-semibold border-0 text-start w-100 transition-all ${isItemActive ? 'active' : ''}`}
-                  >
-                    {iconElement && (
-                      <span className="d-inline-flex align-items-center flex-shrink-0 fs-5">
-                        {iconElement}
-                      </span>
-                    )}
-                    <span className="text-truncate flex-grow-1">{item.label}</span>
-                    {item.badge && (
-                      <span className="badge rounded-pill ms-auto" style={{ background: 'var(--card-bg-alt, rgba(255,255,255,0.08))', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-            <div className="p-2 border-top text-center mt-auto flex-shrink-0" style={{ borderColor: 'var(--border-color)' }}>
-              <span className="badge rounded-pill" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.03))', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.70rem', fontWeight: 600 }}>
-                {PLATFORM_VERSION}
-              </span>
+                })}
+              </nav>
+              <div className="p-2 border-top text-center mt-auto flex-shrink-0" style={{ borderColor: 'var(--border-color)' }}>
+                <span className="badge rounded-pill" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.03))', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.70rem', fontWeight: 600 }}>
+                  {PLATFORM_VERSION}
+                </span>
+              </div>
             </div>
-          </div>
-        )}
-      </aside>
-      {renderFeesModal()}
-    </>
-  );
-}
+          )}
+        </aside>
+        {renderFeesModal()}
+      </>
+    );
+  }
 
   /* ─────────────────────────────────────────────────────────────
      2. MOBILE / TABLET MODE (< 992px)

@@ -2020,7 +2020,7 @@ input:-webkit-autofill:focus {
 @media (max-width: 991px) {
   .cl-hero,
   .hero-section {
-    padding: 115px 0 65px;
+    padding: 48px 0 40px;
     min-height: auto;
   }
 }
@@ -2028,7 +2028,7 @@ input:-webkit-autofill:focus {
 @media (max-width: 767px) {
   .cl-hero,
   .hero-section {
-    padding: 95px 0 45px;
+    padding: 24px 0 32px;
     min-height: auto;
   }
 }
@@ -2179,9 +2179,29 @@ input:-webkit-autofill:focus {
   letter-spacing: 0.8px;
   padding: 6px 14px;
   border-radius: 999px;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.cl-hero-trust-badge .badge-dash {
+  margin: 0 4px;
+  opacity: 0.75;
+  font-weight: 500;
 }
 
 @media (max-width: 767px) {
+  .cl-hero-trust-badge {
+    font-size: 0.72rem;
+    padding: 4px 11px;
+    letter-spacing: 0.4px;
+    gap: 6px;
+    margin-bottom: 0.65rem !important;
+  }
+
+  .cl-hero-trust-badge .badge-dash {
+    margin: 0 3px;
+  }
+
   .cl-hero h1 {
     font-size: 1.85rem !important;
     line-height: 1.22 !important;

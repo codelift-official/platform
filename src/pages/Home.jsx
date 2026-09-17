@@ -117,9 +117,9 @@ export default function Home() {
           <div className="row align-items-center g-4 g-lg-5">
             <div className="col-lg-7 col-xl-6">
               {/* Trust badge */}
-              <div className="cl-hero-trust-badge mb-3">
+              <div className="cl-hero-trust-badge mb-2 mb-md-3">
                 <span className="live-dot" />
-                <span>Admissions Open — {new Date().getFullYear()} Cohorts</span>
+                <span>Admissions Open <span className="badge-dash">–</span> {new Date().getFullYear()} Cohorts</span>
               </div>
 
               <h1 className="mb-3 mb-md-4">
