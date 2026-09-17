@@ -8,9 +8,10 @@ import {
   FaQuestionCircle,
   FaBullseye
 } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 export default function TestManager() {
-  const { tests = [], batches = [], addTest } = useData();
+  const { tests = [], batches = [], addTest, deleteTest } = useData();
   const createTest = addTest; // Alias for backward compat
 
   const [showModal, setShowModal] = useState(false);
@@ -19,6 +20,7 @@ export default function TestManager() {
   const [passingPercentage, setPassingPercentage] = useState(70);
   const [allowRetake, setAllowRetake] = useState(false);
   const [selectedBatches, setSelectedBatches] = useState([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [questions, setQuestions] = useState([
     {
       id: `q-1`,
@@ -27,6 +29,20 @@ export default function TestManager() {
       correctAnswer: 0
     }
   ]);
+
+  const handleDeleteTest = async (testId, testTitle) => {
+    if (window.confirm(`Are you sure you want to delete test "${testTitle}"? This will permanently remove the test, all its questions, scheduled batch links, and student attempt submissions.`)) {
+      setIsDeleting(true);
+      try {
+        await deleteTest(testId);
+        toast.success('Test and all associated records deleted successfully.');
+      } catch (err) {
+        toast.error(err.message || 'Failed to delete test');
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
 
   const testList = Array.isArray(tests) ? tests : [];
   const batchList = Array.isArray(batches) ? batches : [];
@@ -154,13 +170,14 @@ export default function TestManager() {
                   <th>Passing %</th>
                   <th>Retake Policy</th>
                   <th>Assigned Batches</th>
+                  <th className="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {testList.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-5 text-muted">
-                      No assessment tests created yet.
+                    <td colSpan={6} className="text-center py-5 text-muted">
+                      No assessment tests created yet. Click "Create New Test" to add one.
                     </td>
                   </tr>
                 ) : (
@@ -206,6 +223,20 @@ export default function TestManager() {
                             );
                           })}
                         </div>
+                      </td>
+                      <td className="text-end">
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          disabled={isDeleting}
+                          className="d-inline-flex align-items-center justify-content-center rounded-2 p-1.5"
+                          style={{ width: 32, height: 32 }}
+                          onClick={() => handleDeleteTest(test.id, test.title)}
+                          title="Delete Test"
+                          aria-label="Delete Test"
+                        >
+                          <FaTrash size={12} />
+                        </Button>
                       </td>
                     </tr>
                   ))

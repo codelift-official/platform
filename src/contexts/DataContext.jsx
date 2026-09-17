@@ -534,6 +534,31 @@ export function DataProvider({ children }) {
     }
   };
 
+  const addCategory = async (categoryData) => {
+    const slug = (categoryData.slug || categoryData.name || 'cat')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const newCategory = {
+      id: categoryData.id || `cat-${slug}`,
+      name: categoryData.name,
+      slug,
+      description: categoryData.description || '',
+      icon: categoryData.icon || 'FaCode',
+      createdAt: new Date().toISOString(),
+      ...categoryData
+    };
+    setCategories((prev) => [...prev, newCategory]);
+    try {
+      await supabaseDataService.addCategory(newCategory);
+    } catch (e) {
+      console.error('[DataContext] addCategory failed:', e);
+      setCategories((prev) => prev.filter((c) => c.id !== newCategory.id));
+      throw e;
+    }
+    return newCategory;
+  };
+
   // ── ENTITY ASSOCIATION MANAGERS (SYNCHRONIZED) ──────────────────────────────
   const attachCourseToBatch = (courseId, batchId) => {
     setBatches((prev) =>
@@ -1301,9 +1326,25 @@ export function DataProvider({ children }) {
     supabaseDataService.updateTest(testId, updates).catch((e) => console.error(e));
   };
 
-  const deleteTest = (testId) => {
+  const deleteTest = async (testId) => {
+    // 1. Remove test from tests state
     setTests((prev) => prev.filter((t) => t.id !== testId));
-    supabaseDataService.deleteTest(testId).catch((e) => console.error(e));
+    // 2. Cascade delete associated attempts from local state
+    setTestAttempts((prev) => prev.filter((ta) => ta.testId !== testId));
+    // 3. Remove test from batch testIds in local state
+    setBatches((prev) =>
+      prev.map((b) => ({
+        ...b,
+        testIds: Array.isArray(b.testIds) ? b.testIds.filter((id) => id !== testId) : []
+      }))
+    );
+
+    try {
+      await supabaseDataService.deleteTest(testId);
+    } catch (e) {
+      console.error('[DataContext] deleteTest failed:', e);
+      throw e;
+    }
   };
 
   const submitTestAttempt = (attemptData) => {
@@ -1607,6 +1648,7 @@ export function DataProvider({ children }) {
         completeBatch,
         markBatchComplete: completeBatch,
         cleanupBatch,
+        addCategory,
         addCourse,
         updateCourse,
         deleteCourse,

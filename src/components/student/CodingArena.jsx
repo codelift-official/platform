@@ -2,15 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
-import { 
-  FaCode, 
-  FaCheckCircle, 
-  FaPlay, 
-  FaTrophy, 
-  FaFire, 
-  FaSearch, 
-  FaFilter, 
-  FaArrowRight, 
+import {
+  FaCode,
+  FaCheckCircle,
+  FaPlay,
+  FaTrophy,
+  FaFire,
+  FaSearch,
+  FaFilter,
+  FaArrowRight,
   FaLockOpen,
   FaLightbulb,
   FaRedo
@@ -103,7 +103,7 @@ export default function CodingArena() {
   return (
     <div className="container-fluid px-0">
       {/* ── Hero Banner & Journey Progress ── */}
-      <div 
+      <div
         className="card border-0 rounded-4 mb-4 text-white overflow-hidden shadow-sm"
         style={{
           background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%)',
@@ -120,11 +120,8 @@ export default function CodingArena() {
                 </span>
               </div>
               <h2 className="fw-extrabold mb-2 text-white" style={{ letterSpacing: '-0.5px' }}>
-                Python Lists & Logic Journey
+                Problem Solving
               </h2>
-              <p className="text-white-50 mb-4" style={{ maxWidth: 540, fontSize: '0.95rem', lineHeight: 1.6 }}>
-                20 structured coding challenges designed by your tutor. Write authentic Python code, pass visible and hidden test cases, and clear your coding rounds with confidence!
-              </p>
 
               {/* Progress track */}
               <div style={{ maxWidth: 480 }}>
@@ -133,14 +130,14 @@ export default function CodingArena() {
                   <span className="text-white fw-bold">{solvedCount} of {totalProblems} Solved ({progressPercent}%)</span>
                 </div>
                 <div style={{ height: 10, background: 'rgba(255,255,255,0.15)', borderRadius: 6, overflow: 'hidden' }}>
-                  <div 
-                    style={{ 
-                      height: '100%', 
-                      width: `${progressPercent}%`, 
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${progressPercent}%`,
                       background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
                       borderRadius: 6,
                       transition: 'width 0.6s ease'
-                    }} 
+                    }}
                   />
                 </div>
               </div>
@@ -261,7 +258,7 @@ export default function CodingArena() {
           <h5 className="fw-bold" style={{ color: 'var(--text-primary)' }}>No problems match your filters</h5>
           <p className="text-secondary small mb-3">Try resetting search keywords or changing the difficulty filter.</p>
           <div>
-            <button 
+            <button
               className="btn btn-outline-success btn-sm rounded-pill px-3"
               onClick={() => { setSearchQuery(''); setDifficultyFilter('ALL'); setStatusFilter('ALL'); }}
             >
@@ -282,11 +279,11 @@ export default function CodingArena() {
                   className="card border-0 rounded-4 h-100 position-relative transition-all shadow-sm"
                   style={{
                     background: 'var(--card-bg)',
-                    border: isSolved 
-                      ? '1px solid rgba(16, 185, 129, 0.4)' 
+                    border: isSolved
+                      ? '1px solid rgba(16, 185, 129, 0.4)'
                       : '1px solid var(--border-color)',
-                    boxShadow: isSolved 
-                      ? '0 4px 18px rgba(16, 185, 129, 0.08)' 
+                    boxShadow: isSolved
+                      ? '0 4px 18px rgba(16, 185, 129, 0.08)'
                       : '0 2px 10px rgba(0,0,0,0.03)',
                     transition: 'all 0.2s ease'
                   }}
@@ -296,8 +293,8 @@ export default function CodingArena() {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'none';
-                    e.currentTarget.style.borderColor = isSolved 
-                      ? 'rgba(16, 185, 129, 0.4)' 
+                    e.currentTarget.style.borderColor = isSolved
+                      ? 'rgba(16, 185, 129, 0.4)'
                       : 'var(--border-color)';
                   }}
                 >
@@ -305,7 +302,7 @@ export default function CodingArena() {
                     {/* Top Row: Order Index badge & Status pill */}
                     <div className="d-flex justify-content-between align-items-center mb-2.5">
                       <div className="d-flex align-items-center gap-2">
-                        <span 
+                        <span
                           className={`badge rounded-pill arena-badge-order ${isSolved ? 'solved' : ''}`}
                         >
                           #{prob.orderIndex || idx + 1}
@@ -339,9 +336,9 @@ export default function CodingArena() {
                     </h6>
 
                     {/* Problem Description Snippet */}
-                    <p 
-                      className="small text-secondary mb-3 flex-grow-1" 
-                      style={{ 
+                    <p
+                      className="small text-secondary mb-3 flex-grow-1"
+                      style={{
                         lineHeight: 1.5,
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
@@ -363,9 +360,8 @@ export default function CodingArena() {
 
                       <Link
                         to={`/student/arena/${prob.id}`}
-                        className={`btn btn-sm rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1.5 ${
-                          isSolved ? 'btn-outline-success' : 'btn-primary'
-                        }`}
+                        className={`btn btn-sm rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1.5 ${isSolved ? 'btn-outline-success' : 'btn-primary'
+                          }`}
                         style={{ fontSize: '0.82rem' }}
                       >
                         {isSolved ? 'Review Code' : 'Open IDE'} <FaArrowRight style={{ fontSize: '0.72rem' }} />

@@ -4,6 +4,7 @@ import { useData } from '../contexts/DataContext';
 import Navbar from '../components/common/Navbar';
 import SEO from '../components/common/SEO';
 import CourseEnrollModal from '../components/common/CourseEnrollModal';
+import CourseTechThumbnail from '../components/common/CourseTechThumbnail';
 import { resolveCourseFee } from '../utils/feeUtils';
 import {
   FaSearch,
@@ -266,21 +267,21 @@ export default function CourseCatalog() {
               return (
                 <div key={c.id} className="col-md-6 col-lg-4">
                   <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden cl-course-card">
-                    {/* Thumbnail & Badges */}
+                    {/* Technology Thumbnail & Badges */}
                     <div className="position-relative">
-                      <img
-                        src={c.thumbnail || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600'}
-                        alt={c.title}
-                        className="card-img-top"
-                        style={{ height: 200, objectFit: 'cover' }}
+                      <CourseTechThumbnail
+                        course={c}
+                        category={categories?.find((cat) => cat.id === c.categoryId)}
+                        height={190}
                       />
-                      <div className="position-absolute top-0 start-0 m-3">
+                      <div className="position-absolute top-0 start-0 m-3" style={{ zIndex: 3 }}>
                         <span
                           className="badge rounded-pill px-2.5 py-1.5 fw-semibold shadow-sm"
                           style={{
-                            background: c.courseType === 'cohort' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(21, 128, 61, 0.9)',
+                            background: c.courseType === 'cohort' ? 'rgba(15, 23, 42, 0.85)' : 'rgba(21, 128, 61, 0.85)',
                             color: '#ffffff',
-                            backdropFilter: 'blur(4px)',
+                            backdropFilter: 'blur(6px)',
+                            WebkitBackdropFilter: 'blur(6px)',
                             fontSize: '0.72rem'
                           }}
                         >
@@ -290,7 +291,7 @@ export default function CourseCatalog() {
                       <span
                         className={`position-absolute top-0 end-0 m-3 badge rounded-pill px-3 py-1.5 font-bold shadow-sm ${feeInfo.isFree ? 'bg-success' : 'bg-primary'
                           }`}
-                        style={{ fontSize: '0.75rem' }}
+                        style={{ fontSize: '0.75rem', zIndex: 3 }}
                       >
                         {feeInfo.feeFormatted}
                       </span>

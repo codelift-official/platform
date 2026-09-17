@@ -7,6 +7,7 @@ import SEO from '../components/common/SEO';
 import CheckoutModal from '../components/common/CheckoutModal';
 import InvoiceModal from '../components/common/InvoiceModal';
 import CourseEnrollModal from '../components/common/CourseEnrollModal';
+import CourseTechThumbnail from '../components/common/CourseTechThumbnail';
 import toast from 'react-hot-toast';
 import {
   FaStar, FaCheckCircle, FaBookOpen, FaLock,
@@ -21,7 +22,7 @@ export default function CourseDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { auth, currentUser } = useAuth();
-  const { courses, enrollments, payments, batches } = useData();
+  const { courses, categories, enrollments, payments, batches } = useData();
 
   const [showCheckout, setShowCheckout] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
@@ -212,12 +213,12 @@ export default function CourseDetail() {
                 className="rounded-4 overflow-hidden shadow-lg"
                 style={{ background: 'var(--card-bg, #fff)', border: '1px solid var(--border-color)' }}
               >
-                {/* Thumbnail */}
-                <img
-                  src={course.thumbnail || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format'}
-                  alt={course.title}
-                  style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
-                  loading="eager"
+                {/* Technology Icon Thumbnail */}
+                <CourseTechThumbnail
+                  course={course}
+                  category={categories?.find((cat) => cat.id === course.categoryId)}
+                  height={220}
+                  className="rounded-top-4"
                 />
 
                 <div className="p-4">

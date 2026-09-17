@@ -22,28 +22,16 @@ import FloatingWhatsApp from '../components/common/FloatingWhatsApp';
 import CourseEnrollModal from '../components/common/CourseEnrollModal';
 import { useData } from '../contexts/DataContext';
 import { resolveCourseFee } from '../utils/feeUtils';
+import { resolveCourseTech } from '../components/common/CourseTechThumbnail';
 import '../styles/HomeElevated.css';
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 
 /** Resolve a tech icon + colour class from the course category / title */
 function getCourseIconMeta(course) {
-  const cat = (course.categoryId || '').toLowerCase();
-  const title = (course.title || '').toLowerCase();
-
-  if (cat.includes('python') || title.includes('python') || title.includes('fastapi') || title.includes('asyncio')) {
-    return { icon: <SiPython />, boxClass: 'cat-python' };
-  }
-  if (cat.includes('sql') || cat.includes('database') || title.includes('sql') || title.includes('postgres') || title.includes('database')) {
-    return { icon: <SiPostgresql />, boxClass: 'cat-sql' };
-  }
-  if (cat.includes('web') || cat.includes('react') || title.includes('react') || title.includes('full') || title.includes('web')) {
-    return { icon: <SiReact />, boxClass: 'cat-web' };
-  }
-  if (cat.includes('data') || cat.includes('analytics') || title.includes('data') || title.includes('analytics')) {
-    return { icon: <FaChartBar />, boxClass: 'cat-data' };
-  }
-  return { icon: <FaCode />, boxClass: 'cat-default' };
+  const tech = resolveCourseTech(course);
+  const IconComponent = tech.Icon;
+  return { icon: <IconComponent />, boxClass: tech.boxClass };
 }
 
 // ─── Code Arena Preview Problems (shown on Home page) ──────────────────────

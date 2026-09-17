@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import toast from 'react-hot-toast';
 import { FaCheckCircle, FaTag, FaUpload, FaUniversity, FaQrcode } from 'react-icons/fa';
+import CourseTechThumbnail from './CourseTechThumbnail';
 
 export default function CheckoutModal({ course, onClose, onSuccess }) {
   const { auth, currentUser } = useAuth();
@@ -115,11 +116,12 @@ export default function CheckoutModal({ course, onClose, onSuccess }) {
                   Order Summary
                 </h6>
                 <div className="d-flex gap-3 mb-3 align-items-center p-3 rounded-3 border" style={{ background: 'var(--card-bg-alt, rgba(255,255,255,0.04))', borderColor: 'var(--border-color)' }}>
-                  <img
-                    src={course.thumbnail || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=150'}
-                    alt={course.title}
-                    className="rounded-3"
-                    style={{ width: 80, height: 60, objectFit: 'cover' }}
+                  <CourseTechThumbnail
+                    course={course}
+                    compact={true}
+                    width={76}
+                    height={60}
+                    className="rounded-3 flex-shrink-0"
                   />
                   <div>
                     <h6 className="fw-bold mb-1" style={{ color: 'var(--text-primary)' }}>{course.title}</h6>

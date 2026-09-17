@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fa';
 import CurriculumNavigator from './CurriculumNavigator';
 import TopicQuiz from '../common/TopicQuiz';
+import CourseTechThumbnail from '../common/CourseTechThumbnail';
 import '../../styles/CourseView.css';
 
 // ══════════════════════════════════════════════════════════
@@ -644,19 +645,12 @@ export default function StudentCourses() {
                 return (
                   <div key={course.id} className="col d-flex">
                     <div className="cv-course-card w-100">
-                      {/* Thumbnail / Placeholder */}
-                      {course.thumbnail ? (
-                        <img
-                          src={course.thumbnail}
-                          alt={course.title}
-                          className="cv-course-thumb"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="cv-course-thumb-placeholder">
-                          <FaBookOpen />
-                        </div>
-                      )}
+                      {/* Technology Icon Thumbnail */}
+                      <CourseTechThumbnail
+                        course={course}
+                        height={160}
+                        className="rounded-top-3"
+                      />
 
                       {/* Body */}
                       <div className="cv-course-body">

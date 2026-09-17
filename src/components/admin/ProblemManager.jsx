@@ -159,14 +159,6 @@ export default function ProblemManager() {
 
         <div className="d-flex align-items-center gap-2">
           <Button
-            variant="outline-secondary"
-            size="sm"
-            className="rounded-pill px-3 d-flex align-items-center gap-1.5"
-            onClick={handleResetSeed}
-          >
-            <FaUndo /> Reset to 20 Seed Questions
-          </Button>
-          <Button
             variant="primary"
             size="sm"
             className="rounded-pill px-3.5 d-flex align-items-center gap-1.5"
@@ -285,10 +277,10 @@ export default function ProblemManager() {
                     </td>
                     <td>
                       <span className={`badge rounded-pill ${(prob.difficulty || 'Easy').toLowerCase() === 'hard'
-                          ? 'arena-badge-hard'
-                          : (prob.difficulty || '').toLowerCase() === 'medium'
-                            ? 'arena-badge-medium'
-                            : 'arena-badge-easy'
+                        ? 'arena-badge-hard'
+                        : (prob.difficulty || '').toLowerCase() === 'medium'
+                          ? 'arena-badge-medium'
+                          : 'arena-badge-easy'
                         }`}>
                         {prob.difficulty || 'Easy'}
                       </span>

@@ -23,11 +23,13 @@ import CoursePreview from '../common/CoursePreview';
 export default function CourseManager() {
   const {
     courses = [],
+    categories = [],
     batches = [],
     students = [],
     addCourse,
     updateCourse,
     deleteCourse,
+    addCategory,
     createCourseFromJSON
   } = useData();
 
@@ -77,12 +79,20 @@ export default function CourseManager() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [batchId, setBatchId] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('code');
   const [isPublished, setIsPublished] = useState(true);
 
   const resetForm = () => {
     setTitle('');
     setDescription('');
     setBatchId('');
+    setCategoryId(categories[0]?.id || 'cat-web');
+    setIsCreatingCategory(false);
+    setNewCategoryName('');
+    setNewCategoryIcon('code');
     setIsPublished(true);
     setEditingCourse(null);
   };
@@ -97,6 +107,10 @@ export default function CourseManager() {
     setTitle(course.title);
     setDescription(course.description || '');
     setBatchId(course.batchId || '');
+    setCategoryId(course.categoryId || categories[0]?.id || 'cat-web');
+    setIsCreatingCategory(false);
+    setNewCategoryName('');
+    setNewCategoryIcon('code');
     setIsPublished(course.isPublished !== false);
     setShowCreateModal(true);
   };
@@ -109,11 +123,28 @@ export default function CourseManager() {
     }
 
     try {
+      let finalCategoryId = categoryId;
+      if (isCreatingCategory) {
+        if (!newCategoryName.trim()) {
+          toast.error('Please enter a name for the new category');
+          return;
+        }
+        const createdCat = await addCategory({
+          name: newCategoryName.trim(),
+          icon: newCategoryIcon || 'code'
+        });
+        if (createdCat && createdCat.id) {
+          finalCategoryId = createdCat.id;
+          toast.success(`Category "${createdCat.name}" added successfully.`);
+        }
+      }
+
       if (editingCourse) {
         await updateCourse(editingCourse.id, {
           title,
           description,
           batchId,
+          categoryId: finalCategoryId,
           courseType: editingCourse.courseType || (editingCourse.isCohort ? 'cohort' : 'elective'),
           isPublished
         });
@@ -123,6 +154,7 @@ export default function CourseManager() {
           title,
           description,
           batchId,
+          categoryId: finalCategoryId,
           courseType: 'elective',
           isPublished,
           modules: [
@@ -286,6 +318,26 @@ export default function CourseManager() {
                               ) : (
                                 <Badge bg="secondary" className="border" style={{ fontSize: '0.68rem', fontWeight: 500 }}>Elective</Badge>
                               )}
+                              {(() => {
+                                const courseCat = categories.find((cat) => cat.id === course.categoryId);
+                                if (courseCat) {
+                                  return (
+                                    <Badge
+                                      className="border"
+                                      style={{
+                                        background: 'var(--card-bg-alt, rgba(99,102,241,0.12))',
+                                        color: 'var(--brand-primary, #6366f1)',
+                                        borderColor: 'var(--border-color)',
+                                        fontSize: '0.68rem',
+                                        fontWeight: 600
+                                      }}
+                                    >
+                                      {courseCat.name}
+                                    </Badge>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                             <div className="text-muted small text-truncate" style={{ maxWidth: 360 }}>
                               {course.description || 'No description'}
@@ -468,6 +520,88 @@ export default function CourseManager() {
                 style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
               />
             </Form.Group>
+
+            {/* Category Selector with Inline Category Creator */}
+            <div className="mb-3 p-3 rounded-3 border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <Form.Label className="fw-semibold small mb-0" style={{ color: 'var(--text-primary)' }}>
+                  Course Category & Technology
+                </Form.Label>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="p-0 text-decoration-none fw-semibold"
+                  style={{ fontSize: '0.8rem', color: 'var(--brand-primary, #6366f1)' }}
+                  onClick={() => setIsCreatingCategory((prev) => !prev)}
+                >
+                  {isCreatingCategory ? '← Choose Existing Category' : '+ Add New Category'}
+                </Button>
+              </div>
+
+              {!isCreatingCategory ? (
+                <div>
+                  <Form.Select
+                    value={categoryId}
+                    onChange={(e) => {
+                      if (e.target.value === '__new__') {
+                        setIsCreatingCategory(true);
+                      } else {
+                        setCategoryId(e.target.value);
+                      }
+                    }}
+                    style={{ background: 'var(--card-bg)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name} ({cat.icon || 'code'})
+                      </option>
+                    ))}
+                    <option value="__new__">+ Create New Category...</option>
+                  </Form.Select>
+                  <Form.Text className="text-muted small">
+                    Assigning a category automatically maps modern technology icons and thematic styling across the platform.
+                  </Form.Text>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-3 border mt-1" style={{ borderColor: 'var(--border-color)', background: 'var(--card-bg)' }}>
+                  <Row className="g-2">
+                    <Col md={7}>
+                      <Form.Label className="fw-semibold small mb-1" style={{ fontSize: '0.75rem' }}>Category Name</Form.Label>
+                      <Form.Control
+                        type="text"
+                        size="sm"
+                        placeholder="e.g. Cloud & DevOps, Artificial Intelligence"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        required={isCreatingCategory}
+                        style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                      />
+                    </Col>
+                    <Col md={5}>
+                      <Form.Label className="fw-semibold small mb-1" style={{ fontSize: '0.75rem' }}>Technology Icon</Form.Label>
+                      <Form.Select
+                        size="sm"
+                        value={newCategoryIcon}
+                        onChange={(e) => setNewCategoryIcon(e.target.value)}
+                        style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                      >
+                        <option value="code">Code / Development</option>
+                        <option value="python">Python</option>
+                        <option value="react">React / Frontend</option>
+                        <option value="node">Node.js / Full Stack</option>
+                        <option value="database">Database / SQL</option>
+                        <option value="cloud">Cloud / DevOps</option>
+                        <option value="ai">AI / Machine Learning</option>
+                        <option value="terminal">Core CS / Algorithms</option>
+                        <option value="mobile">Mobile App Dev</option>
+                        <option value="chart">Data & Analytics</option>
+                      </Form.Select>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+            </div>
 
             <Row className="g-3 mb-3">
               <Col md={8}>

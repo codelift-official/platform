@@ -15,6 +15,7 @@ import { runBatchCourseAndFeeTests } from './batch-course-and-fee.test.js';
 import { runEnrollmentAndMarketplaceTests } from './enrollment-journey-and-marketplace.test.js';
 import { runProblemEditorialTests } from './problem-solutions.test.js';
 import { runBatchManagementAndQuizzesTests } from './batch-management-and-quizzes.test.js';
+import { runTestDeletionAndTechThumbnailsTests } from './test-deletion-and-tech-thumbnails.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -105,6 +106,15 @@ async function runAll() {
     suiteResults.push({ name: 'Batch Management, Safe Deletion & Course Quizzes', passed: r9.passedCount, total: r9.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Batch Management, Safe Deletion & Course Quizzes', error: err.message, ok: false });
+  }
+
+  try {
+    const r10 = runTestDeletionAndTechThumbnailsTests();
+    totalPassed += r10.passedCount;
+    totalTests += r10.totalCount;
+    suiteResults.push({ name: 'Test Deletion, Categories & Tech Thumbnails', passed: r10.passedCount, total: r10.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Test Deletion, Categories & Tech Thumbnails', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

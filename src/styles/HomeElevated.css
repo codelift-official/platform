@@ -316,6 +316,31 @@
   border: 1px solid rgba(245, 158, 11, 0.2);
   color: #d97706;
 }
+.cl-tech-icon-box.cat-ai {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(192, 132, 252, 0.08));
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  color: #9333ea;
+}
+.cl-tech-icon-box.cat-cloud {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(56, 189, 248, 0.08));
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  color: #0284c7;
+}
+.cl-tech-icon-box.cat-mobile {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.08));
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #059669;
+}
+.cl-tech-icon-box.cat-core {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(74, 222, 128, 0.08));
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  color: #16a34a;
+}
+.cl-tech-icon-box.cat-node {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(34, 197, 94, 0.08));
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #15803d;
+}
 .cl-tech-icon-box.cat-default {
   background: linear-gradient(135deg, rgba(var(--bs-primary-rgb, 21, 128, 61), 0.12), rgba(var(--bs-primary-rgb, 21, 128, 61), 0.05));
   border: 1px solid rgba(var(--bs-primary-rgb, 21, 128, 61), 0.2);

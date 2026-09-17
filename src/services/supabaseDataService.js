@@ -1014,6 +1014,32 @@ export async function deleteCourse(courseId) {
   return true;
 }
 
+export async function addCategory(categoryData) {
+  const slug = (categoryData.slug || categoryData.name || 'cat')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  const id = categoryData.id || `cat-${slug}`;
+
+  const { data, error } = await supabase
+    .from('categories')
+    .upsert(
+      {
+        id,
+        name: categoryData.name,
+        slug,
+        description: categoryData.description || '',
+        icon: categoryData.icon || 'code'
+      },
+      { onConflict: 'id' }
+    )
+    .select()
+    .single();
+
+  if (error) handleSupabaseError(error, 'Failed to add category');
+  return data;
+}
+
 // ==============================================================================
 // FEES & PAYMENTS
 // ==============================================================================
@@ -1144,6 +1170,9 @@ export async function updateTest(testId, updates) {
 }
 
 export async function deleteTest(testId) {
+  await supabase.from('test_attempts').delete().eq('test_id', testId);
+  await supabase.from('batch_tests').delete().eq('test_id', testId);
+  await supabase.from('test_questions').delete().eq('test_id', testId);
   const { error } = await supabase.from('tests').delete().eq('id', testId);
   if (error) handleSupabaseError(error, 'Failed to delete test');
   return true;
