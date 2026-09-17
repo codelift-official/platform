@@ -186,21 +186,40 @@ export default function StudentCourses() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { auth } = useAuth();
-  const { students = [], courses = [], batches = [], markTopicComplete, saveQuizAttempt } = useData();
+  const { students = [], courses = [], batches = [], enrollments = [], markTopicComplete, saveQuizAttempt } = useData();
 
   const student = students.find(s => s.id === auth?.studentId);
   const batch = batches.find(b => b.id === student?.batchId);
 
   const allAvailableCourses = useMemo(() => {
-    if (!student?.batchId) return [];
     return courses.filter(c => {
-      if (Array.isArray(batch?.courseIds)) return batch.courseIds.includes(c.id);
-      return c.batchId === student.batchId || (Array.isArray(c.batchIds) && c.batchIds.includes(student.batchId));
+      if (c.isPublished === false) return false;
+
+      // 1. Matched via student's batch
+      if (student?.batchId) {
+        if (Array.isArray(batch?.courseIds) && batch.courseIds.includes(c.id)) return true;
+        if (c.batchId === student.batchId || (Array.isArray(c.batchIds) && c.batchIds.includes(student.batchId))) return true;
+      }
+
+      // 2. Direct student enrollment (free or verified paid)
+      const isEnrolled = enrollments.some(
+        e => (e.studentId === student?.id || e.studentId === auth?.studentId) &&
+             (e.courseId === c.id || e.courseId === c.slug) &&
+             ['ACTIVE', 'FREE', 'PAID'].includes(e.status)
+      );
+      if (isEnrolled) return true;
+
+      // 3. Published elective or free courses (all students have access to self-paced elective curricula)
+      if (c.courseType === 'elective' || c.isFree || !c.price || c.price === 0) return true;
+
+      return false;
     });
-  }, [courses, student?.batchId, batch?.courseIds]);
+  }, [courses, student, batch, enrollments, auth?.studentId]);
 
   const selectedCourseId = searchParams.get('id');
-  const activeCourse = allAvailableCourses.find(c => c.id === selectedCourseId);
+  const activeCourse = allAvailableCourses.find(c => c.id === selectedCourseId || c.slug === selectedCourseId) ||
+                       courses.find(c => (c.id === selectedCourseId || c.slug === selectedCourseId) && c.isPublished !== false) ||
+                       allAvailableCourses[0];
 
   // ── Navigator State ──────────────────────────────────────
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
@@ -445,7 +464,7 @@ export default function StudentCourses() {
               {/* Body */}
               <div className="cv-lecture-body">
                 <LectureMarkdown
-                  content={currentTopic?.contentMd || currentTopic?.description || 'No lecture content has been added yet.'}
+                  content={currentTopic?.contentMd || currentTopic?.content_md || currentTopic?.description || 'No lecture content has been added yet.'}
                 />
 
                 {/* ── Topic MCQ Assessment & Quiz ── */}

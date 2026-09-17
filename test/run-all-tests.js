@@ -17,6 +17,7 @@ import { runProblemEditorialTests } from './problem-solutions.test.js';
 import { runBatchManagementAndQuizzesTests } from './batch-management-and-quizzes.test.js';
 import { runTestDeletionAndTechThumbnailsTests } from './test-deletion-and-tech-thumbnails.test.js';
 import { runHomepageMobileAndThemeTests } from './homepage-mobile-and-theme.test.js';
+import { run56ModuleCourseImportVisibilityTests } from './course-import-56m-visibility.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -125,6 +126,15 @@ async function runAll() {
     suiteResults.push({ name: 'Homepage Mobile Fixes & Public Theme Selector', passed: r11.passedCount, total: r11.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Homepage Mobile Fixes & Public Theme Selector', error: err.message, ok: false });
+  }
+
+  try {
+    const r12 = await run56ModuleCourseImportVisibilityTests();
+    totalPassed += r12.passedCount;
+    totalTests += r12.totalCount;
+    suiteResults.push({ name: '56-Module Course Import & Content Visibility', passed: r12.passedCount, total: r12.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: '56-Module Course Import & Content Visibility', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

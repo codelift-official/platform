@@ -57,9 +57,8 @@ export default function CourseImportModal({ show, onHide, onImport, courses = []
     if (preview && Array.isArray(courses) && courses.length > 0) {
       const match = courses.find(
         (c) =>
-          c.id === preview.id ||
-          c.title?.trim().toLowerCase() === preview.title?.trim().toLowerCase() ||
-          (preview.title?.toLowerCase().includes('python') && c.id === 'course-python-free')
+          (preview.id && c.id === preview.id) ||
+          (preview.title && c.title?.trim().toLowerCase() === preview.title?.trim().toLowerCase())
       );
       if (match) {
         setImportMode('update');

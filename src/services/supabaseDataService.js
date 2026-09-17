@@ -232,8 +232,8 @@ export async function fetchAllData() {
       supabase.from('students').select('*').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('name', { ascending: true }),
       supabase.from('courses').select('*').order('created_at', { ascending: false }),
-      supabase.from('course_modules').select('*').order('order_index', { ascending: true }),
-      supabase.from('course_topics').select('*').order('order_index', { ascending: true }),
+      supabase.from('course_modules').select('*').order('order_index', { ascending: true }).limit(5000),
+      supabase.from('course_topics').select('*').order('order_index', { ascending: true }).limit(10000),
       supabase.from('batch_courses').select('*'),
       supabase.from('enrollments').select('*').order('enrolled_at', { ascending: false }),
       supabase.from('coupons').select('*').order('created_at', { ascending: false }),
@@ -311,13 +311,13 @@ export async function fetchAllData() {
         .map((m) => ({
           id: m.id,
           title: m.title,
+          quizQuestions: Array.isArray(m.quiz_questions) ? m.quiz_questions : (Array.isArray(m.quizQuestions) ? m.quizQuestions : []),
           topics: rawTopics
             .filter((t) => t.module_id === m.id)
             .map((t) => ({
               id: t.id,
               title: t.title,
-              videoUrl: t.video_url || '',
-              contentMd: t.content_md || '',
+              contentMd: t.content_md || t.contentMd || '',
               quizQuestions: Array.isArray(t.quiz_questions) ? t.quiz_questions : (Array.isArray(t.quizQuestions) ? t.quizQuestions : [])
             }))
         }));
@@ -913,28 +913,41 @@ export async function addCourse(courseData) {
   if (error) handleSupabaseError(error, 'Failed to add course');
 
   // Insert modules and topics
-  if (Array.isArray(courseData.modules)) {
+  if (Array.isArray(courseData.modules) && courseData.modules.length > 0) {
+    const moduleRows = courseData.modules.map((mod, mIdx) => ({
+      id: mod.id,
+      course_id: courseData.id,
+      title: mod.title,
+      order_index: mIdx,
+      quiz_questions: Array.isArray(mod.quizQuestions) ? mod.quizQuestions : []
+    }));
+    const { error: modErr } = await supabase.from('course_modules').insert(moduleRows);
+    if (modErr) handleSupabaseError(modErr, 'Failed to add course modules');
+
+    const allTopicRows = [];
     for (let mIdx = 0; mIdx < courseData.modules.length; mIdx++) {
       const mod = courseData.modules[mIdx];
-      await supabase.from('course_modules').insert({
-        id: mod.id,
-        course_id: courseData.id,
-        title: mod.title,
-        order_index: mIdx
-      });
-
       if (Array.isArray(mod.topics)) {
-        const topicRows = mod.topics.map((t, tIdx) => ({
-          id: t.id,
-          module_id: mod.id,
-          title: t.title,
-          video_url: t.videoUrl || t.video_url || '',
-          content_md: t.contentMd || '',
-          order_index: tIdx
-        }));
-        if (topicRows.length > 0) {
-          await supabase.from('course_topics').insert(topicRows);
+        for (let tIdx = 0; tIdx < mod.topics.length; tIdx++) {
+          const t = mod.topics[tIdx];
+          allTopicRows.push({
+            id: t.id,
+            module_id: mod.id,
+            title: t.title,
+            content_md: t.contentMd || t.content_md || '',
+            order_index: tIdx,
+            quiz_questions: Array.isArray(t.quizQuestions) ? t.quizQuestions : (Array.isArray(t.quiz_questions) ? t.quiz_questions : [])
+          });
         }
+      }
+    }
+
+    if (allTopicRows.length > 0) {
+      const chunkSize = 50;
+      for (let i = 0; i < allTopicRows.length; i += chunkSize) {
+        const chunk = allTopicRows.slice(i, i + chunkSize);
+        const { error: topErr } = await supabase.from('course_topics').insert(chunk);
+        if (topErr) handleSupabaseError(topErr, 'Failed to add course topics');
       }
     }
   }
@@ -973,25 +986,45 @@ export async function updateCourse(courseId, updates) {
 
   // If modules array passed, re-sync modules and topics
   if (Array.isArray(updates.modules)) {
-    await supabase.from('course_modules').delete().eq('course_id', courseId);
-    for (let mIdx = 0; mIdx < updates.modules.length; mIdx++) {
-      const mod = updates.modules[mIdx];
-      await supabase.from('course_modules').insert({
+    const { error: delModErr } = await supabase.from('course_modules').delete().eq('course_id', courseId);
+    if (delModErr) handleSupabaseError(delModErr, 'Failed to clear previous course modules');
+
+    if (updates.modules.length > 0) {
+      const moduleRows = updates.modules.map((mod, mIdx) => ({
         id: mod.id,
         course_id: courseId,
         title: mod.title,
-        order_index: mIdx
-      });
-      if (Array.isArray(mod.topics) && mod.topics.length > 0) {
-        const topicRows = mod.topics.map((t, tIdx) => ({
-          id: t.id,
-          module_id: mod.id,
-          title: t.title,
-          video_url: t.videoUrl || t.video_url || '',
-          content_md: t.contentMd || '',
-          order_index: tIdx
-        }));
-        await supabase.from('course_topics').insert(topicRows);
+        order_index: mIdx,
+        quiz_questions: Array.isArray(mod.quizQuestions) ? mod.quizQuestions : []
+      }));
+      const { error: modErr } = await supabase.from('course_modules').insert(moduleRows);
+      if (modErr) handleSupabaseError(modErr, 'Failed to update course modules');
+
+      const allTopicRows = [];
+      for (let mIdx = 0; mIdx < updates.modules.length; mIdx++) {
+        const mod = updates.modules[mIdx];
+        if (Array.isArray(mod.topics)) {
+          for (let tIdx = 0; tIdx < mod.topics.length; tIdx++) {
+            const t = mod.topics[tIdx];
+            allTopicRows.push({
+              id: t.id,
+              module_id: mod.id,
+              title: t.title,
+              content_md: t.contentMd || t.content_md || '',
+              order_index: tIdx,
+              quiz_questions: Array.isArray(t.quizQuestions) ? t.quizQuestions : (Array.isArray(t.quiz_questions) ? t.quiz_questions : [])
+            });
+          }
+        }
+      }
+
+      if (allTopicRows.length > 0) {
+        const chunkSize = 50;
+        for (let i = 0; i < allTopicRows.length; i += chunkSize) {
+          const chunk = allTopicRows.slice(i, i + chunkSize);
+          const { error: topErr } = await supabase.from('course_topics').insert(chunk);
+          if (topErr) handleSupabaseError(topErr, 'Failed to update course topics');
+        }
       }
     }
   }

@@ -713,14 +713,13 @@ export function DataProvider({ children }) {
       ? data.modules.map((m, mIdx) => ({
           id: m.id || `mod-${Date.now()}-${mIdx}-${Math.random().toString(36).slice(2, 6)}`,
           title: m.title || `Module ${mIdx + 1}`,
-          quizQuestions: Array.isArray(m.quizQuestions) ? m.quizQuestions : [],
+          quizQuestions: Array.isArray(m.quizQuestions) ? m.quizQuestions : (Array.isArray(m.quiz_questions) ? m.quiz_questions : []),
           topics: Array.isArray(m.topics)
             ? m.topics.map((t, tIdx) => ({
                 id: t.id || `top-${Date.now()}-${mIdx}-${tIdx}-${Math.random().toString(36).slice(2, 6)}`,
                 title: t.title || `Topic ${tIdx + 1}`,
-                videoUrl: t.videoUrl || t.video_url || '',
-                contentMd: t.contentMd || t.content_md || `# ${t.title || 'Topic'}\n\nContent for this topic.`,
-                quizQuestions: Array.isArray(t.quizQuestions) ? t.quizQuestions : []
+                contentMd: t.contentMd || t.content_md || t.content || `# ${t.title || 'Topic'}\n\nContent for this topic.`,
+                quizQuestions: Array.isArray(t.quizQuestions) ? t.quizQuestions : (Array.isArray(t.quiz_questions) ? t.quiz_questions : [])
               }))
             : []
         }))

@@ -193,14 +193,6 @@ export default function CourseDetail() {
                   <span><strong style={{ color: 'var(--text-primary)' }}>{course.modules?.length || 0}</strong> sections</span>
                 </div>
                 <div className="d-flex align-items-center gap-1">
-                  <FaBookOpen style={{ color: 'var(--bs-primary, #15803d)' }} />
-                  <span><strong style={{ color: 'var(--text-primary)' }}>{totalTopics}</strong> lectures</span>
-                </div>
-                <div className="d-flex align-items-center gap-1">
-                  <FaClock style={{ color: '#f472b6' }} />
-                  <span><strong style={{ color: 'var(--text-primary)' }}>{durationStr}</strong> total</span>
-                </div>
-                <div className="d-flex align-items-center gap-1">
                   <FaCertificate style={{ color: 'var(--bs-primary, #15803d)' }} />
                   <span>Certificate Included</span>
                 </div>
@@ -237,11 +229,12 @@ export default function CourseDetail() {
                   {!isEnrolled && !isPending && (
                     <ul className="list-unstyled mt-4 mb-0" style={{ fontSize: '0.83rem' }}>
                       {[
-                        'Full Lifetime Access to Curricula',
-                        'Comprehensive Code Examples & Labs',
-                        'Practical Assignments & Module Tests',
-                        'Verified Certificate on Completion',
-                        'Expert Faculty Mentorship'
+                        'Free Demo Class',
+                        '3+ Real-World Projects',
+                        'Project-Based Learning',
+                        'GitHub Deployment',
+                        'Verified Certificate',
+                        'Expert Mentorship'
                       ].map((perk, i) => (
                         <li key={i} className="d-flex align-items-start gap-2 mb-2" style={{ color: 'var(--text-secondary)' }}>
                           <FaCheckCircle style={{ color: '#16a34a', marginTop: 2, flexShrink: 0 }} size={12} />
@@ -331,7 +324,7 @@ export default function CourseDetail() {
               <div>
                 <div className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>Secure Enrollment</div>
                 <div className="text-muted" style={{ fontSize: '0.78rem', lineHeight: 1.5 }}>
-                  All payments are manually verified by our admin team. Zero risk.
+                  Free Demo Available.
                 </div>
               </div>
             </div>

@@ -1,0 +1,1018 @@
+{
+  "title": "Python Programming: Beginner to Advanced (56 Modules)",
+  "description": "Complete Python course covering everything from variables to OOP with edge cases, FAQs, and module-wise quizzes.",
+  "isPublished": true,
+  "courseType": "elective",
+  "isFree": true,
+  "price": 0,
+  "modules": [
+    {
+      "title": "Module 1: Variables and Naming Conventions",
+      "topics": [
+        {
+          "title": "Variables & Naming Rules",
+          "contentMd": "# Variables and Naming Conventions\n\n## What is a Variable?\nA variable is a name bound to a value stored in memory.\n\n```python\nname = \"Alice\"\nage = 25\n```\n\n## Naming Rules\n- Must start with a letter or `_`\n- Can contain letters, digits, `_`\n- Case-sensitive (`age` ≠ `Age`)\n- Cannot use keywords (`if`, `for`, `class`)\n- Use `snake_case` for variables, `UPPER_CASE` for constants\n\n## Multiple Assignment\n```python\na, b, c = 1, 2, 3\nx = y = z = 0\n```\n\n## Deleting Variables\n```python\ndel age\n```\n\n## Edge Cases\n- `2value` is invalid (starts with digit)\n- `my-var` is invalid (hyphen not allowed)\n- `class` is invalid (keyword)\n- Using a variable before assignment → `NameError`\n\n## FAQ\n**Q: Can a variable name start with an underscore?**\nYes, e.g., `_temp`. Single underscore is often used for \"internal\" variables.\n\n**Q: Can I use Unicode letters in variable names?**\nYes (Python 3), but avoid it for readability.\n\n## Q&A\n1. What is dynamic typing? – The type of a variable is determined at runtime.\n2. What is a constant in Python? – Convention only; use UPPER_CASE.\n3. Can you reassign a variable to a different type? – Yes.\n4. What does `del x` do? – Removes the binding; x no longer exists.\n5. Is `My_Var` valid? – Yes, but PEP 8 prefers `my_var`.",
+          "quizQuestions": [
+            {"text": "Which is a valid variable name?", "options": ["2value", "my-var", "_myvar", "class"], "correct": 2},
+            {"text": "What happens if you use a variable before assigning it?", "options": ["Returns 0", "Returns None", "Raises NameError", "Raises ValueError"], "correct": 2},
+            {"text": "Which naming style does PEP 8 recommend for variables?", "options": ["camelCase", "PascalCase", "snake_case", "UPPER_CASE"], "correct": 2},
+            {"text": "What does `a = b = 5` do?", "options": ["Error", "Assigns 5 to b then to a", "Assigns to both a and b", "Only assigns to a"], "correct": 2},
+            {"text": "Which is a Python keyword?", "options": ["name", "value", "class", "count"], "correct": 2},
+            {"text": "Is Python case-sensitive for variable names?", "options": ["No", "Yes", "Only for constants", "Only for strings"], "correct": 1},
+            {"text": "What does `del x` do?", "options": ["Sets x to 0", "Removes x binding", "Raises error", "Prints x"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 2: Core Data Types (Part 1)",
+      "topics": [
+        {
+          "title": "int, float, str, bool",
+          "contentMd": "# Core Data Types – Part 1\n\n## Integers (`int`)\nWhole numbers (positive, negative, zero). Arbitrarily large in Python.\n```python\nx = 100\ny = -25\nbig = 10**100\n```\n\n## Floats (`float`)\nDecimal numbers, scientific notation.\n```python\npi = 3.14\nsmall = 1e-5\n```\n\n## Strings (`str`)\nText in single, double, or triple quotes.\n```python\ns = \"hello\"\nmulti = '''line1\nline2'''\n```\n\n## Booleans (`bool`)\n`True` or `False`. Subclass of `int`.\n```python\nis_active = True\nprint(True + 1)  # 2\n```\n\n## Edge Cases\n- `0.1 + 0.2 != 0.3` (floating-point precision)\n- Python ints have no overflow\n- `bool` is subclass of `int`: `True == 1`, `False == 0`\n\n## FAQ\n**Q: Why does `0.1 + 0.2` not equal `0.3`?**\nBecause floats use binary representation and cannot exactly represent some decimals.\n\n**Q: What's the largest integer Python supports?**\nNo limit – integers grow as needed.\n\n## Q&A\n1. What type is `True`? – `bool`.\n2. Is `bool` a subclass of `int`? – Yes.\n3. What does `type(3.14)` return? – `<class 'float'>`.\n4. Can strings be changed after creation? – No, they are immutable.\n5. What's the fix for float precision? – Use `Decimal` or `math.isclose()`.",
+          "quizQuestions": [
+            {"text": "What does `type(True)` return?", "options": ["<class 'int'>", "<class 'bool'>", "<class 'str'>", "<class 'float'>"], "correct": 1},
+            {"text": "What is `0.1 + 0.2` in Python?", "options": ["0.3", "0.30000000000000004", "0.30", "Error"], "correct": 1},
+            {"text": "Is there a limit on Python integer size?", "options": ["Yes, 64-bit", "Yes, 32-bit", "No limit", "Depends on OS"], "correct": 2},
+            {"text": "Which is a valid string?", "options": ["'hello'", "\"hello\"", "'''hello'''", "All of these"], "correct": 3},
+            {"text": "What does `True + 1` give?", "options": ["True", "2", "Error", "1"], "correct": 1},
+            {"text": "What is `False == 0`?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "Which type represents decimals?", "options": ["int", "float", "str", "bool"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 3: Core Data Types (Part 2)",
+      "topics": [
+        {
+          "title": "None, type(), isinstance(), id()",
+          "contentMd": "# Core Data Types – Part 2\n\n## The `None` Type\nRepresents absence of value. Singleton.\n```python\nresult = None\n```\n\n## `type()` vs `isinstance()`\n```python\nprint(type(10))              # <class 'int'>\nprint(isinstance(10, int))   # True\nprint(isinstance(True, int)) # True (bool is subclass)\n```\n\n## `id()` Function\nReturns memory address (unique identifier).\n```python\na = 10\nprint(id(a))\n```\n\n## Constants\nNo true constants. Use UPPER_CASE convention.\n```python\nPI = 3.14159\n```\n\n## Edge Cases\n- `type(True)` returns `<class 'bool'>`, not `int`\n- `isinstance(True, int)` is `True`\n- Small integers cached: `a = 5; b = 5; a is b` → True\n\n## FAQ\n**Q: When should I use `None`?**\nAs default return value or placeholder for \"no value\".\n\n**Q: `type()` vs `isinstance()` – which is better?**\nUse `isinstance()` – it works with inheritance.\n\n## Q&A\n1. Is `None` the same as `False`? – No.\n2. What does `id()` return? – An integer memory address.\n3. Are two `None` values identical? – Yes.\n4. What's the output of `isinstance(3.5, float)`? – True.\n5. Can you assign a constant? – No, only convention.",
+          "quizQuestions": [
+            {"text": "What does `isinstance(True, int)` return?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "What is `None` used for?", "options": ["Zero value", "Empty string", "Absence of value", "False"], "correct": 2},
+            {"text": "What does `id(x)` return?", "options": ["Value of x", "Type of x", "Memory address of x", "Name of x"], "correct": 2},
+            {"text": "How are constants written by convention?", "options": ["lowercase", "camelCase", "UPPER_CASE", "PascalCase"], "correct": 2},
+            {"text": "Is `a is b` True for `a = 5; b = 5`?", "options": ["Yes", "No", "Depends", "Error"], "correct": 0},
+            {"text": "Which is better: `type()` or `isinstance()`?", "options": ["type()", "isinstance()", "Same", "Neither"], "correct": 1},
+            {"text": "`None == False` evaluates to?", "options": ["True", "False", "Error", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 4: Type Casting",
+      "topics": [
+        {
+          "title": "Implicit & Explicit Conversion",
+          "contentMd": "# Type Casting\n\n## Implicit Casting\nAutomatic conversion by Python.\n```python\nx = 10 + 2.5   # 12.5 (int → float)\n```\n\n## Explicit Casting\nManual conversion using functions.\n```python\nint(\"123\")     # 123\nfloat(\"3.14\")  # 3.14\nstr(100)       # \"100\"\nbool(0)        # False\nlist(\"abc\")    # ['a', 'b', 'c']\n```\n\n## Edge Cases\n- `int(\"10.5\")` → ValueError\n- `int(\"abc\")` → ValueError\n- `int(3.99)` → 3 (truncates, doesn't round)\n- `bool(\"False\")` → True (non-empty string)\n- `bool(\"\")` → False\n\n## FAQ\n**Q: Does `int()` round or truncate?**\nTruncates toward zero.\n\n**Q: Why does `bool(\"False\")` return `True`?**\nBecause any non-empty string is truthy.\n\n## Q&A\n1. `int(\"10\")` gives? – 10.\n2. `float(\"3.5\")` gives? – 3.5.\n3. `str(3.14)` gives? – \"3.14\".\n4. `int(3.99)` gives? – 3.\n5. `int(\"10.5\")` raises? – ValueError.",
+          "quizQuestions": [
+            {"text": "What does `int(\"10.5\")` raise?", "options": ["Returns 10", "Returns 10.5", "ValueError", "TypeError"], "correct": 2},
+            {"text": "What does `int(3.99)` return?", "options": ["3", "4", "3.99", "Error"], "correct": 0},
+            {"text": "What does `bool(\"False\")` return?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "What does `list(\"abc\")` return?", "options": ["['abc']", "['a','b','c']", "\"abc\"", "Error"], "correct": 1},
+            {"text": "What does `10 + 2.5` return?", "options": ["12", "12.5", "Error", "10"], "correct": 1},
+            {"text": "What does `int(\"abc\")` raise?", "options": ["TypeError", "ValueError", "NameError", "None"], "correct": 1},
+            {"text": "What does `str(100)` return?", "options": ["100", "\"100\"", "Error", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 5: Basic Input and Output",
+      "topics": [
+        {
+          "title": "print() and input()",
+          "contentMd": "# Input and Output\n\n## print()\n```python\nprint(\"Hello\")\nprint(\"a\", \"b\", sep=\"-\")   # a-b\nprint(\"x\", end=\" \")         # no newline\n```\n\n## input()\n```python\nname = input(\"Enter name: \")\nage = int(input(\"Enter age: \"))\n```\n\n## Edge Cases\n- `input()` always returns `str`\n- Empty input returns `\"\"`\n- `EOFError` on Ctrl+D\n- Invalid numeric input raises `ValueError`\n\n## FAQ\n**Q: Why is `input()` always a string?**\nIt reads raw text from stdin.\n\n**Q: How do I print without a newline?**\nUse `print(\"text\", end=\"\")`.\n\n## Q&A\n1. Default `sep` in print? – \" \" (space).\n2. Default `end` in print? – \"\\n\".\n3. How to read an integer? – `int(input())`.\n4. What raises EOFError? – Ctrl+D / Ctrl+Z.\n5. Does print return anything? – None.",
+          "quizQuestions": [
+            {"text": "What does `input()` always return?", "options": ["int", "float", "str", "auto"], "correct": 2},
+            {"text": "Default separator in `print()`?", "options": ["comma", "space", "newline", "tab"], "correct": 1},
+            {"text": "How to print without newline?", "options": ["print(x, sep='')", "print(x, end='')", "print(x, n='')", "print(x, noend=True)"], "correct": 1},
+            {"text": "What does `int(input())` do with invalid text?", "options": ["Returns 0", "Returns None", "Raises ValueError", "Raises TypeError"], "correct": 2},
+            {"text": "How do you read a float from user?", "options": ["input()", "int(input())", "float(input())", "str(input())"], "correct": 2},
+            {"text": "Empty input returns?", "options": ["None", "\"\"", "0", "Error"], "correct": 1},
+            {"text": "Which handles Ctrl+D?", "options": ["ValueError", "EOFError", "TypeError", "NameError"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 6: String Formatting",
+      "topics": [
+        {
+          "title": "f-strings, format(), % formatting",
+          "contentMd": "# String Formatting\n\n## f-strings (Recommended)\n```python\nname = \"Alice\"\nage = 25\nprint(f\"{name} is {age}\")\nprint(f\"{3.14159:.2f}\")\nprint(f\"{name:>10}\")\n```\n\n## .format()\n```python\nprint(\"{} is {}\".format(name, age))\nprint(\"{1} then {0}\".format(\"A\", \"B\"))\n```\n\n## % Formatting (Legacy)\n```python\nprint(\"%s is %d\" % (name, age))\n```\n\n## Format Specs\n- `.2f` – 2 decimals\n- `>10` – right align\n- `<10` – left align\n- `^10` – center\n- `,` – thousands separator\n- `%` – percentage\n\n## FAQ\n**Q: Which is fastest?**\nf-strings are fastest.\n\n**Q: Can I use expressions in f-strings?**\nYes: `f\"{2+3}\"` → \"5\".\n\n## Q&A\n1. `f\"{3.14:.1f}\"` → 3.1.\n2. `f\"{x:>5}\"` → right-align in 5 chars.\n3. `f\"{1000000:,}\"` → 1,000,000.\n4. `f\"{0.25:.0%}\"` → 25%.\n5. `f\"{name=}\"` → prints name=\"value\".",
+          "quizQuestions": [
+            {"text": "Output of `f\"{3.14159:.2f}\"`?", "options": ["3.14", "3.1416", "3.1", "3"], "correct": 0},
+            {"text": "How to right-align in f-string?", "options": ["{x:<10}", "{x:>10}", "{x:^10}", "{x:10}"], "correct": 1},
+            {"text": "Which format is fastest?", "options": ["%", ".format()", "f-strings", "concat"], "correct": 2},
+            {"text": "`f\"{1000000:,}\"` outputs?", "options": ["1000000", "1,000,000", "1000,000", "Error"], "correct": 1},
+            {"text": "`f\"{2+3}\"` outputs?", "options": ["2+3", "5", "Error", "None"], "correct": 1},
+            {"text": "Which is legacy formatting?", "options": ["f-string", ".format()", "% formatting", "None"], "correct": 2},
+            {"text": "`f\"{0.25:.0%}\"` outputs?", "options": ["0.25", "25%", "25", "0.25%"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 7: Command Line Arguments",
+      "topics": [
+        {
+          "title": "sys.argv and argparse",
+          "contentMd": "# Command Line Arguments\n\n## sys.argv\n```python\nimport sys\nprint(sys.argv)\n# python script.py hello 42\n# ['script.py', 'hello', '42']\n```\n\n## argparse (better for complex CLIs)\n```python\nimport argparse\nparser = argparse.ArgumentParser()\nparser.add_argument(\"--name\", required=True)\nargs = parser.parse_args()\nprint(args.name)\n```\n\n## Edge Cases\n- `sys.argv[0]` is always the script name\n- Arguments are strings (must cast)\n- No arguments = only script name in list\n\n## FAQ\n**Q: Difference between input() and argv?**\nargv is passed at launch; input() is interactive.\n\n## Q&A\n1. `sys.argv[0]` is? – Script name.\n2. Type of argv elements? – Strings.\n3. How to add optional flags? – argparse.\n4. What if no args? – Only script name.\n5. Best library for CLIs? – argparse.",
+          "quizQuestions": [
+            {"text": "What is `sys.argv[0]`?", "options": ["First argument", "Script name", "Empty", "Error"], "correct": 1},
+            {"text": "Type of argv elements?", "options": ["int", "str", "auto", "float"], "correct": 1},
+            {"text": "Which library builds CLIs?", "options": ["sys", "os", "argparse", "cli"], "correct": 2},
+            {"text": "How to access arguments?", "options": ["import args", "sys.argv", "sys.args", "os.argv"], "correct": 1},
+            {"text": "If no args given, argv contains?", "options": ["Empty list", "Script name", "None", "Error"], "correct": 1},
+            {"text": "Arguments must be cast to?", "options": ["int/float if needed", "list", "dict", "str only"], "correct": 0},
+            {"text": "Which is better for complex CLIs?", "options": ["sys.argv", "argparse", "input()", "manual"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 8: Modules and Imports",
+      "topics": [
+        {
+          "title": "import, from, as",
+          "contentMd": "# Modules & Imports\n\n## Basic Import\n```python\nimport math\nprint(math.sqrt(16))\n```\n\n## From Import\n```python\nfrom math import sqrt\nprint(sqrt(16))\n```\n\n## Aliasing\n```python\nimport numpy as np\nfrom math import sqrt as sq\n```\n\n## Edge Cases\n- `from math import *` pollutes namespace\n- Circular imports cause errors\n- Modules cached in `sys.modules`\n\n## FAQ\n**Q: What is a module?**\nA `.py` file with reusable code.\n\n**Q: Why use `as`?**\nFor shorter names or to avoid conflicts.\n\n## Q&A\n1. `import math` imports? – Whole module.\n2. `from math import sqrt` imports? – Just sqrt.\n3. `as` creates? – Alias.\n4. Modules load once? – Yes, cached.\n5. Circular import? – A imports B, B imports A.",
+          "quizQuestions": [
+            {"text": "What does `import math` do?", "options": ["Imports sqrt only", "Imports whole module", "Errors", "Nothing"], "correct": 1},
+            {"text": "What does `as` do?", "options": ["Deletes module", "Creates alias", "Imports all", "Errors"], "correct": 1},
+            {"text": "Which is discouraged?", "options": ["import math", "from math import sqrt", "from math import *", "import math as m"], "correct": 2},
+            {"text": "Where are modules cached?", "options": ["sys.modules", "os.cache", "local", "None"], "correct": 0},
+            {"text": "What is a module?", "options": ["A .py file", "A class", "A function", "A package"], "correct": 0},
+            {"text": "Circular imports cause?", "options": ["Nothing", "Errors", "Warnings", "Auto-fix"], "correct": 1},
+            {"text": "`from math import sqrt as sq` allows?", "options": ["math.sqrt()", "sq()", "sqrt()", "import()"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 9: Using the Standard Library",
+      "topics": [
+        {
+          "title": "math, random, datetime, os, sys",
+          "contentMd": "# Standard Library\n\n## math\n```python\nimport math\nmath.sqrt(16)   # 4.0\nmath.floor(3.7) # 3\nmath.ceil(3.2)  # 4\nmath.pi\nmath.factorial(5)\nmath.gcd(12, 18)\n```\n\n## random\n```python\nimport random\nrandom.random()         # 0-1\nrandom.randint(1, 10)   # 1-10\nrandom.choice([1,2,3])\nrandom.shuffle(lst)\nrandom.seed(42)\n```\n\n## datetime\n```python\nfrom datetime import datetime, date, timedelta\ndatetime.now()\ndate.today()\ndatetime.now() + timedelta(days=7)\n```\n\n## os\n```python\nimport os\nos.getcwd()\nos.listdir(\".\")\nos.path.exists(\"file.txt\")\n```\n\n## sys\n```python\nimport sys\nsys.version\nsys.platform\nsys.exit()\n```\n\n## FAQ\n**Q: What's the difference between `random.seed()` and `random.random()`?**\nseed() sets the starting point; random() generates a float.\n\n## Q&A\n1. `math.sqrt(16)` → 4.0.\n2. `random.randint(1,5)` → random int 1-5.\n3. `datetime.now()` → current datetime.\n4. `os.getcwd()` → current directory.\n5. `sys.platform` → OS name.",
+          "quizQuestions": [
+            {"text": "What does `math.floor(3.7)` return?", "options": ["4", "3", "3.7", "Error"], "correct": 1},
+            {"text": "How to generate random int 1-10?", "options": ["random.random()", "random.randint(1,10)", "random.choice(10)", "random.rand()"], "correct": 1},
+            {"text": "Which module gives current date/time?", "options": ["time", "datetime", "os", "sys"], "correct": 1},
+            {"text": "What does `os.getcwd()` return?", "options": ["Home dir", "Current directory", "File list", "OS name"], "correct": 1},
+            {"text": "`sys.exit()` does what?", "options": ["Restarts", "Exits program", "Sleeps", "Errors"], "correct": 1},
+            {"text": "`math.factorial(5)` returns?", "options": ["5", "25", "120", "Error"], "correct": 2},
+            {"text": "Which seeds random number generator?", "options": ["random.init()", "random.start()", "random.seed()", "random.set()"], "correct": 2}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 10: Arithmetic & Assignment Operators",
+      "topics": [
+        {
+          "title": "Math operators and shortcuts",
+          "contentMd": "# Arithmetic & Assignment Operators\n\n## Arithmetic\n`+ - * / // % **`\n\n```python\n7 / 2   # 3.5\n7 // 2  # 3\n7 % 2   # 1\n2 ** 3  # 8\n```\n\n## Assignment Shortcuts\n```python\nx = 10\nx += 5   # 15\nx -= 3   # 12\nx *= 2   # 24\nx /= 4   # 6.0\nx //= 2  # 3.0\nx **= 2  # 9.0\n```\n\n## Edge Cases\n- Division by zero → `ZeroDivisionError`\n- `-7 // 2 = -4` (floor division rounds down)\n- `-7 % 2 = 1` (result has sign of divisor)\n\n## FAQ\n**Q: Difference between `/` and `//`?**\n`/` returns float; `//` returns integer floor.\n\n## Q&A\n1. `7 / 2` → 3.5.\n2. `7 // 2` → 3.\n3. `7 % 2` → 1.\n4. `2 ** 3` → 8.\n5. `-7 // 2` → -4.",
+          "quizQuestions": [
+            {"text": "What does `7 // 2` return?", "options": ["3.5", "3", "4", "Error"], "correct": 1},
+            {"text": "What does `7 % 2` return?", "options": ["3", "1", "0", "3.5"], "correct": 1},
+            {"text": "What does `-7 // 2` return?", "options": ["-3", "-4", "3", "4"], "correct": 1},
+            {"text": "What does `5 / 0` do?", "options": ["0", "Infinity", "ZeroDivisionError", "None"], "correct": 2},
+            {"text": "`x = 5; x += 3` gives?", "options": ["5", "8", "3", "Error"], "correct": 1},
+            {"text": "`2 ** 3` = ?", "options": ["6", "8", "9", "5"], "correct": 1},
+            {"text": "What is `-7 % 2`?", "options": ["-1", "1", "0", "-3"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 11: Comparison & Logical Operators",
+      "topics": [
+        {
+          "title": "==, !=, and, or, not",
+          "contentMd": "# Comparison & Logical Operators\n\n## Comparison\n`== != > < >= <=`\n\n## Chained Comparison\n```python\n18 <= age < 65\n```\n\n## Logical\n`and`, `or`, `not`\n\n## Short-Circuit\n- `and` stops at first False\n- `or` stops at first True\n\n## Edge Cases\n- Comparing int and str raises TypeError\n- `not` has higher precedence than `and`/`or`\n- `and`/`or` return operands, not booleans\n\n## FAQ\n**Q: What does `0 or \"default\"` return?**\n\"default\".\n\n**Q: What does `1 and \"yes\"` return?**\n\"yes\".\n\n## Q&A\n1. `True and False` → False.\n2. `True or False` → True.\n3. `not True` → False.\n4. `10 > 5 > 1` → True.\n5. `\"a\" and \"b\"` → \"b\".",
+          "quizQuestions": [
+            {"text": "What does `0 or \"default\"` return?", "options": ["0", "\"default\"", "True", "False"], "correct": 1},
+            {"text": "What does `1 and \"yes\"` return?", "options": ["1", "\"yes\"", "True", "False"], "correct": 1},
+            {"text": "What does `not (5 > 3)` return?", "options": ["True", "False", "5", "3"], "correct": 1},
+            {"text": "Is `10 > 5 > 1` valid?", "options": ["Yes, True", "No, error", "Yes, False", "None"], "correct": 0},
+            {"text": "Comparing `5 > \"abc\"` raises?", "options": ["ValueError", "TypeError", "Returns False", "Returns True"], "correct": 1},
+            {"text": "Short-circuit: `False and print('hi')`?", "options": ["Prints hi", "Nothing prints", "Error", "None"], "correct": 1},
+            {"text": "`3 or 4` returns?", "options": ["True", "3", "4", "False"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 12: Membership & Identity Operators",
+      "topics": [
+        {
+          "title": "in, not in, is, is not",
+          "contentMd": "# Membership & Identity\n\n## Membership\n```python\n\"a\" in \"apple\"    # True\n3 in [1,2,3]      # True\n\"x\" not in \"abc\"  # True\n```\n\n## Identity\n```python\na = [1, 2]\nb = a\nc = [1, 2]\nprint(a is b)   # True\nprint(a is c)   # False\nprint(a == c)   # True\n```\n\n## Difference\n- `==` compares values\n- `is` compares identity (memory location)\n\n## Edge Cases\n- Small ints (-5 to 256) are cached\n- String interning can make `is` True for equal strings\n- `[] == []` → True, but `[] is []` → False\n\n## FAQ\n**Q: When to use `is`?**\nFor comparing to `None`: `if x is None:`.\n\n## Q&A\n1. `3 in [1,2,3]` → True.\n2. `[] is []` → False.\n3. `[1] == [1]` → True.\n4. `5 is 5` → True (cached).\n5. Use `is` with None? – Yes.",
+          "quizQuestions": [
+            {"text": "`3 in [1, 2, 3]` returns?", "options": ["True", "False", "3", "Error"], "correct": 0},
+            {"text": "`[] is []` returns?", "options": ["True", "False", "Error", "None"], "correct": 1},
+            {"text": "`[1] == [1]` returns?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "`5 is 5` returns?", "options": ["True", "False", "Error", "Depends"], "correct": 0},
+            {"text": "Correct way to check None?", "options": ["== None", "is None", "= None", "None =="], "correct": 1},
+            {"text": "What does `is` compare?", "options": ["Values", "Types", "Identity", "Length"], "correct": 2},
+            {"text": "`\"abc\" not in \"abcdef\"`?", "options": ["True", "False", "Error", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 13: Conditional Statements",
+      "topics": [
+        {
+          "title": "if, elif, else, truthy/falsy",
+          "contentMd": "# Conditional Statements\n\n## Syntax\n```python\nif score >= 90:\n    grade = \"A\"\nelif score >= 80:\n    grade = \"B\"\nelse:\n    grade = \"F\"\n```\n\n## Truthy / Falsy\nFalsy: `None`, `False`, `0`, `0.0`, `\"\"`, `[]`, `{}`, `set()`\nTruthy: everything else\n\n## Edge Cases\n- `if x = 5:` → SyntaxError\n- Empty `if :` → SyntaxError\n- `10 > \"5\"` → TypeError\n\n## FAQ\n**Q: Can I skip else?**\nYes, if not needed.\n\n## Q&A\n1. `if True:` runs? – Yes.\n2. Truthy of 0? – Falsy.\n3. Truthy of \"\"? – Falsy.\n4. Truthy of [0]? – Truthy.\n5. `elif` needs preceding? – `if`.",
+          "quizQuestions": [
+            {"text": "Is `0` truthy or falsy?", "options": ["Truthy", "Falsy", "Error", "None"], "correct": 1},
+            {"text": "Is `[0]` truthy or falsy?", "options": ["Truthy", "Falsy", "Error", "None"], "correct": 0},
+            {"text": "What does `if x = 5:` do?", "options": ["Assigns x", "SyntaxError", "Compares", "Returns"], "correct": 1},
+            {"text": "Which is NOT falsy?", "options": ["0", "\"\"", "[]", "[0]"], "correct": 3},
+            {"text": "`elif` requires a preceding?", "options": ["for", "while", "if", "def"], "correct": 2},
+            {"text": "`if 10 > \"5\":` raises?", "options": ["ValueError", "TypeError", "Returns False", "Returns True"], "correct": 1},
+            {"text": "Is `None` truthy?", "options": ["Yes", "No", "Error", "Sometimes"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 14: Nested Conditions & Ternary Operator",
+      "topics": [
+        {
+          "title": "Nested if and ternary",
+          "contentMd": "# Nested Conditions & Ternary\n\n## Nested if-else\n```python\nif age >= 18:\n    if has_license:\n        print(\"Can drive\")\n    else:\n        print(\"Get license\")\nelse:\n    print(\"Too young\")\n```\n\n## Ternary\n```python\nresult = \"Pass\" if marks >= 40 else \"Fail\"\n```\n\n## Edge Cases\n- Deep nesting hurts readability\n- Nested ternary is confusing – avoid\n\n## FAQ\n**Q: When to use ternary?**\nFor simple binary decisions.\n\n## Q&A\n1. Nested if-else possible? – Yes.\n2. Ternary syntax? – `a if cond else b`.\n3. Ternary for complex logic? – No.\n4. Nested ternary readable? – No.\n5. Best for simple choices? – Ternary.",
+          "quizQuestions": [
+            {"text": "Ternary syntax?", "options": ["a if cond else b", "if cond a else b", "cond ? a : b", "a ? b : cond"], "correct": 0},
+            {"text": "When is ternary best?", "options": ["Complex logic", "Simple binary choices", "Loops", "Functions"], "correct": 1},
+            {"text": "Can you nest ternaries?", "options": ["Yes, but confusing", "No", "Only in Python 3", "Only for ints"], "correct": 0},
+            {"text": "`x = 5 if True else 10` gives?", "options": ["5", "10", "True", "Error"], "correct": 0},
+            {"text": "Deep nesting should be?", "options": ["Encouraged", "Avoided", "Required", "None"], "correct": 1},
+            {"text": "Nested if-else is used when?", "options": ["Simple choice", "Multiple conditions", "Loops", "None"], "correct": 1},
+            {"text": "`\"big\" if 10 > 5 else \"small\"`?", "options": ["big", "small", "Error", "None"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 15: Match-Case (Python 3.10+)",
+      "topics": [
+        {
+          "title": "match-case syntax",
+          "contentMd": "# Match-Case\n\n## Basic\n```python\nmatch command:\n    case \"start\":\n        print(\"Starting\")\n    case \"stop\":\n        print(\"Stopping\")\n    case _:\n        print(\"Unknown\")\n```\n\n## OR patterns\n```python\ncase 1 | 2 | 3:\n    print(\"small\")\n```\n\n## Guards\n```python\ncase x if x > 10:\n    print(\"big\")\n```\n\n## FAQ\n**Q: Is match-case better than if-elif?**\nFor structured patterns, yes. For simple comparisons, if-elif works.\n\n## Q&A\n1. Wildcard in match? – `_`.\n2. Multiple cases? – Use `|`.\n3. Guards? – `if` condition.\n4. Requires Python? – 3.10+.\n5. Better than if-elif? – Depends.",
+          "quizQuestions": [
+            {"text": "Which Python version has match-case?", "options": ["3.8", "3.9", "3.10", "3.11"], "correct": 2},
+            {"text": "What is the wildcard pattern?", "options": ["*", "?", "_", "#"], "correct": 2},
+            {"text": "How to match multiple values?", "options": ["and", "or", "|", "&"], "correct": 2},
+            {"text": "Can you add conditions to case?", "options": ["No", "Yes with if", "Yes with where", "Only in 3.11"], "correct": 1},
+            {"text": "match-case is best for?", "options": ["Loops", "Pattern matching", "Strings", "Files"], "correct": 1},
+            {"text": "Is match-case always better than if-elif?", "options": ["Yes", "No", "Sometimes", "Never"], "correct": 1},
+            {"text": "`case _:` matches?", "options": ["Nothing", "Only None", "Anything", "Only ints"], "correct": 2}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 16: String Basics",
+      "topics": [
+        {
+          "title": "Indexing, Slicing, Immutability",
+          "contentMd": "# String Basics\n\n## Creation\n```python\ns1 = 'hello'\ns2 = \"world\"\ns3 = '''multi\nline'''\n```\n\n## Indexing & Slicing\n```python\ns = \"Python\"\ns[0]      # 'P'\ns[-1]     # 'n'\ns[1:4]    # 'yth'\ns[::-1]   # reverse\n```\n\n## Immutability\nCannot change after creation.\n```python\ns = \"hello\"\ns[0] = 'H'  # TypeError!\n```\n\n## Edge Cases\n- `s[100]` → IndexError\n- Slicing never raises IndexError\n\n## FAQ\n**Q: Why immutable?**\nHashability, thread safety, performance.\n\n## Q&A\n1. `s[::-1]` does? – Reverses.\n2. Slice out of range? – Returns empty.\n3. Index out of range? – IndexError.\n4. Multi-line strings use? – Triple quotes.\n5. Immutability means? – Cannot change.",
+          "quizQuestions": [
+            {"text": "`\"Python\"[1:4]` returns?", "options": ["Pyt", "yth", "ytho", "Error"], "correct": 1},
+            {"text": "`\"Python\"[::-1]` returns?", "options": ["Python", "nohtyP", "Error", "None"], "correct": 1},
+            {"text": "What is `\"abc\"[-1]`?", "options": ["a", "b", "c", "Error"], "correct": 2},
+            {"text": "What does `\"abc\"[100]` do?", "options": ["Returns ''", "IndexError", "Returns None", "Returns last char"], "correct": 1},
+            {"text": "Multi-line strings use?", "options": ["Single quotes", "Double quotes", "Triple quotes", "Backticks"], "correct": 2},
+            {"text": "Strings are?", "options": ["Mutable", "Immutable", "Both", "Neither"], "correct": 1},
+            {"text": "`\"hello\"[1:100]` returns?", "options": ["Error", "ello", "h", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 17: String Methods (Part 1)",
+      "topics": [
+        {
+          "title": "Case & Search Methods",
+          "contentMd": "# String Methods – Part 1\n\n## Case\n```python\n\"hi\".upper()       # HI\n\"HI\".lower()       # hi\n\"hi there\".title() # Hi There\n\"hi\".capitalize()  # Hi\n\"Hi\".swapcase()    # hI\n```\n\n## Whitespace\n```python\n\"  hi  \".strip()   # \"hi\"\n\"  hi\".lstrip()    # \"hi\"\n\"hi  \".rstrip()    # \"hi\"\n```\n\n## Search\n```python\n\"hello\".find(\"l\")   # 2\n\"hello\".index(\"l\")  # 2\n\"hello\".count(\"l\")  # 2\n```\n\n## Edge Cases\n- `find()` returns -1 if not found\n- `index()` raises ValueError if not found\n\n## FAQ\n**Q: Difference between find and index?**\nfind returns -1; index raises error.\n\n## Q&A\n1. `.upper()` → uppercase.\n2. `.strip()` → trim.\n3. `.find()` not found → -1.\n4. `.count()` → occurrences.\n5. `.title()` → Title Case.",
+          "quizQuestions": [
+            {"text": "What does `\"hi\".upper()` return?", "options": ["hi", "HI", "Hi", "Error"], "correct": 1},
+            {"text": "What does `\"  hi  \".strip()` return?", "options": ["hi", "  hi", "hi  ", "hi "], "correct": 0},
+            {"text": "`\"hello\".find(\"x\")` returns?", "options": ["0", "-1", "Error", "None"], "correct": 1},
+            {"text": "`\"hello\".count(\"l\")` returns?", "options": ["1", "2", "3", "0"], "correct": 1},
+            {"text": "Difference between find and index?", "options": ["Same", "index raises, find returns -1", "find raises", "No difference"], "correct": 1},
+            {"text": "`\"hi there\".title()` returns?", "options": ["HI THERE", "Hi There", "hi there", "Hi there"], "correct": 1},
+            {"text": "What does `.swapcase()` do?", "options": ["Nothing", "Swaps case", "Removes case", "Uppercases"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 18: String Methods (Part 2)",
+      "topics": [
+        {
+          "title": "Split, Join, Replace, Validate",
+          "contentMd": "# String Methods – Part 2\n\n## Split & Join\n```python\n\"a,b,c\".split(\",\")       # ['a', 'b', 'c']\n\"a b c\".split()           # ['a', 'b', 'c']\n\"-\".join([\"a\",\"b\"])      # \"a-b\"\n```\n\n## Replace\n```python\n\"hi\".replace(\"i\", \"o\")   # \"ho\"\n```\n\n## Validation\n```python\n\"123\".isdigit()     # True\n\"abc\".isalpha()     # True\n\"a1\".isalnum()      # True\n\"  \".isspace()      # True\n\"abc\".islower()     # True\n\"ABC\".isupper()     # True\n```\n\n## Check\n```python\n\"hello\".startswith(\"he\")  # True\n\"hello\".endswith(\"lo\")    # True\n```\n\n## FAQ\n**Q: `.split()` with no args?**\nSplits on any whitespace.\n\n## Q&A\n1. `.split()` → list.\n2. `.join()` → string.\n3. `.replace()` → new string.\n4. `.isdigit()` on \"12\" → True.\n5. `.startswith()` returns bool.",
+          "quizQuestions": [
+            {"text": "`\"a,b,c\".split(\",\")` returns?", "options": ["['a','b','c']", "['abc']", "\"abc\"", "Error"], "correct": 0},
+            {"text": "`\"-\".join(['a','b'])` returns?", "options": ["a-b", "ab", "a b", "Error"], "correct": 0},
+            {"text": "What does `\"123\".isdigit()` return?", "options": ["True", "False", "Error", "123"], "correct": 0},
+            {"text": "`\"abc\".isalpha()`?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "`\"hello\".startswith(\"he\")`?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "`.split()` with no args splits on?", "options": ["Comma", "Any whitespace", "Newline", "Nothing"], "correct": 1},
+            {"text": "`\"  \".isspace()`?", "options": ["True", "False", "Error", "None"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 19: Regex Basics",
+      "topics": [
+        {
+          "title": "re module introduction",
+          "contentMd": "# Regex Basics\n\n## Importing\n```python\nimport re\n```\n\n## Raw Strings\n```python\npattern = r\"\\d+\"\n```\n\n## Functions\n```python\nre.search(r\"\\d+\", \"abc123\")   # Match object\nre.match(r\"\\d+\", \"123abc\")    # Match at start\nre.fullmatch(r\"\\d+\", \"123\")   # Full match\n```\n\n## Match Object\n```python\nm = re.search(r\"\\d+\", \"abc123\")\nm.group()  # '123'\nm.start()  # 3\nm.end()    # 6\nm.span()   # (3, 6)\n```\n\n## Edge Cases\n- `match()` only matches at start\n- `fullmatch()` requires entire string\n- Returns None if no match\n\n## FAQ\n**Q: Why raw strings?**\nTo avoid double-escaping backslashes.\n\n## Q&A\n1. `re.search` searches anywhere.\n2. `re.match` at start only.\n3. `re.fullmatch` entire string.\n4. `.group()` returns match.\n5. No match → None.",
+          "quizQuestions": [
+            {"text": "Which searches anywhere?", "options": ["re.match", "re.search", "re.fullmatch", "re.find"], "correct": 1},
+            {"text": "Which matches only at start?", "options": ["re.match", "re.search", "re.fullmatch", "re.find"], "correct": 0},
+            {"text": "What is `r\"\\d+\"`?", "options": ["Normal string", "Raw string", "List", "Error"], "correct": 1},
+            {"text": "What does `.group()` return?", "options": ["Full match", "Start index", "End index", "Length"], "correct": 0},
+            {"text": "What if no match is found?", "options": ["Raises error", "Returns None", "Returns empty", "Returns 0"], "correct": 1},
+            {"text": "`re.fullmatch(r\"\\d+\", \"123\")`?", "options": ["Match", "None", "Error", "Depends"], "correct": 0},
+            {"text": "Which function returns all matches?", "options": ["re.search", "re.match", "re.findall", "re.fullmatch"], "correct": 2}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 20: Regex Metacharacters",
+      "topics": [
+        {
+          "title": "Metacharacters and functions",
+          "contentMd": "# Regex Metacharacters\n\n## Metacharacters\n- `.` – any char\n- `^` – start\n- `$` – end\n- `*` – 0 or more\n- `+` – 1 or more\n- `?` – 0 or 1\n- `{n}` – exactly n\n- `{n,m}` – between\n\n## Character Classes\n```python\n[a-z]\n[A-Z]\n[0-9]\n[^0-9]   # not digit\n```\n\n## Predefined\n- `\\d` – digit\n- `\\D` – non-digit\n- `\\w` – word char\n- `\\W` – non-word\n- `\\s` – whitespace\n- `\\S` – non-whitespace\n\n## Functions\n```python\nre.findall(r\"\\d+\", \"a1b2\")     # ['1', '2']\nre.finditer(r\"\\d+\", \"a1b2\")    # iterator\nre.sub(r\"\\d\", \"X\", \"a1b2\")    # \"aXbX\"\nre.split(r\"\\s+\", \"a b  c\")     # ['a', 'b', 'c']\n```\n\n## Flags\n- `re.IGNORECASE`\n- `re.MULTILINE`\n- `re.DOTALL`\n\n## FAQ\n**Q: `.` vs `.*`?**\n`.` matches 1 char; `.*` matches 0+ chars.\n\n## Q&A\n1. `\\d` matches digit.\n2. `\\w` matches word chars.\n3. `*` is 0+.\n4. `+` is 1+.\n5. `{3}` is exactly 3.",
+          "quizQuestions": [
+            {"text": "`\\d` matches?", "options": ["Letters", "Digits", "Spaces", "Symbols"], "correct": 1},
+            {"text": "`\\w` matches?", "options": ["Only digits", "Word chars", "Only letters", "Spaces"], "correct": 1},
+            {"text": "`+` means?", "options": ["0 or more", "1 or more", "Exactly 1", "0 or 1"], "correct": 1},
+            {"text": "`*` means?", "options": ["0 or more", "1 or more", "Exactly 1", "Exactly 0"], "correct": 0},
+            {"text": "`[^0-9]` matches?", "options": ["Digits", "Non-digits", "Letters only", "Spaces"], "correct": 1},
+            {"text": "`re.findall(r\"\\d+\", \"a1b2\")` returns?", "options": ["['1','2']", "['a','b']", "\"12\"", "Error"], "correct": 0},
+            {"text": "Flag for case-insensitive?", "options": ["re.IGNORECASE", "re.CI", "re.LOWER", "re.NOCASE"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 21: For Loops & range()",
+      "topics": [
+        {
+          "title": "Iteration basics",
+          "contentMd": "# For Loops & range()\n\n## For Loop\n```python\nfor i in range(5):\n    print(i)   # 0 1 2 3 4\n```\n\n## range(start, stop, step)\n```python\nrange(5)         # 0-4\nrange(2, 6)      # 2-5\nrange(1, 10, 2)  # 1,3,5,7,9\nrange(5, 0, -1)  # 5,4,3,2,1\n```\n\n## Iterating Strings & Lists\n```python\nfor ch in \"abc\": ...\nfor x in [1,2,3]: ...\n```\n\n## Edge Cases\n- `range(0)` is empty\n- `range(5, 0)` is empty (need negative step)\n\n## FAQ\n**Q: Does `range()` return a list?**\nNo, it returns a lazy range object.\n\n## Q&A\n1. `range(5)` → 0-4.\n2. `range(2,6)` → 2-5.\n3. `range(1,10,2)` → odd.\n4. `range(5,0)` → empty.\n5. Reverse using -1 step.",
+          "quizQuestions": [
+            {"text": "`range(5)` produces?", "options": ["1-5", "0-5", "0-4", "1-4"], "correct": 2},
+            {"text": "`range(2, 6)` produces?", "options": ["2,3,4,5", "2,3,4,5,6", "3,4,5", "0-5"], "correct": 0},
+            {"text": "`range(5, 0)` is?", "options": ["5,4,3,2,1", "Empty", "0-4", "Error"], "correct": 1},
+            {"text": "Reverse iteration needs?", "options": ["Positive step", "Negative step", "No step", "Both"], "correct": 1},
+            {"text": "`range(1, 10, 2)` yields?", "options": ["1,3,5,7,9", "1,2,3...9", "Even", "Error"], "correct": 0},
+            {"text": "range returns?", "options": ["List", "Tuple", "range object", "Set"], "correct": 2},
+            {"text": "How to loop 3 times?", "options": ["for i in range(3)", "for i in [3]", "for i in 3", "for range(3)"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 22: Iteration Tools (enumerate, zip)",
+      "topics": [
+        {
+          "title": "enumerate and zip",
+          "contentMd": "# Iteration Tools\n\n## enumerate()\n```python\nfor i, ch in enumerate([\"a\",\"b\"]):\n    print(i, ch)   # 0 a, 1 b\n\nfor i, ch in enumerate([\"a\"], start=1):\n    print(i, ch)   # 1 a\n```\n\n## zip()\n```python\nfor a, b in zip([1,2], ['x','y']):\n    print(a, b)   # 1 x, 2 y\n```\n\n## Unzipping\n```python\npairs = [(1,'a'), (2,'b')]\nnums, letters = zip(*pairs)\n```\n\n## Dictionary Iteration\n```python\nd = {\"a\": 1}\nfor k in d: ...           # keys\nfor v in d.values(): ...  # values\nfor k, v in d.items(): ...\n```\n\n## FAQ\n**Q: Does zip pad shorter lists?**\nNo, it stops at the shortest.\n\n## Q&A\n1. enumerate gives index + value.\n2. zip combines lists.\n3. zip stops at shortest.\n4. Unzip with `*`.\n5. `.items()` gives k,v pairs.",
+          "quizQuestions": [
+            {"text": "What does `enumerate([\"a\",\"b\"])` yield?", "options": ["Only values", "Only indices", "(index, value) pairs", "Error"], "correct": 2},
+            {"text": "Does `zip()` pad shorter lists?", "options": ["Yes", "No, stops at shortest", "Sometimes", "Only for ints"], "correct": 1},
+            {"text": "How to iterate dict keys + values?", "options": ["for k in d", "for v in d", "for k,v in d.items()", "for i in d"], "correct": 2},
+            {"text": "How to unzip with zip?", "options": ["zip(*pairs)", "unzip(pairs)", "*zip(pairs)", "None"], "correct": 0},
+            {"text": "`enumerate(..., start=1)` starts at?", "options": ["0", "1", "-1", "Depends"], "correct": 1},
+            {"text": "`zip([1,2,3], ['a','b'])` yields?", "options": ["3 pairs", "2 pairs", "1 pair", "Error"], "correct": 1},
+            {"text": "`.keys()` returns?", "options": ["Values", "Keys view", "Items", "List"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 23: While Loops & Counter/Flag Patterns",
+      "topics": [
+        {
+          "title": "while loops and patterns",
+          "contentMd": "# While Loops\n\n## Basic\n```python\nn = 5\nwhile n > 0:\n    print(n)\n    n -= 1\n```\n\n## Counter Pattern\n```python\ncount = 0\nwhile count < 5:\n    count += 1\n```\n\n## Flag Pattern\n```python\nfound = False\nwhile not found:\n    ...\n```\n\n## while-else\n```python\nwhile cond:\n    ...\nelse:\n    print(\"completed\")\n```\n\n## Edge Cases\n- Forgetting to update counter → infinite loop\n- `while True:` needs `break`\n\n## FAQ\n**Q: while vs for?**\nUse for when count is known; while when condition is unknown.\n\n## Q&A\n1. Counter pattern uses a variable.\n2. Flag pattern uses bool.\n3. Infinite loops need break.\n4. while-else runs if no break.\n5. Update counter every iteration.",
+          "quizQuestions": [
+            {"text": "Counter pattern uses?", "options": ["A boolean", "A counter variable", "A list", "A string"], "correct": 1},
+            {"text": "Flag pattern uses?", "options": ["Integer", "Boolean", "String", "List"], "correct": 1},
+            {"text": "What causes infinite loop?", "options": ["Not updating counter", "Too many iterations", "Break", "Continue"], "correct": 0},
+            {"text": "while-else runs when?", "options": ["Always", "If no break", "If break", "Never"], "correct": 1},
+            {"text": "When use while over for?", "options": ["Known count", "Unknown count", "Never", "Always"], "correct": 1},
+            {"text": "`while True:` requires?", "options": ["Continue", "Break", "Return", "Pass"], "correct": 1},
+            {"text": "Counter starts usually at?", "options": ["0", "1", "-1", "Depends"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 24: Loop Control (break, continue, pass, else)",
+      "topics": [
+        {
+          "title": "Loop control statements",
+          "contentMd": "# Loop Control\n\n## break\nExits loop immediately.\n```python\nfor i in range(10):\n    if i == 5: break\n    print(i)\n```\n\n## continue\nSkips to next iteration.\n```python\nfor i in range(5):\n    if i == 2: continue\n    print(i)\n```\n\n## pass\nPlaceholder – does nothing.\n```python\nfor i in range(3):\n    pass\n```\n\n## else on loops\nRuns only if loop completes without break.\n```python\nfor i in range(3):\n    print(i)\nelse:\n    print(\"Done\")\n```\n\n## Nested loops + break\n`break` only exits inner loop.\n\n## FAQ\n**Q: break vs continue?**\nbreak exits; continue skips.\n\n## Q&A\n1. break exits loop.\n2. continue skips iteration.\n3. pass does nothing.\n4. else runs if no break.\n5. break in nested loops only exits inner.",
+          "quizQuestions": [
+            {"text": "`break` does?", "options": ["Skips iteration", "Exits loop", "Nothing", "Restarts"], "correct": 1},
+            {"text": "`continue` does?", "options": ["Exits loop", "Skips iteration", "Nothing", "Restarts"], "correct": 1},
+            {"text": "`pass` does?", "options": ["Exits", "Skips", "Nothing", "Errors"], "correct": 2},
+            {"text": "Loop `else` runs when?", "options": ["Always", "Never", "No break occurred", "Only in for"], "correct": 2},
+            {"text": "break in nested loops exits?", "options": ["All loops", "Inner loop only", "Outer loop", "None"], "correct": 1},
+            {"text": "Difference between pass and continue?", "options": ["Same", "pass does nothing, continue skips", "pass exits", "continue exits"], "correct": 1},
+            {"text": "Can you have else without if?", "options": ["No", "Yes, in loops", "Only in for", "Only in while"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 25: Nested Loops & Pattern Printing",
+      "topics": [
+        {
+          "title": "Nested loops and patterns",
+          "contentMd": "# Nested Loops & Patterns\n\n## Nested for\n```python\nfor i in range(3):\n    for j in range(3):\n        print(i, j)\n```\n\n## Star Triangle\n```python\nfor i in range(1, 6):\n    print(\"*\" * i)\n```\n\n## Inverted Triangle\n```python\nfor i in range(5, 0, -1):\n    print(\"*\" * i)\n```\n\n## Pyramid\n```python\nfor i in range(1, 6):\n    print(\" \" * (5-i) + \"*\" * (2*i-1))\n```\n\n## Time Complexity\nNested loops are often O(n²).\n\n## FAQ\n**Q: How to print triangle?**\nUse `* i` inside loop.\n\n## Q&A\n1. Nested for uses two loops.\n2. Triangle uses `* i`.\n3. Pyramid uses spaces + stars.\n4. Nested complexity O(n²).\n5. Use reverse range for inverted.",
+          "quizQuestions": [
+            {"text": "Nested loops usually have complexity?", "options": ["O(1)", "O(n)", "O(n²)", "O(log n)"], "correct": 2},
+            {"text": "How to print 5 stars?", "options": ["print('*' * 5)", "print('*' + 5)", "print('*', 5)", "print(5 * '*')"], "correct": 0},
+            {"text": "Inverted triangle uses?", "options": ["Positive range", "Negative step range", "while True", "Recursion"], "correct": 1},
+            {"text": "Pyramid needs?", "options": ["Only stars", "Only spaces", "Spaces + stars", "Numbers"], "correct": 2},
+            {"text": "Number of iterations in nested for range(3)?", "options": ["3", "6", "9", "12"], "correct": 2},
+            {"text": "How to loop backwards?", "options": ["range(0,5)", "range(5,0,-1)", "range(5)", "reverse()"], "correct": 1},
+            {"text": "`\"*\" * 3` gives?", "options": ["***", "*3", "* * *", "Error"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 26: Lists – Basics, Indexing & Slicing",
+      "topics": [
+        {
+          "title": "List basics",
+          "contentMd": "# Lists – Basics\n\n## Creation\n```python\nnums = [1, 2, 3]\nmixed = [1, \"a\", True]\nnested = [[1, 2], [3, 4]]\n```\n\n## Indexing\n```python\nnums[0]    # 1\nnums[-1]   # 3\n```\n\n## Slicing\n```python\nnums[1:3]    # [2, 3]\nnums[::-1]   # reverse\n```\n\n## Copying\n```python\nb = nums[:]       # slice copy\nc = nums.copy()   # method copy\n```\n\n## Edge Cases\n- `IndexError` on out-of-range\n- Slicing never raises IndexError\n- `[:]` creates shallow copy\n\n## FAQ\n**Q: How to copy a list?**\nUse `.copy()` or `[:]`.\n\n## Q&A\n1. List is ordered and mutable.\n2. Indexing starts at 0.\n3. Negative index from end.\n4. Slicing returns new list.\n5. `[:]` copies.",
+          "quizQuestions": [
+            {"text": "`[1,2,3][-1]` returns?", "options": ["1", "2", "3", "Error"], "correct": 2},
+            {"text": "How to reverse a list?", "options": ["[1:0]", "[::-1]", "[0:1]", "[end:start]"], "correct": 1},
+            {"text": "How to copy a list?", "options": ["b = a", "b = a[:]", "b = a()", "b = list(a) only"], "correct": 1},
+            {"text": "Lists are?", "options": ["Immutable", "Mutable", "Fixed", "None"], "correct": 1},
+            {"text": "`[1,2,3][1:3]` returns?", "options": ["[1,2]", "[2,3]", "[3]", "[1,3]"], "correct": 1},
+            {"text": "Out-of-range access raises?", "options": ["ValueError", "IndexError", "TypeError", "None"], "correct": 1},
+            {"text": "Nested lists can contain?", "options": ["Only ints", "Only strings", "Any type", "Nothing"], "correct": 2}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 27: Lists – Methods & Operations",
+      "topics": [
+        {
+          "title": "append, extend, pop, sort",
+          "contentMd": "# List Methods\n\n## Adding\n```python\nl.append(4)         # [1,2,3,4]\nl.extend([5,6])     # [1,2,3,4,5,6]\nl.insert(0, 0)      # [0,1,2,3,4,5,6]\n```\n\n## Removing\n```python\nl.remove(3)         # removes first 3\nl.pop()             # removes last\nl.pop(0)            # removes first\nl.clear()           # empties\n```\n\n## Sorting\n```python\nl.sort()                    # ascending\nl.sort(reverse=True)        # descending\nl.sort(key=lambda x: -x)    # custom\nsorted(l)                   # returns new list\n```\n\n## Other\n```python\nl.index(2)          # find index\nl.count(2)          # occurrences\nl.reverse()         # in-place reverse\nl.copy()            # shallow copy\n```\n\n## Edge Cases\n- `.append()` returns None\n- `.remove()` raises ValueError if missing\n- `.sort()` in-place; `sorted()` returns new\n\n## FAQ\n**Q: append vs extend?**\nappend adds 1 item; extend adds each.\n\n## Q&A\n1. append adds single item.\n2. extend adds multiple.\n3. sort in-place.\n4. sorted returns new.\n5. pop returns removed item.",
+          "quizQuestions": [
+            {"text": "`[1,2].append([3,4])` gives?", "options": ["[1,2,3,4]", "[1,2,[3,4]]", "Error", "None"], "correct": 1},
+            {"text": "`[1,2].extend([3,4])` gives?", "options": ["[1,2,3,4]", "[1,2,[3,4]]", "Error", "[3,4]"], "correct": 0},
+            {"text": "`.sort()` returns?", "options": ["New list", "None", "Sorted list", "True"], "correct": 1},
+            {"text": "`.pop()` returns?", "options": ["Nothing", "Removed item", "List", "Index"], "correct": 1},
+            {"text": "`sorted([3,1,2])` returns?", "options": ["[3,1,2]", "[1,2,3]", "None", "Error"], "correct": 1},
+            {"text": "`.remove(x)` on missing x?", "options": ["Nothing", "ValueError", "Returns None", "Adds x"], "correct": 1},
+            {"text": "`.append()` returns?", "options": ["New list", "None", "Item", "True"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 28: Nested Lists & Matrix Operations",
+      "topics": [
+        {
+          "title": "2D lists and operations",
+          "contentMd": "# Nested Lists\n\n## Creation\n```python\nmatrix = [[1,2], [3,4]]\n```\n\n## Access\n```python\nmatrix[0][1]    # 2\nmatrix[1][0]    # 3\n```\n\n## Transpose\n```python\ntransposed = [[row[i] for row in matrix] for i in range(2)]\n```\n\n## Iterate\n```python\nfor row in matrix:\n    for val in row:\n        print(val)\n```\n\n## Safe Creation\n```python\nmatrix = [[0]*3 for _ in range(3)]   # ✅\nbad = [[0]*3]*3                       # ❌ shares rows!\n```\n\n## FAQ\n**Q: Why `[[0]*3]*3` is bad?**\nAll rows are the same object.\n\n## Q&A\n1. Access with `[i][j]`.\n2. Transpose swaps rows/cols.\n3. Nested loops iterate.\n4. Use comprehension for safe creation.\n5. `*` on lists aliases.",
+          "quizQuestions": [
+            {"text": "How to access element in matrix?", "options": ["matrix[i,j]", "matrix[i][j]", "matrix(i,j)", "matrix.get(i,j)"], "correct": 1},
+            {"text": "Why is `[[0]*3]*3` bad?", "options": ["Memory", "Rows are same object", "Not allowed", "Syntax error"], "correct": 1},
+            {"text": "Safe way to create 3x3 zeros?", "options": ["[[0]*3]*3", "[[0]*3 for _ in range(3)]", "[[0,0,0]]*3", "Both A and C"], "correct": 1},
+            {"text": "`[[1,2],[3,4]][1][0]` gives?", "options": ["1", "2", "3", "4"], "correct": 2},
+            {"text": "Nested list iterations require?", "options": ["One loop", "Two loops", "Three loops", "None"], "correct": 1},
+            {"text": "Transpose swaps?", "options": ["Values", "Rows and columns", "Length", "Types"], "correct": 1},
+            {"text": "`matrix[0]` in `[[1,2],[3,4]]` gives?", "options": ["1", "[1,2]", "[3,4]", "2"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 29: List Comprehensions",
+      "topics": [
+        {
+          "title": "List comprehension syntax",
+          "contentMd": "# List Comprehensions\n\n## Basic\n```python\n[x**2 for x in range(5)]   # [0,1,4,9,16]\n```\n\n## With Condition\n```python\n[x for x in nums if x > 0]\n```\n\n## With if-else\n```python\n[x if x > 0 else 0 for x in nums]\n```\n\n## Nested\n```python\n[(x,y) for x in [1,2] for y in [3,4]]\n```\n\n## When NOT to use\n- Complex logic\n- Side effects\n- Long conditions\n\n## FAQ\n**Q: Comprehension vs map/filter?**\nComprehension is more Pythonic.\n\n## Q&A\n1. `[x**2 for x in range(3)]` → [0,1,4].\n2. Add condition with `if`.\n3. Add else inside expression.\n4. Nested comprehension like nested loops.\n5. Comprehensions build entire list.",
+          "quizQuestions": [
+            {"text": "`[x**2 for x in range(4)]` returns?", "options": ["[0,1,2,3]", "[0,1,4,9]", "[1,4,9,16]", "Error"], "correct": 1},
+            {"text": "Add condition using?", "options": ["where", "if", "when", "filter"], "correct": 1},
+            {"text": "`[x for x in range(10) if x%2==0]` returns?", "options": ["[0,2,4,6,8]", "Odd", "All", "Error"], "correct": 0},
+            {"text": "When NOT to use comprehension?", "options": ["Simple maps", "Complex logic", "Filters", "Nested"], "correct": 1},
+            {"text": "Nested comprehension syntax uses?", "options": ["Two ifs", "Multiple for", "while", "Nested()"], "correct": 1},
+            {"text": "Comprehensions build?", "options": ["Iterator", "List immediately", "Generator", "Tuple"], "correct": 1},
+            {"text": "`[x if x>0 else 0 for x in [-1,1,2]]` returns?", "options": ["[-1,1,2]", "[0,1,2]", "[1,2]", "Error"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 30: Tuples",
+      "topics": [
+        {
+          "title": "Tuples, immutability, unpacking",
+          "contentMd": "# Tuples\n\n## Creation\n```python\nt = (1, 2, 3)\nsingle = (5,)      # comma required!\nempty = ()\n```\n\n## Immutability\n```python\nt[0] = 10   # TypeError\n```\n\n## Methods\nOnly `.count()` and `.index()`.\n\n## Unpacking\n```python\na, b, c = (1, 2, 3)\nfirst, *rest = (1, 2, 3, 4)\n```\n\n## Edge Cases\n- `(5)` is just int\n- Nested mutable objects can be modified\n- Tuples are hashable\n\n## FAQ\n**Q: Why tuples?**\nImmutable, fast, hashable (can be dict keys).\n\n## Q&A\n1. Single tuple needs comma.\n2. Tuples immutable.\n3. `.count()` counts.\n4. `.index()` finds.\n5. Tuples hashable.",
+          "quizQuestions": [
+            {"text": "`(5)` is?", "options": ["Tuple", "Int", "String", "Error"], "correct": 1},
+            {"text": "How to make single-element tuple?", "options": ["(5)", "(5,)", "tuple(5)", "[5]"], "correct": 1},
+            {"text": "Tuples are?", "options": ["Mutable", "Immutable", "Ordered mutable", "None"], "correct": 1},
+            {"text": "Can tuples be dict keys?", "options": ["Yes", "No", "Only empty", "Depends"], "correct": 0},
+            {"text": "`a, b = (1, 2)` sets?", "options": ["Error", "a=1,b=2", "a=(1,2)", "a=2,b=1"], "correct": 1},
+            {"text": "Can you modify tuple elements?", "options": ["Yes", "No", "Only ints", "Sometimes"], "correct": 1},
+            {"text": "`first, *rest = (1,2,3)` sets rest to?", "options": ["[2,3]", "(2,3)", "3", "Error"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 31: Sets & Frozensets",
+      "topics": [
+        {
+          "title": "Sets, uniqueness, operations",
+          "contentMd": "# Sets\n\n## Creation\n```python\ns = {1, 2, 3}\ns2 = set([1, 2, 2, 3])   # {1,2,3}\nempty = set()            # NOT {}\n```\n\n## Add/Remove\n```python\ns.add(4)\ns.remove(1)      # KeyError if missing\ns.discard(1)     # No error if missing\ns.pop()          # removes arbitrary\ns.clear()\n```\n\n## Operations\n```python\nA | B   # union\nA & B   # intersection\nA - B   # difference\nA ^ B   # symmetric diff\n```\n\n## Frozenset\nImmutable, hashable set.\n```python\nfs = frozenset([1, 2, 3])\n```\n\n## FAQ\n**Q: Why `{}` is not a set?**\nIt creates an empty dict.\n\n## Q&A\n1. Use `set()` for empty set.\n2. Sets unordered.\n3. No duplicates.\n4. `|` for union.\n5. Frozenset immutable.",
+          "quizQuestions": [
+            {"text": "How to create empty set?", "options": ["{}", "set()", "[]", "dict()"], "correct": 1},
+            {"text": "Sets have duplicates?", "options": ["Yes", "No", "Sometimes", "Only ints"], "correct": 1},
+            {"text": "Union operator is?", "options": ["&", "|", "-", "^"], "correct": 1},
+            {"text": "Difference between remove and discard?", "options": ["Same", "remove raises, discard doesn't", "Both raise", "Both silent"], "correct": 1},
+            {"text": "Frozenset is?", "options": ["Mutable", "Immutable", "Same as set", "None"], "correct": 1},
+            {"text": "`{1,2} & {2,3}` returns?", "options": ["{1,2,3}", "{2}", "{}", "Error"], "correct": 1},
+            {"text": "Can sets be dict keys?", "options": ["Yes", "No", "Only frozenset", "Sometimes"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 32: Dictionaries – Basics & Access",
+      "topics": [
+        {
+          "title": "Dict creation and access",
+          "contentMd": "# Dictionaries\n\n## Creation\n```python\nd = {\"name\": \"Alice\", \"age\": 25}\nd2 = dict(name=\"Alice\", age=25)\n```\n\n## Access\n```python\nd[\"name\"]          # Alice\nd.get(\"missing\")   # None\nd.get(\"missing\", 0) # 0\n```\n\n## Modify\n```python\nd[\"city\"] = \"NYC\"  # add\nfdel d[\"age\"]       # delete\nd.pop(\"age\")       # delete and return\n```\n\n## Edge Cases\n- `d[\"missing\"]` → KeyError\n- Keys must be hashable\n- Dicts are ordered (3.7+)\n\n## FAQ\n**Q: get vs []?**\nget is safe; [] raises.\n\n## Q&A\n1. Dicts are key-value.\n2. Keys hashable.\n3. `.get()` safe.\n4. Ordered in 3.7+.\n5. `.pop()` removes.",
+          "quizQuestions": [
+            {"text": "`{\"a\":1}.get(\"b\", 0)` returns?", "options": ["KeyError", "None", "0", "False"], "correct": 2},
+            {"text": "Dicts are ordered since?", "options": ["3.5", "3.6", "3.7", "2.7"], "correct": 2},
+            {"text": "Can a list be a dict key?", "options": ["Yes", "No", "Sometimes", "Only empty"], "correct": 1},
+            {"text": "`d[\"missing\"]` raises?", "options": ["ValueError", "KeyError", "TypeError", "None"], "correct": 1},
+            {"text": "Add key-value?", "options": ["d.add(k,v)", "d[k]=v", "d.insert(k,v)", "d.push(k,v)"], "correct": 1},
+            {"text": "Delete key and get value?", "options": ["del d[k]", "d.pop(k)", "d.remove(k)", "d.clear()"], "correct": 1},
+            {"text": "Which is safe access?", "options": ["d[k]", "d.get(k)", "d.fetch(k)", "d[k] with default"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 33: Dictionaries – Methods & Comprehensions",
+      "topics": [
+        {
+          "title": "Dict methods and comprehension",
+          "contentMd": "# Dict Methods\n\n## Views\n```python\nd.keys()    # all keys\nd.values()  # all values\nd.items()   # (k,v) pairs\n```\n\n## Update\n```python\nd.update({\"new\": 1})\n```\n\n## Set Default\n```python\nd.setdefault(\"x\", 0)   # returns existing or sets default\n```\n\n## Comprehension\n```python\n{x: x**2 for x in range(5)}\n{v: k for k, v in d.items()}   # invert\n```\n\n## Merging\n```python\nmerged = d1 | d2     # Python 3.9+\n```\n\n## FAQ\n**Q: keys() returns list?**\nNo, returns a view object.\n\n## Q&A\n1. `.keys()` view.\n2. `.items()` tuples.\n3. `.update()` merges.\n4. `.setdefault()` helpful.\n5. `|` merges 3.9+.",
+          "quizQuestions": [
+            {"text": "`.items()` returns?", "options": ["Keys", "Values", "(k,v) pairs", "List"], "correct": 2},
+            {"text": "How to merge dicts in 3.9+?", "options": ["d1 + d2", "d1 | d2", "d1 & d2", "merge(d1,d2)"], "correct": 1},
+            {"text": "`.setdefault(k, v)` does?", "options": ["Raises", "Returns existing or sets default", "Deletes", "None"], "correct": 1},
+            {"text": "`{x: x**2 for x in range(3)}` gives?", "options": ["{0:0,1:1,2:4}", "[0,1,4]", "{(0,0)...}", "Error"], "correct": 0},
+            {"text": "`.update()` does?", "options": ["Replaces all", "Merges", "Deletes", "None"], "correct": 1},
+            {"text": "`.keys()` returns?", "options": ["List", "View object", "Tuple", "Set"], "correct": 1},
+            {"text": "Inverting dict using comprehension uses?", "options": ["k, v = d.items()", "{v:k for k,v in d.items()}", "d.invert()", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 34: Primitive vs Non-Primitive (Memory Model)",
+      "topics": [
+        {
+          "title": "Stack, heap, references",
+          "contentMd": "# Memory Model\n\n## Everything is an Object\nIn Python, all values are objects stored in heap. Variables are references.\n\n## References\n```python\na = [1, 2]\nb = a           # b refers to same list\nb.append(3)\nprint(a)        # [1, 2, 3]\n```\n\n## id() and Memory\n```python\na = 10\nid(a)   # memory address\n```\n\n## Edge Cases\n- Small ints (-5 to 256) cached\n- Strings interned\n- None is singleton\n\n## FAQ\n**Q: Stack vs heap?**\nStack stores references; heap stores objects.\n\n## Q&A\n1. Variables hold references.\n2. All values are objects.\n3. `id()` gives address.\n4. Small ints cached.\n5. Strings often interned.",
+          "quizQuestions": [
+            {"text": "Variables hold?", "options": ["Values", "References", "Types", "None"], "correct": 1},
+            {"text": "Small integers cached range?", "options": ["0-100", "-5 to 256", "-100 to 100", "None"], "correct": 1},
+            {"text": "`b = a` for list does?", "options": ["Copies", "Refers to same object", "Errors", "Clones"], "correct": 1},
+            {"text": "`id()` returns?", "options": ["Value", "Type", "Memory address", "Length"], "correct": 2},
+            {"text": "None is?", "options": ["Mutable", "Singleton", "List", "Function"], "correct": 1},
+            {"text": "Modifying `b` when `b=a` (list)?", "options": ["Nothing", "Also changes a", "Only b", "Error"], "correct": 1},
+            {"text": "Stack stores?", "options": ["Objects", "References", "Values", "Types"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 35: Mutable vs Immutable Objects",
+      "topics": [
+        {
+          "title": "Mutability and function args",
+          "contentMd": "# Mutable vs Immutable\n\n## Immutable\n`int`, `float`, `str`, `bool`, `tuple`, `frozenset`\n\n## Mutable\n`list`, `dict`, `set`\n\n## Function Arguments\nMutable objects are passed by reference:\n```python\ndef add_item(lst):\n    lst.append(4)\n\nmy = [1,2,3]\nadd_item(my)\nprint(my)   # [1,2,3,4]\n```\n\nImmutable objects are effectively copied:\n```python\ndef change(x):\n    x = 10\n\nn = 5\nchange(n)\nprint(n)   # 5\n```\n\n## Edge Cases\n- Tuple containing mutable object can be modified inside\n- Function default mutable args trap\n\n## FAQ\n**Q: Does Python pass by value or reference?**\nNeither – passes object references. Behavior depends on mutability.\n\n## Q&A\n1. Lists mutable.\n2. Tuples immutable.\n3. Dicts mutable.\n4. Strings immutable.\n5. Passing depends on mutability.",
+          "quizQuestions": [
+            {"text": "Which is mutable?", "options": ["tuple", "str", "list", "int"], "correct": 2},
+            {"text": "Which is immutable?", "options": ["list", "dict", "tuple", "set"], "correct": 2},
+            {"text": "Modifying list arg in function?", "options": ["Nothing", "Original changes", "Error", "Copies"], "correct": 1},
+            {"text": "Modifying int arg in function?", "options": ["Original changes", "Nothing", "Error", "Copies"], "correct": 1},
+            {"text": "Tuple containing list can be?", "options": ["Fully modified", "Inner list modified", "Not modified", "None"], "correct": 1},
+            {"text": "Python passes?", "options": ["By value", "By reference", "Object references", "Both"], "correct": 2},
+            {"text": "Default mutable arg trap?", "options": ["Memory leak", "Shared default", "Syntax error", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 36: Shallow Copy vs Deep Copy",
+      "topics": [
+        {
+          "title": "copy() and deepcopy()",
+          "contentMd": "# Copying\n\n## Reference Assignment\n```python\na = [1, 2]\nb = a         # same object\n```\n\n## Shallow Copy\n```python\nb = a.copy()\nb = a[:]\nimport copy\nb = copy.copy(a)\n```\nNested objects still shared.\n\n## Deep Copy\n```python\nimport copy\nb = copy.deepcopy(a)\n```\nFully independent.\n\n## Example\n```python\na = [[1,2], [3,4]]\nb = a.copy()\nb[0].append(99)\nprint(a)   # [[1,2,99],[3,4]] – SHARED!\n\nc = copy.deepcopy(a)\nc[0].append(100)\nprint(a)   # unchanged\n```\n\n## FAQ\n**Q: When to use deepcopy?**\nWhen you need fully independent nested structures.\n\n## Q&A\n1. Shallow copy shares nested.\n2. Deep copy fully independent.\n3. Use `copy.deepcopy()`.\n4. Slicing is shallow.\n5. `.copy()` is shallow.",
+          "quizQuestions": [
+            {"text": "Which is shallow copy?", "options": ["a.copy()", "copy.deepcopy(a)", "a[:]  and a.copy()", "Both B and A"], "correct": 2},
+            {"text": "Which is deep copy?", "options": ["a.copy()", "a[:]", "copy.deepcopy(a)", "list(a)"], "correct": 2},
+            {"text": "Shallow copy shares?", "options": ["Everything", "Nested objects", "Nothing", "Only ints"], "correct": 1},
+            {"text": "Which import for deepcopy?", "options": ["import copy", "import clone", "import deep", "None"], "correct": 0},
+            {"text": "Slicing `a[:]` is?", "options": ["Deep copy", "Shallow copy", "Reference", "None"], "correct": 1},
+            {"text": "When to use deepcopy?", "options": ["Never", "Nested independence", "Only ints", "Strings"], "correct": 1},
+            {"text": "`b = a` creates?", "options": ["Copy", "Reference", "Deep copy", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 37: Exception Handling",
+      "topics": [
+        {
+          "title": "try, except, finally",
+          "contentMd": "# Exception Handling\n\n## try-except\n```python\ntry:\n    x = int(input())\nexcept ValueError:\n    print(\"Invalid\")\n```\n\n## Multiple Exceptions\n```python\ntry:\n    ...\nexcept (TypeError, ValueError):\n    print(\"Error\")\n```\n\n## else & finally\n```python\ntry:\n    x = 1\nexcept:\n    pass\nelse:\n    print(\"Success\")\nfinally:\n    print(\"Always runs\")\n```\n\n## Common Exceptions\n- `ValueError`, `TypeError`, `KeyError`, `IndexError`, `ZeroDivisionError`, `FileNotFoundError`, `AttributeError`\n\n## Edge Cases\n- Bare `except:` catches everything (avoid)\n- Order matters: specific first\n- `finally` runs even with `return`\n\n## FAQ\n**Q: When does else run?**\nOnly if no exception occurred.\n\n## Q&A\n1. try-except handles errors.\n2. finally always runs.\n3. else runs on success.\n4. Catch multiple with tuple.\n5. Specific before general.",
+          "quizQuestions": [
+            {"text": "`finally` runs when?", "options": ["Never", "On success", "On error", "Always"], "correct": 3},
+            {"text": "`else` runs when?", "options": ["Always", "Only on error", "Only on success", "Never"], "correct": 2},
+            {"text": "`int('abc')` raises?", "options": ["TypeError", "ValueError", "NameError", "None"], "correct": 1},
+            {"text": "`d['missing']` raises?", "options": ["IndexError", "KeyError", "ValueError", "None"], "correct": 1},
+            {"text": "`[1][5]` raises?", "options": ["KeyError", "IndexError", "TypeError", "None"], "correct": 1},
+            {"text": "Catch multiple exceptions?", "options": ["Multiple excepts", "Tuple in except", "Both", "None"], "correct": 2},
+            {"text": "Order matters?", "options": ["No", "Yes, specific first", "General first", "N/A"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 38: Raising Exceptions & Custom Exceptions",
+      "topics": [
+        {
+          "title": "raise and custom exceptions",
+          "contentMd": "# Raising Exceptions\n\n## raise\n```python\nraise ValueError(\"Bad input\")\n```\n\n## Re-raising\n```python\ntry:\n    ...\nexcept ValueError:\n    raise\n```\n\n## Custom Exceptions\n```python\nclass MyError(Exception):\n    pass\n\nraise MyError(\"Something wrong\")\n```\n\n## With Attributes\n```python\nclass ValidationError(Exception):\n    def __init__(self, field, msg):\n        self.field = field\n        super().__init__(msg)\n```\n\n## Exception Chaining\n```python\nraise NewError() from original\n```\n\n## FAQ\n**Q: Why custom exceptions?**\nFor domain-specific error handling.\n\n## Q&A\n1. `raise` throws exception.\n2. Custom extend Exception.\n3. Chain with `from`.\n4. Re-raise with bare `raise`.\n5. Add attributes for context.",
+          "quizQuestions": [
+            {"text": "Which raises an exception?", "options": ["throw", "raise", "error", "except"], "correct": 1},
+            {"text": "Custom exception inherits from?", "options": ["object", "Exception", "Error", "Base"], "correct": 1},
+            {"text": "How to re-raise?", "options": ["raise original", "raise", "except()", "None"], "correct": 1},
+            {"text": "Chain exceptions with?", "options": ["from", "with", "to", "via"], "correct": 0},
+            {"text": "Why custom exceptions?", "options": ["Faster", "Domain-specific", "Required", "None"], "correct": 1},
+            {"text": "`class E(Exception): pass` creates?", "options": ["Custom exception", "Function", "Module", "Package"], "correct": 0},
+            {"text": "Can custom exceptions have attributes?", "options": ["No", "Yes, in __init__", "Only strings", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 39: Function Basics & Variable Scope",
+      "topics": [
+        {
+          "title": "Functions and LEGB scope",
+          "contentMd": "# Functions & Scope\n\n## Defining\n```python\ndef greet(name):\n    return f\"Hi {name}\"\n```\n\n## LEGB Rule\n- **L**ocal\n- **E**nclosing\n- **G**lobal\n- **B**uilt-in\n\n## global / nonlocal\n```python\ncount = 0\ndef inc():\n    global count\n    count += 1\n```\n\n## Edge Cases\n- Local shadows global\n- global needed for assignment\n- nonlocal for enclosing function\n\n## FAQ\n**Q: What is LEGB?**\nLookup order for names in Python.\n\n## Q&A\n1. Return sends value back.\n2. No return → None.\n3. global modifies module-level.\n4. nonlocal for nested.\n5. LEGB ordering.",
+          "quizQuestions": [
+            {"text": "What does LEGB stand for?", "options": ["Local, Eval, Global, Base", "Local, Enclosing, Global, Built-in", "List, Elems, Group, Built", "None"], "correct": 1},
+            {"text": "What does `global` do?", "options": ["Creates global", "Modifies global", "Both", "Nothing"], "correct": 1},
+            {"text": "What does `nonlocal` do?", "options": ["Same as global", "Modifies enclosing", "Creates new", "None"], "correct": 1},
+            {"text": "Function with no return gives?", "options": ["0", "None", "Error", "Empty"], "correct": 1},
+            {"text": "Local variable shadows?", "options": ["Nothing", "Global of same name", "Built-in", "None"], "correct": 1},
+            {"text": "Where can variables be seen?", "options": ["Everywhere", "Depends on scope", "Only local", "Only global"], "correct": 1},
+            {"text": "Print is which scope?", "options": ["Local", "Global", "Built-in", "Enclosing"], "correct": 2}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 40: Advanced Function Arguments",
+      "topics": [
+        {
+          "title": "*args, **kwargs, defaults",
+          "contentMd": "# Advanced Arguments\n\n## Default Args\n```python\ndef greet(name, greeting=\"Hello\"):\n    print(greeting, name)\n```\n\n## *args\n```python\ndef total(*args):\n    return sum(args)\n```\n\n## **kwargs\n```python\ndef show(**kwargs):\n    for k, v in kwargs.items():\n        print(k, v)\n```\n\n## Mixing\n```python\ndef func(a, *args, **kwargs):\n    pass\n```\n\n## Keyword-Only\n```python\ndef f(*, key): ...   # key must be keyword\n```\n\n## Positional-Only (3.8+)\n```python\ndef f(a, /, b): ...\n```\n\n## Mutable Default Trap\n```python\ndef add(x, lst=[]):   # ❌ shares list!\n    lst.append(x)\n    return lst\n# Fix\ndef add(x, lst=None):\n    if lst is None: lst = []\n    ...\n```\n\n## FAQ\n**Q: Why avoid mutable defaults?**\nThey persist across calls.\n\n## Q&A\n1. *args is tuple.\n2. **kwargs is dict.\n3. Defaults must come after positional.\n4. Use None for mutable defaults.\n5. Keyword-only via `*`.",
+          "quizQuestions": [
+            {"text": "*args stores as?", "options": ["List", "Tuple", "Dict", "Set"], "correct": 1},
+            {"text": "**kwargs stores as?", "options": ["List", "Tuple", "Dict", "Set"], "correct": 2},
+            {"text": "Why avoid mutable default?", "options": ["Slower", "Shared across calls", "Errors", "None"], "correct": 1},
+            {"text": "Fix for mutable default?", "options": ["Use tuple", "Use None", "Use int", "None"], "correct": 1},
+            {"text": "Order of arguments?", "options": ["kwargs first", "args first", "positional → *args → **kwargs", "Any"], "correct": 2},
+            {"text": "Keyword-only args use?", "options": ["*", "**", "/", "!"], "correct": 0},
+            {"text": "Positional-only use?", "options": ["*", "/", "**", "!"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 41: Lambda Functions & Higher-Order Functions",
+      "topics": [
+        {
+          "title": "lambda, map, filter, reduce",
+          "contentMd": "# Lambdas & Higher-Order\n\n## Lambda\n```python\nsquare = lambda x: x * x\nadd = lambda a, b: a + b\n```\n\n## map\n```python\nlist(map(lambda x: x*2, [1,2,3]))   # [2,4,6]\n```\n\n## filter\n```python\nlist(filter(lambda x: x>0, [-1,1])) # [1]\n```\n\n## reduce\n```python\nfrom functools import reduce\nreduce(lambda a,b: a+b, [1,2,3])   # 6\n```\n\n## Edge Cases\n- map/filter return iterators\n- Lambda single expression only\n- Prefer comprehensions for readability\n\n## FAQ\n**Q: lambda vs def?**\nLambda for one-liners; def for complex.\n\n## Q&A\n1. Lambda anonymous.\n2. map transforms.\n3. filter selects.\n4. reduce combines.\n5. Wrap map in list().",
+          "quizQuestions": [
+            {"text": "Lambda can have how many expressions?", "options": ["Many", "One", "Zero", "Two"], "correct": 1},
+            {"text": "map() returns?", "options": ["List", "Iterator", "Tuple", "Set"], "correct": 1},
+            {"text": "filter() selects?", "options": ["All", "True conditions", "False", "None"], "correct": 1},
+            {"text": "reduce() needs import from?", "options": ["functools", "itertools", "collections", "math"], "correct": 0},
+            {"text": "`list(map(lambda x: x*2, [1,2]))` gives?", "options": ["[2,4]", "[1,2]", "[1,4]", "Error"], "correct": 0},
+            {"text": "`filter(lambda x: x>0, [-1,0,1])`?", "options": ["[-1]", "[0]", "[1]", "[-1,0,1]"], "correct": 2},
+            {"text": "Preferred over map for readability?", "options": ["Comprehension", "loop", "Recursion", "None"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 42: Modularity & Custom Modules",
+      "topics": [
+        {
+          "title": "Custom modules and packages",
+          "contentMd": "# Modularity\n\n## Custom Module\nCreate `utils.py`:\n```python\ndef add(a, b):\n    return a + b\n```\n\nUse:\n```python\nfrom utils import add\n```\n\n## `__name__ == \"__main__\"`\nRuns only when script executed directly.\n```python\nif __name__ == \"__main__\":\n    main()\n```\n\n## Packages\nFolder with `__init__.py` and modules.\n\n## Edge Cases\n- Circular imports\n- Relative imports\n- Module caching\n\n## FAQ\n**Q: Why `__name__` check?**\nTo make module importable without running main code.\n\n## Q&A\n1. Module = .py file.\n2. Package = folder.\n3. `__init__.py` marks package.\n4. `__name__` is `__main__` when run.\n5. Avoid circular imports.",
+          "quizQuestions": [
+            {"text": "What is a module?", "options": ["Class", "Function", "A .py file", "Package"], "correct": 2},
+            {"text": "What marks a package?", "options": ["__init__.py", "index.py", "main.py", "__main__.py"], "correct": 0},
+            {"text": "`__name__` is what when run directly?", "options": ["script name", "__main__", "None", "path"], "correct": 1},
+            {"text": "Purpose of `__name__` check?", "options": ["Speed", "Avoid running on import", "Security", "None"], "correct": 1},
+            {"text": "Circular imports cause?", "options": ["Nothing", "Errors", "Warnings", "Auto-fix"], "correct": 1},
+            {"text": "Packages contain?", "options": ["Only functions", "Modules", "Only classes", "Nothing"], "correct": 1},
+            {"text": "How to import custom module?", "options": ["import module", "from module import x", "Both", "None"], "correct": 2}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 43: File Handling",
+      "topics": [
+        {
+          "title": "Read, write, append files",
+          "contentMd": "# File Handling\n\n## Modes\n- `r` – read\n- `w` – write (overwrites!)\n- `a` – append\n- `x` – create\n- `b` – binary\n- `+` – read+write\n\n## Reading\n```python\nwith open(\"file.txt\") as f:\n    content = f.read()\n\nwith open(\"file.txt\") as f:\n    for line in f:\n        print(line.strip())\n```\n\n## Writing\n```python\nwith open(\"out.txt\", \"w\") as f:\n    f.write(\"Hello\\n\")\n```\n\n## Methods\n- `f.read()` – entire\n- `f.readline()` – one line\n- `f.readlines()` – list of lines\n- `f.write(str)`\n- `f.writelines(list)`\n\n## Edge Cases\n- `w` mode wipes file\n- `FileNotFoundError` if missing\n- Always use `with`\n\n## FAQ\n**Q: Why use `with`?**\nAuto-closes file even on error.\n\n## Q&A\n1. `w` overwrites.\n2. `a` appends.\n3. `with` auto-closes.\n4. `read()` full content.\n5. `readlines()` list.",
+          "quizQuestions": [
+            {"text": "Which mode overwrites?", "options": ["r", "w", "a", "x"], "correct": 1},
+            {"text": "Which mode appends?", "options": ["r", "w", "a", "x"], "correct": 2},
+            {"text": "What does `with` do?", "options": ["Locks", "Auto-closes file", "Encrypts", "None"], "correct": 1},
+            {"text": "`f.readlines()` returns?", "options": ["String", "List of lines", "Iterator", "None"], "correct": 1},
+            {"text": "Missing file in `r` mode raises?", "options": ["KeyError", "FileNotFoundError", "ValueError", "None"], "correct": 1},
+            {"text": "Which returns entire content?", "options": ["readline()", "readlines()", "read()", "readall()"], "correct": 2},
+            {"text": "Best practice for opening files?", "options": ["f = open()", "with open()", "file()", "open.read()"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 44: JSON & CSV File Handling",
+      "topics": [
+        {
+          "title": "csv and json modules",
+          "contentMd": "# JSON & CSV\n\n## CSV\n```python\nimport csv\nwith open(\"data.csv\") as f:\n    reader = csv.reader(f)\n    for row in reader:\n        print(row)\n\nwith open(\"out.csv\", \"w\", newline=\"\") as f:\n    writer = csv.writer(f)\n    writer.writerow([\"a\", \"b\"])\n```\n\n## DictReader/Writer\n```python\nwith open(\"data.csv\") as f:\n    for row in csv.DictReader(f):\n        print(row[\"name\"])\n```\n\n## JSON\n```python\nimport json\nwith open(\"data.json\") as f:\n    data = json.load(f)\n\nwith open(\"out.json\", \"w\") as f:\n    json.dump(data, f, indent=2)\n```\n\n## From String\n```python\njson.loads(\"{...}\")\njson.dumps(obj)\n```\n\n## FAQ\n**Q: load vs loads?**\nload from file; loads from string.\n\n## Q&A\n1. csv.reader reads rows.\n2. DictReader uses headers.\n3. json.load from file.\n4. json.loads from string.\n5. dump writes to file.",
+          "quizQuestions": [
+            {"text": "json.load reads from?", "options": ["String", "File", "Bytes", "None"], "correct": 1},
+            {"text": "json.loads reads from?", "options": ["String", "File", "Bytes", "None"], "correct": 0},
+            {"text": "CSV DictReader uses?", "options": ["Index", "Headers", "Rows", "None"], "correct": 1},
+            {"text": "Which writes JSON to file?", "options": ["json.dump", "json.dumps", "json.write", "json.save"], "correct": 0},
+            {"text": "Newlines in CSV write need?", "options": ["\\n", "newline=''", "\\r", "None"], "correct": 1},
+            {"text": "CSV reader returns?", "options": ["Dict", "Rows as lists", "JSON", "String"], "correct": 1},
+            {"text": "Which module for CSV?", "options": ["csv", "json", "os", "sys"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 45: Classes, Objects, Constructors",
+      "topics": [
+        {
+          "title": "__init__, self, __str__",
+          "contentMd": "# Classes & Objects\n\n## Basic Class\n```python\nclass Car:\n    wheels = 4    # class attribute\n\n    def __init__(self, brand):\n        self.brand = brand    # instance attribute\n\n    def drive(self):\n        return f\"{self.brand} driving\"\n```\n\n## Creating Objects\n```python\nc = Car(\"Toyota\")\nprint(c.brand)\nprint(c.drive())\n```\n\n## `self`\nRefers to current instance.\n\n## `__str__`\n```python\ndef __str__(self):\n    return f\"Car({self.brand})\"\n```\n\n## `__repr__`\nFor debugging:\n```python\ndef __repr__(self):\n    return f\"Car({self.brand!r})\"\n```\n\n## FAQ\n**Q: Why self?**\nTo access instance attributes and methods.\n\n## Q&A\n1. Class = blueprint.\n2. Object = instance.\n3. self refers to instance.\n4. `__str__` for print.\n5. `__repr__` for debugging.",
+          "quizQuestions": [
+            {"text": "What is `self`?", "options": ["Class", "Instance", "Module", "Function"], "correct": 1},
+            {"text": "`__init__` is?", "options": ["Destructor", "Constructor", "Method", "Attribute"], "correct": 1},
+            {"text": "`__str__` used by?", "options": ["repr()", "print()", "type()", "id()"], "correct": 1},
+            {"text": "Class attributes are?", "options": ["Per instance", "Shared", "Immutable", "None"], "correct": 1},
+            {"text": "Creating object uses?", "options": ["ClassName()", "new ClassName()", "ClassName.new()", "None"], "correct": 0},
+            {"text": "`__repr__` is for?", "options": ["Users", "Debugging", "Print", "None"], "correct": 1},
+            {"text": "Instance attributes assigned via?", "options": ["self.attr", "attr", "class.attr", "None"], "correct": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 46: Encapsulation, Getters, Setters & @property",
+      "topics": [
+        {
+          "title": "Access control and @property",
+          "contentMd": "# Encapsulation\n\n## Access Levels\n- Public: `name`\n- Protected: `_name` (convention)\n- Private: `__name` (name mangling)\n\n## Name Mangling\n`__balance` becomes `_ClassName__balance`\n\n## Getters/Setters\n```python\nclass Bank:\n    def __init__(self, bal):\n        self.__bal = bal\n\n    def get_balance(self):\n        return self.__bal\n\n    def set_balance(self, v):\n        if v >= 0:\n            self.__bal = v\n```\n\n## @property\n```python\nclass Circle:\n    def __init__(self, r):\n        self._r = r\n\n    @property\n    def radius(self):\n        return self._r\n\n    @radius.setter\n    def radius(self, v):\n        if v > 0:\n            self._r = v\n\n    @radius.deleter\n    def radius(self):\n        del self._r\n```\n\n## FAQ\n**Q: Why @property?**\nClean syntax + validation.\n\n## Q&A\n1. `_x` protected convention.\n2. `__x` name mangled.\n3. @property for getters.\n4. @x.setter for setters.\n5. @x.deleter for del.",
+          "quizQuestions": [
+            {"text": "Private attributes use?", "options": ["_", "__", "!", "#"], "correct": 1},
+            {"text": "`__balance` becomes?", "options": ["__balance", "_Class__balance", "public", "None"], "correct": 1},
+            {"text": "Which decorator makes a getter?", "options": ["@getter", "@property", "@get", "@field"], "correct": 1},
+            {"text": "Setter decorator is?", "options": ["@setter", "@x.setter", "@set", "@field"], "correct": 1},
+            {"text": "Protected uses?", "options": ["_", "__", "!", "#"], "correct": 0},
+            {"text": "Why @property?", "options": ["Faster", "Clean syntax + validation", "Required", "None"], "correct": 1},
+            {"text": "Deleter decorator is?", "options": ["@del", "@x.deleter", "@delete", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 47: Inheritance & super()",
+      "topics": [
+        {
+          "title": "Inheritance, MRO, super",
+          "contentMd": "# Inheritance\n\n## Single\n```python\nclass Animal:\n    def speak(self):\n        return \"...\"\n\nclass Dog(Animal):\n    def speak(self):\n        return \"Woof\"\n```\n\n## super()\n```python\nclass Student(Person):\n    def __init__(self, name, roll):\n        super().__init__(name)\n        self.roll = roll\n```\n\n## Multiple\n```python\nclass C(A, B): pass\n```\n\n## MRO\n```python\nD.__mro__   # (D, B, C, A, object)\n```\n\n## isinstance / issubclass\n```python\nisinstance(dog, Animal)     # True\nissubclass(Dog, Animal)     # True\n```\n\n## Diamond Problem\nSolved by C3 linearization.\n\n## FAQ\n**Q: Why super()?**\nCorrect MRO handling.\n\n## Q&A\n1. Child inherits parent.\n2. super() calls parent.\n3. MRO determines order.\n4. `isinstance()` checks.\n5. Multiple inheritance possible.",
+          "quizQuestions": [
+            {"text": "super() calls?", "options": ["Self", "Parent method", "Child", "None"], "correct": 1},
+            {"text": "MRO stands for?", "options": ["Main Run Order", "Method Resolution Order", "Module Return Object", "None"], "correct": 1},
+            {"text": "`isinstance(True, int)`?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "Multiple inheritance syntax?", "options": ["class C(A, B):", "class C: A, B", "class C extends A,B", "None"], "correct": 0},
+            {"text": "MRO solved by?", "options": ["DFS", "C3 linearization", "BFS", "None"], "correct": 1},
+            {"text": "`issubclass(Dog, Animal)` when Dog inherits Animal?", "options": ["True", "False", "Error", "None"], "correct": 0},
+            {"text": "Child overrides parent method called?", "options": ["Inheritance", "Method overriding", "Overloading", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 48: Polymorphism & Operator Overloading",
+      "topics": [
+        {
+          "title": "Duck typing and dunders",
+          "contentMd": "# Polymorphism\n\n## Method Overriding\nChild replaces parent's method.\n\n## Duck Typing\n```python\nclass Dog:\n    def sound(self): return \"Woof\"\nclass Cat:\n    def sound(self): return \"Meow\"\n\nfor pet in [Dog(), Cat()]:\n    print(pet.sound())\n```\n\n## Operator Overloading\n```python\nclass Vector:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\n    def __add__(self, other):\n        return Vector(self.x + other.x, self.y + other.y)\n\n    def __eq__(self, other):\n        return (self.x, self.y) == (other.x, other.y)\n\n    def __str__(self):\n        return f\"Vector({self.x}, {self.y})\"\n```\n\n## Common Dunders\n`__add__`, `__sub__`, `__mul__`, `__eq__`, `__lt__`, `__len__`, `__getitem__`, `__call__`\n\n## FAQ\n**Q: Does Python support method overloading?**\nNot directly – use defaults or *args.\n\n## Q&A\n1. Duck typing: behavior > type.\n2. Overloading via dunders.\n3. `__add__` for +.\n4. `__eq__` for ==.\n5. `total_ordering` fills comparisons.",
+          "quizQuestions": [
+            {"text": "Duck typing means?", "options": ["Type matters", "Behavior matters", "Class matters", "None"], "correct": 1},
+            {"text": "Which dunder for +?", "options": ["__plus__", "__add__", "__sum__", "__inc__"], "correct": 1},
+            {"text": "Which dunder for ==?", "options": ["__eq__", "__equals__", "__cmp__", "__same__"], "correct": 0},
+            {"text": "Which dunder for len()?", "options": ["__size__", "__len__", "__count__", "__total__"], "correct": 1},
+            {"text": "Which dunder for obj()?", "options": ["__invoke__", "__call__", "__exec__", "__run__"], "correct": 1},
+            {"text": "Which dunder for obj[i]?", "options": ["__idx__", "__getitem__", "__at__", "__item__"], "correct": 1},
+            {"text": "Does Python support method overloading?", "options": ["Yes", "No", "Only via dunders", "Sometimes"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 49: Abstraction & Abstract Methods",
+      "topics": [
+        {
+          "title": "ABC and abstractmethod",
+          "contentMd": "# Abstraction\n\n## ABC Module\n```python\nfrom abc import ABC, abstractmethod\n\nclass Shape(ABC):\n    @abstractmethod\n    def area(self):\n        pass\n\n    @abstractmethod\n    def perimeter(self):\n        pass\n```\n\n## Child Must Implement\n```python\nclass Circle(Shape):\n    def __init__(self, r):\n        self.r = r\n\n    def area(self):\n        return 3.14 * self.r ** 2\n\n    def perimeter(self):\n        return 2 * 3.14 * self.r\n```\n\n## Cannot Instantiate\n```python\n# Shape()  # ❌ TypeError\n```\n\n## Abstract Property\n```python\n@property\n@abstractmethod\ndef value(self): ...\n```\n\n## Abstract Classmethod\n```python\n@classmethod\n@abstractmethod\ndef create(cls): ...\n```\n\n## FAQ\n**Q: Why ABC?**\nEnforces implementation contract.\n\n## Q&A\n1. ABC from abc module.\n2. @abstractmethod forces child.\n3. Cannot instantiate abstract.\n4. Abstract properties possible.\n5. Multiple abstract methods fine.",
+          "quizQuestions": [
+            {"text": "ABC is imported from?", "options": ["abc", "abstract", "typing", "None"], "correct": 0},
+            {"text": "Can you instantiate abstract class?", "options": ["Yes", "No", "Only with args", "None"], "correct": 1},
+            {"text": "Which decorator for abstract?", "options": ["@abstract", "@abstractmethod", "@virtual", "None"], "correct": 1},
+            {"text": "If child misses abstract method?", "options": ["Works", "Error at instantiation", "Ignores", "None"], "correct": 1},
+            {"text": "Abstract property order?", "options": ["@abstractmethod first", "@property first", "Either", "None"], "correct": 1},
+            {"text": "ABC stands for?", "options": ["Any Base Class", "Abstract Base Class", "Auto Base Class", "None"], "correct": 1},
+            {"text": "Why use abstract methods?", "options": ["Speed", "Enforce contract", "Memory", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 50: Static Methods & Class Methods",
+      "topics": [
+        {
+          "title": "@staticmethod vs @classmethod",
+          "contentMd": "# Static & Class Methods\n\n## @staticmethod\nNo self/cls. Utility.\n```python\nclass MathUtils:\n    @staticmethod\n    def add(a, b):\n        return a + b\n```\n\n## @classmethod\nReceives cls. Factory methods.\n```python\nclass Date:\n    def __init__(self, y, m, d):\n        self.y, self.m, self.d = y, m, d\n\n    @classmethod\n    def from_string(cls, s):\n        y, m, d = map(int, s.split(\"-\"))\n        return cls(y, m, d)\n```\n\n## Comparison\n| Type | First arg | Access instance | Access class |\n|------|-----------|-----------------|---------------|\n| Instance | self | Yes | Yes |\n| Class | cls | No | Yes |\n| Static | none | No | Only by name |\n\n## FAQ\n**Q: static vs class method?**\nstatic has no context; class has cls.\n\n## Q&A\n1. static = utility.\n2. class = factory.\n3. Instance = self.\n4. class method receives cls.\n5. static can be called anywhere.",
+          "quizQuestions": [
+            {"text": "@staticmethod receives?", "options": ["self", "cls", "Nothing", "None"], "correct": 2},
+            {"text": "@classmethod receives?", "options": ["self", "cls", "Nothing", "None"], "correct": 1},
+            {"text": "Which for factory methods?", "options": ["@staticmethod", "@classmethod", "Instance", "None"], "correct": 1},
+            {"text": "Which has no context?", "options": ["@staticmethod", "@classmethod", "Instance", "All"], "correct": 0},
+            {"text": "Which receives class as first arg?", "options": ["@staticmethod", "@classmethod", "Instance", "None"], "correct": 1},
+            {"text": "Can static method access class attrs?", "options": ["Directly", "By class name", "No", "Only self"], "correct": 1},
+            {"text": "Instance method first arg is?", "options": ["cls", "self", "Nothing", "None"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 51: Time & Space Complexity (Basics)",
+      "topics": [
+        {
+          "title": "Big-O basics",
+          "contentMd": "# Complexity Basics\n\n## Big-O\nDescribes how runtime/memory grows with input.\n\n## Common Orders\n- O(1) – constant\n- O(log n) – binary search\n- O(n) – single loop\n- O(n log n) – merge sort\n- O(n²) – nested loops\n- O(2ⁿ) – exponential\n- O(n!) – factorial\n\n## Examples\n```python\n# O(1)\nx = arr[0]\n\n# O(n)\nfor x in arr: ...\n\n# O(n²)\nfor i in arr:\n    for j in arr: ...\n```\n\n## Amortized\nList append is amortized O(1).\n\n## FAQ\n**Q: Hidden O(n)?**\n`x in list` is O(n); `x in set` is O(1).\n\n## Q&A\n1. O(1) constant.\n2. O(n) linear.\n3. O(n²) quadratic.\n4. Nested = multiply.\n5. `x in list` is O(n).",
+          "quizQuestions": [
+            {"text": "Single loop is?", "options": ["O(1)", "O(n)", "O(n²)", "O(log n)"], "correct": 1},
+            {"text": "Nested loops is?", "options": ["O(n)", "O(n²)", "O(log n)", "O(1)"], "correct": 1},
+            {"text": "Binary search is?", "options": ["O(1)", "O(n)", "O(log n)", "O(n²)"], "correct": 2},
+            {"text": "`x in list` is?", "options": ["O(1)", "O(n)", "O(log n)", "O(n²)"], "correct": 1},
+            {"text": "`x in set` is?", "options": ["O(1)", "O(n)", "O(log n)", "O(n²)"], "correct": 0},
+            {"text": "List append is?", "options": ["O(n)", "Amortized O(1)", "O(n²)", "O(log n)"], "correct": 1},
+            {"text": "Merge sort time?", "options": ["O(n)", "O(n log n)", "O(n²)", "O(log n)"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 52: Time & Space Complexity (Advanced)",
+      "topics": [
+        {
+          "title": "Space complexity, optimization",
+          "contentMd": "# Complexity Advanced\n\n## Space Complexity\n- O(1) – constant extra space\n- O(n) – extra list/dict/recursion\n- Recursion depth counts too\n\n## In-Place vs Out-of-Place\n- In-place: no extra space (e.g., `.sort()`)\n- Out-of-place: creates new (e.g., `sorted()`)\n\n## Optimization Examples\n```python\n# Two Sum: O(n²) → O(n)\ndef two_sum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target-n], i]\n        seen[n] = i\n```\n\n## Python Recursion Limit\n~1000. Change with `sys.setrecursionlimit()`.\n\n## FAQ\n**Q: In-place vs out-of-place?**\nIn-place modifies; out-of-place creates new.\n\n## Q&A\n1. Space counts memory.\n2. In-place is O(1).\n3. Hash maps trade space for time.\n4. Recursion uses stack.\n5. Set recursion limit for deep calls.",
+          "quizQuestions": [
+            {"text": "In-place sort is?", "options": ["O(n)", "O(1) space", "O(n²)", "None"], "correct": 1},
+            {"text": "sorted() is?", "options": ["In-place", "Out-of-place", "Both", "None"], "correct": 1},
+            {"text": "Python recursion limit ~?", "options": ["100", "1000", "10000", "No limit"], "correct": 1},
+            {"text": "Hash map trades?", "options": ["Time for space", "Space for time", "Nothing", "Both"], "correct": 1},
+            {"text": "`sys.setrecursionlimit()` changes?", "options": ["Stack size", "Recursion depth", "Memory", "None"], "correct": 1},
+            {"text": "Two Sum optimal complexity?", "options": ["O(n²)", "O(n)", "O(log n)", "O(1)"], "correct": 1},
+            {"text": "Which is O(n) space?", "options": ["in-place sort", "new list", "swap", "loop"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 53: OOP Interview Questions",
+      "topics": [
+        {
+          "title": "Common OOP interview Q&A",
+          "contentMd": "# OOP Interview Questions\n\n## Theoretical\n1. What are the 4 pillars of OOP?\n2. Class vs Object?\n3. `__init__` vs `__new__`?\n4. Name mangling?\n5. MRO?\n6. super() vs direct parent call?\n\n## Scenario-Based\n- Design a BankAccount class\n- Design a Library system\n- When to use composition over inheritance?\n\n## self vs cls vs static\n- `self` – instance method\n- `cls` – class method\n- nothing – static method\n\n## Common Mistakes\n- Forgetting super().__init__\n- Mutable class attributes\n- Overriding __eq__ without __hash__\n\n## FAQ\n**Q: Composition vs inheritance?**\nComposition (has-a) for flexibility; inheritance (is-a) for shared behavior.\n\n## Q&A\n1. 4 pillars: Encapsulation, Inheritance, Polymorphism, Abstraction.\n2. `__init__` initializes; `__new__` creates.\n3. MRO: method lookup order.\n4. `super()` follows MRO.\n5. Composition: class contains another class.",
+          "quizQuestions": [
+            {"text": "4 pillars of OOP?", "options": ["Encapsulation, Inheritance, Polymorphism, Abstraction", "Only encapsulation", "Only inheritance", "None"], "correct": 0},
+            {"text": "`__init__` does what?", "options": ["Creates object", "Initializes object", "Deletes object", "None"], "correct": 1},
+            {"text": "`__new__` does what?", "options": ["Creates object", "Initializes", "Deletes", "None"], "correct": 0},
+            {"text": "MRO determines?", "options": ["Speed", "Method lookup", "Memory", "None"], "correct": 1},
+            {"text": "super() follows?", "options": ["Immediate parent", "MRO", "Child", "None"], "correct": 1},
+            {"text": "Composition = ?", "options": ["is-a", "has-a", "both", "None"], "correct": 1},
+            {"text": "Name mangling uses?", "options": ["_", "__", "#", "!"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 54: Tricky Questions & Edge Cases",
+      "topics": [
+        {
+          "title": "Pitfalls and edge cases",
+          "contentMd": "# Tricky Python\n\n## Mutable Default Trap\n```python\ndef add(x, lst=[]):   # ❌\n    lst.append(x)\n    return lst\n# Fix: use None\n```\n\n## Float Precision\n```python\n0.1 + 0.2 == 0.3   # False\n```\nFix: `math.isclose()`\n\n## is vs ==\n- `==` value\n- `is` identity\n\n## Late Binding\n```python\nfuncs = [lambda: i for i in range(3)]\n# all return 2\n```\n\n## Empty Input Edge Cases\n- `max([])` → ValueError\n- `sum([])` → 0\n- `[] * 3` → []\n- `sorted([])` → []\n\n## Integer Division with Negatives\n`-7 // 2` → `-4`\n\n## Always Compare None with `is`\n```python\nif x is None:   # ✅\n```\n\n## FAQ\n**Q: Why is `0.1 + 0.2 != 0.3`?**\nBinary float representation.\n\n## Q&A\n1. Use None for mutable defaults.\n2. Use isclose for floats.\n3. Use `is` for None.\n4. Late binding affects lambdas in loops.\n5. Test empty inputs.",
+          "quizQuestions": [
+            {"text": "Fix for mutable default arg?", "options": ["Use tuple", "Use None and create inside", "Use int", "None"], "correct": 1},
+            {"text": "`0.1 + 0.2 == 0.3`?", "options": ["True", "False", "Error", "None"], "correct": 1},
+            {"text": "Compare None using?", "options": ["==", "is", "=", "<>"], "correct": 1},
+            {"text": "`max([])` raises?", "options": ["ValueError", "IndexError", "Returns 0", "None"], "correct": 0},
+            {"text": "`sum([])` returns?", "options": ["0", "None", "Error", "1"], "correct": 0},
+            {"text": "`-7 // 2` = ?", "options": ["-3", "-4", "3", "4"], "correct": 1},
+            {"text": "Late binding affects?", "options": ["For loops", "Lambdas in loops", "Strings", "Ints"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 55: Comprehensive Revision",
+      "topics": [
+        {
+          "title": "Revision I, II, III",
+          "contentMd": "# Revision\n\n## Revision I – Core\n- Variables, types, casting\n- Operators, conditions, loops\n- Strings, lists, tuples, sets, dicts\n\n## Revision II – Functions & Files\n- Functions, args, kwargs, lambda\n- Scope (LEGB), global, nonlocal\n- File handling, CSV, JSON\n- Exceptions and custom exceptions\n\n## Revision III – OOP & Complexity\n- Classes, inheritance, MRO\n- Encapsulation, properties\n- Polymorphism, dunders\n- Abstraction, static/class methods\n- Big-O analysis\n\n## Rapid-Fire Drills\n1. What is `is` vs `==`?\n2. What is MRO?\n3. Difference between `__init__` and `__new__`?\n4. What is a lambda?\n5. Difference between `list.append` and `list.extend`?\n\n## FAQ\n**Q: How to revise effectively?**\nPractice coding, don't just read.\n\n## Q&A\n1. Variables hold references.\n2. Mutable vs immutable.\n3. Exceptions caught with try-except.\n4. OOP has 4 pillars.\n5. Big-O measures growth.",
+          "quizQuestions": [
+            {"text": "Difference between is and ==?", "options": ["Same", "is = identity, == = value", "== = identity", "None"], "correct": 1},
+            {"text": "MRO stands for?", "options": ["Main Return Object", "Method Resolution Order", "Module Run Order", "None"], "correct": 1},
+            {"text": "Which is faster, list or set lookup?", "options": ["List", "Set", "Same", "None"], "correct": 1},
+            {"text": "Lambda is?", "options": ["Named", "Anonymous", "Class", "None"], "correct": 1},
+            {"text": "append vs extend?", "options": ["Same", "append adds 1 item", "extend adds 1 item", "None"], "correct": 1},
+            {"text": "Which is mutable?", "options": ["tuple", "str", "list", "int"], "correct": 2},
+            {"text": "Which is NOT a pillar of OOP?", "options": ["Encapsulation", "Recursion", "Inheritance", "Polymorphism"], "correct": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Module 56: Capstone Project",
+      "topics": [
+        {
+          "title": "Build a CLI Application",
+          "contentMd": "# Capstone Project\n\n## Options\n1. Student Management System\n2. Expense Tracker\n3. Library Manager\n4. To-Do App\n\n## Features\n- Menu-driven CLI\n- CRUD operations\n- File persistence (JSON/CSV)\n- Exception handling\n- OOP design (classes for entities, manager)\n\n## Suggested Structure\n```\nproject/\n├── main.py\n├── student.py\n├── manager.py\n├── storage.py\n└── data.json\n```\n\n## Student Class\n```python\nclass Student:\n    def __init__(self, name, roll, marks):\n        self.name = name\n        self.roll = roll\n        self.marks = marks\n\n    def to_dict(self):\n        return {\"name\": self.name, \"roll\": self.roll, \"marks\": self.marks}\n\n    @classmethod\n    def from_dict(cls, d):\n        return cls(d[\"name\"], d[\"roll\"], d[\"marks\"])\n```\n\n## Manager Skeleton\n```python\nclass StudentManager:\n    def __init__(self):\n        self.students = []\n\n    def add(self, s): ...\n    def remove(self, roll): ...\n    def find(self, roll): ...\n    def average(self): ...\n    def topper(self): ...\n    def save(self, path): ...\n    def load(self, path): ...\n```\n\n## Extensions\n- NumPy-based statistics\n- CSV export\n- Flask API\n\n## FAQ\n**Q: What makes a good project?**\nClean code, tests, README, demo.\n\n## Q&A\n1. Use classes for entities.\n2. File I/O for persistence.\n3. Handle exceptions.\n4. Menu-driven UX.\n5. Include README.",
+          "quizQuestions": [
+            {"text": "Capstone should include?", "options": ["Only OOP", "Full CRUD + File I/O + Exceptions", "Only files", "Only loops"], "correct": 1},
+            {"text": "Which is used for persistence?", "options": ["Print", "File I/O (JSON/CSV)", "Input", "None"], "correct": 1},
+            {"text": "Best structure for CRUD app?", "options": ["One file", "Multiple files + classes", "Only functions", "None"], "correct": 1},
+            {"text": "Should project have README?", "options": ["No", "Yes", "Optional", "None"], "correct": 1},
+            {"text": "Class for saving entities?", "options": ["Manager", "Student", "Both", "None"], "correct": 2},
+            {"text": "What handles errors?", "options": ["try/except", "print", "input", "None"], "correct": 0},
+            {"text": "Best UX style for CLI?", "options": ["Random prompts", "Menu-driven", "Silent", "None"], "correct": 1}
+          ]
+        }
+      ]
+    }
+  ]
+}

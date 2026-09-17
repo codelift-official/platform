@@ -467,7 +467,7 @@ export default function CoursePreview({
   const foundModuleIndex = modules.findIndex(m => Array.isArray(m?.topics) && m.topics.some(t => t?.id === activeTopicId));
   const currentModuleIndex = foundModuleIndex >= 0 ? foundModuleIndex : 0;
   const currentModule = modules[currentModuleIndex] || modules[0] || null;
-  const activeTopic = allTopics.find(t => t?.id === activeTopicId) || (Array.isArray(currentModule?.topics) ? currentModule.topics[0] : null);
+  const activeTopic = allTopics.find(t => t?.id === activeTopicId) || (Array.isArray(currentModule?.topics) ? currentModule.topics[0] : null) || allTopics[0] || null;
 
   const currentTopicIndexInModule = Array.isArray(currentModule?.topics) ? currentModule.topics.findIndex(t => t?.id === activeTopic?.id) : -1;
   const isFirstTopicInModule = currentTopicIndexInModule === 0;
@@ -514,17 +514,17 @@ export default function CoursePreview({
 
   const progressPercent = allTopics.length ? Math.round((completedCount / allTopics.length) * 100) : 0;
 
-  // Sync when course changes
+  // Sync when course changes or modules/topics hydrate
   useEffect(() => {
     if (modules.length > 0) {
       if (!expandedModuleId || !modules.some(m => m.id === expandedModuleId)) {
         setExpandedModuleId(modules[0].id);
       }
       if (!activeTopicId || !allTopics.some(t => t.id === activeTopicId)) {
-        setActiveTopicId(modules[0].topics?.[0]?.id || null);
+        setActiveTopicId(allTopics[0]?.id || modules[0]?.topics?.[0]?.id || null);
       }
     }
-  }, [course?.id]);
+  }, [course?.id, modules.length, allTopics.length]);
 
   // Scroll to top of content when active topic or module changes (with safe header offset)
   useEffect(() => {
@@ -1123,7 +1123,7 @@ export default function CoursePreview({
 
                 {/* Markdown Study Notes */}
                 <div className="topic-markdown-content mb-4">
-                  <SimpleMarkdown content={activeTopic.contentMd} />
+                  <SimpleMarkdown content={activeTopic.contentMd || activeTopic.content_md || activeTopic.content || ''} />
                 </div>
 
                 {/* ── Topic MCQ Assessment & Practice Questions (MANDATORY & RATED) ── */}
