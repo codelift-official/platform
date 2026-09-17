@@ -71,6 +71,10 @@ export function checkConfigured() {
 // COHORT & ELECTIVE COURSES RESOLUTION
 // ==============================================================================
 export async function getStaticCohortCourses() {
+  // When Supabase is configured, do not load static fake cohort courses; Supabase is the sole source of truth
+  if (isSupabaseConfigured) {
+    return [];
+  }
   try {
     if (typeof window === 'undefined') {
       try {
@@ -138,6 +142,28 @@ export async function getStaticCohortCourses() {
 }
 
 export async function getAllCourses() {
+  if (isSupabaseConfigured) {
+    const { data: rawCourses, error } = await supabase
+      .from('courses')
+      .select('*');
+
+    if (error) {
+      console.warn('[supabaseDataService] Failed to fetch courses from Supabase:', error);
+      return [];
+    }
+
+    return (rawCourses || []).map((c) => ({
+      ...c,
+      courseType: c.course_type || 'elective',
+      course_type: c.course_type || 'elective',
+      isCohort: c.course_type === 'cohort' || Boolean(c.is_cohort),
+      price: Number(c.price || 0),
+      isFree: Boolean(c.is_free),
+      isPublished: Boolean(c.is_published),
+      isApproved: Boolean(c.is_approved)
+    }));
+  }
+
   const cohortCourses = await getStaticCohortCourses();
   const { data: electiveRaw, error } = await supabase
     .from('courses')

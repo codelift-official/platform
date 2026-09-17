@@ -342,6 +342,14 @@ export function DataProvider({ children }) {
     supabaseDataService.updateBatch(batchId, updates).catch((e) => console.error('[DataContext] updateBatch failed:', e));
   };
 
+  const toggleBatchActive = (batchId) => {
+    const target = batches.find((b) => b.id === batchId);
+    if (!target) return;
+    const newActiveState = !target.isActive;
+    updateBatch(batchId, { isActive: newActiveState });
+    toast.success(`Batch ${newActiveState ? 'activated' : 'archived'} successfully.`);
+  };
+
   const deleteBatch = async (batchId) => {
     // 1. Remove batch from batches list
     setBatches((prev) => prev.filter((b) => b.id !== batchId));
@@ -1546,6 +1554,7 @@ export function DataProvider({ children }) {
         addBatch,
         updateBatch,
         deleteBatch,
+        toggleBatchActive,
         completeBatch,
         markBatchComplete: completeBatch,
         cleanupBatch,

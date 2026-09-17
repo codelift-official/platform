@@ -95,12 +95,11 @@ export default function Home() {
     }
   };
 
-  // Strictly published cohort bootcamps
+  // Strictly published programs
   const allCohorts = (courses || []).filter(
     (c) =>
       c.isPublished !== false &&
-      c.isApproved  !== false &&
-      (c.courseType === 'cohort' || c.isCohort === true)
+      c.isApproved !== false
   );
 
   // Filter by selected track
@@ -225,10 +224,12 @@ export default function Home() {
             >
               <FaBookOpen className="text-muted fs-1 mb-3 opacity-50" />
               <h5 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                No active cohorts for this track
+                {selectedCohortTrack === 'all' ? 'No active courses available' : 'No active cohorts for this track'}
               </h5>
               <p className="mb-3" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                Explore all available cohorts or check back for upcoming batch dates.
+                {selectedCohortTrack === 'all'
+                  ? 'New cohorts and curriculum modules are currently being prepared. Check back soon or speak with an advisor!'
+                  : 'Explore all available cohorts or check back for upcoming batch dates.'}
               </p>
               <button
                 type="button"

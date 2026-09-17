@@ -107,8 +107,8 @@ export default function BatchManager() {
     defaultValues: {
       name: '',
       description: '',
-      capacity: 30,
-      feeAmount: 5000,
+      capacity: 10,
+      feeAmount: 3000,
       startDate: new Date().toISOString().split('T')[0]
     }
   });
@@ -194,13 +194,23 @@ export default function BatchManager() {
         studentCount: enrolledStudents.length
       });
     } else {
-      toggleBatchActive(batch.id);
+      if (typeof toggleBatchActive === 'function') {
+        toggleBatchActive(batch.id);
+      } else if (typeof updateBatch === 'function') {
+        updateBatch(batch.id, { isActive: !batch.isActive });
+        toast.success(`Batch ${!batch.isActive ? 'activated' : 'archived'} successfully.`);
+      }
     }
   };
 
   const confirmArchive = () => {
     if (archiveWarning) {
-      toggleBatchActive(archiveWarning.batch.id);
+      if (typeof toggleBatchActive === 'function') {
+        toggleBatchActive(archiveWarning.batch.id);
+      } else if (typeof updateBatch === 'function') {
+        updateBatch(archiveWarning.batch.id, { isActive: !archiveWarning.batch.isActive });
+        toast.success(`Batch ${!archiveWarning.batch.isActive ? 'activated' : 'archived'} successfully.`);
+      }
       setArchiveWarning(null);
     }
   };
@@ -390,7 +400,7 @@ export default function BatchManager() {
             <Table hover className="mb-0 align-middle">
               <thead style={{ background: 'var(--bg-body)' }}>
                 <tr className="small text-uppercase text-muted" style={{ letterSpacing: '0.5px' }}>
-                  <th>Curriculum</th>
+                  <th>Cohort & Curriculum</th>
                   <th>Enrollment</th>
                   <th>Tuition & Schedule</th>
                   <th>Status</th>
@@ -476,10 +486,10 @@ export default function BatchManager() {
                             </span>
                             <span
                               className={`badge rounded-pill ${enrolledCount >= batch.capacity
-                                  ? 'bg-danger-subtle text-danger border border-danger-subtle'
-                                  : enrolledCount > 0
-                                    ? 'bg-primary-subtle text-primary border border-primary-subtle'
-                                    : 'bg-light text-muted border'
+                                ? 'bg-danger-subtle text-danger border border-danger-subtle'
+                                : enrolledCount > 0
+                                  ? 'bg-primary-subtle text-primary border border-primary-subtle'
+                                  : 'bg-light text-muted border'
                                 }`}
                               style={{ fontSize: '0.68rem' }}
                             >

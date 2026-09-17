@@ -60,6 +60,19 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, info) {
     this.setState({ error, info });
     console.error('CodeLift Error:', error, info);
+    const msg = error?.message || String(error || '');
+    if (
+      msg.includes('Failed to fetch dynamically imported module') ||
+      msg.includes('error loading dynamically imported module') ||
+      msg.includes('Importing a module script failed')
+    ) {
+      const lastReload = sessionStorage.getItem('codelift_last_chunk_reload');
+      const now = Date.now();
+      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+        sessionStorage.setItem('codelift_last_chunk_reload', now.toString());
+        window.location.reload();
+      }
+    }
   }
 
   handleReset = () => {
