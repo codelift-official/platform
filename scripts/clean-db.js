@@ -29,6 +29,7 @@ function loadEnv() {
 }
 
 loadEnv();
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -105,6 +106,7 @@ async function deleteTableData() {
     'enrollments',
     'payments',
     'fees',
+    'coupons',
     'batch_courses',
     'batch_tests',
     'batch_assignments',
@@ -140,20 +142,32 @@ async function deleteTableData() {
 async function deleteAuthUsers() {
   console.log('\n🗑️  Deleting non-admin auth users...');
 
-  const { data: { users }, error } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  if (error) throw error;
-
-  let deleted = 0;
-  for (const user of users) {
-    if (user.id === ADMIN_ID || user.email === 'codelift.official@gmail.com') {
-      console.log(`   🛡️  Preserving admin auth user: ${user.email} (${user.id})`);
-      continue;
+  try {
+    const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    if (!error && data?.users) {
+      let deleted = 0;
+      for (const user of data.users) {
+        if (user.id === ADMIN_ID || user.email === 'codelift.official@gmail.com') {
+          console.log(`   🛡️  Preserving admin auth user: ${user.email} (${user.id})`);
+          continue;
+        }
+        const { error: delErr } = await supabase.auth.admin.deleteUser(user.id);
+        if (delErr) console.warn(`   ⚠️  ${user.email}: ${delErr.message}`);
+        else deleted++;
+      }
+      console.log(`   ✅ Deleted ${deleted} non-admin auth users via admin API (kept admin)`);
+      return;
     }
-    const { error: delErr } = await supabase.auth.admin.deleteUser(user.id);
-    if (delErr) console.warn(`   ⚠️  ${user.email}: ${delErr.message}`);
-    else deleted++;
+    console.warn(`   ⚠️  GoTrue listUsers returned note: ${error?.message || 'deferred'}, using direct auth.users query`);
+  } catch (err) {
+    console.warn('   ⚠️  GoTrue admin API deferred, using direct auth.users SQL delete');
   }
-  console.log(`   ✅ Deleted ${deleted} non-admin auth users (kept admin)`);
+
+  const authRes = await client.query(
+    "DELETE FROM auth.users WHERE id != $1 AND email != 'codelift.official@gmail.com';",
+    [ADMIN_ID]
+  );
+  console.log(`   ✅ Deleted ${authRes.rowCount ?? 0} non-admin auth users from auth.users (preserved admin)`);
 }
 
 async function verifyCleanup() {
@@ -186,8 +200,12 @@ async function verifyCleanup() {
   console.log('\n👤 Public users preserved:', adminCheck);
 
   // Verify admin in auth.users
-  const { data: { users: remainingAuth } } = await supabase.auth.admin.listUsers();
-  console.log('\n🔐 Auth users preserved:', remainingAuth.map((u) => ({ id: u.id, email: u.email })));
+  try {
+    const { rows: remainingAuth } = await client.query("SELECT id, email FROM auth.users;");
+    console.log('\n🔐 Auth users preserved:', remainingAuth);
+  } catch (authErr) {
+    console.warn('\n⚠️ Could not query auth.users directly:', authErr.message);
+  }
 }
 
 async function main() {

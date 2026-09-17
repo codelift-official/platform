@@ -134,7 +134,7 @@ export default function Navbar() {
                 onClick={() => setNavExpanded(false)}
               >
                 <FaBook size={13} />
-                <span>Cohorts &amp; Courses</span>
+                <span>Courses</span>
               </Link>
             </li>
             <li className="nav-item">
