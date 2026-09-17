@@ -320,9 +320,6 @@ export default function BatchManager() {
             <FaLayerGroup className="text-primary" />
             <span>Batch & Cohort Operations Hub</span>
           </h4>
-          <p className="text-muted small mb-0">
-            Manage cohort schedules, student enrollments, attached courses, and assigned benchmark tests.
-          </p>
         </div>
         <Button
           variant="primary"
@@ -373,9 +370,8 @@ export default function BatchManager() {
               key={tab.id}
               type="button"
               onClick={() => setFilterStatus(tab.id)}
-              className={`btn btn-sm rounded-pill px-3 py-1 d-flex align-items-center gap-1.5 border-0 fw-semibold ${
-                filterStatus === tab.id ? 'btn-primary text-white shadow-sm' : 'text-muted bg-transparent'
-              }`}
+              className={`btn btn-sm rounded-pill px-3 py-1 d-flex align-items-center gap-1.5 border-0 fw-semibold ${filterStatus === tab.id ? 'btn-primary text-white shadow-sm' : 'text-muted bg-transparent'
+                }`}
               style={{ fontSize: '0.8rem' }}
             >
               <span>{tab.label}</span>
@@ -394,7 +390,7 @@ export default function BatchManager() {
             <Table hover className="mb-0 align-middle">
               <thead style={{ background: 'var(--bg-body)' }}>
                 <tr className="small text-uppercase text-muted" style={{ letterSpacing: '0.5px' }}>
-                  <th>Cohort & Curriculum</th>
+                  <th>Curriculum</th>
                   <th>Enrollment</th>
                   <th>Tuition & Schedule</th>
                   <th>Status</th>
@@ -479,13 +475,12 @@ export default function BatchManager() {
                               {enrolledCount} / {batch.capacity} Students
                             </span>
                             <span
-                              className={`badge rounded-pill ${
-                                enrolledCount >= batch.capacity
+                              className={`badge rounded-pill ${enrolledCount >= batch.capacity
                                   ? 'bg-danger-subtle text-danger border border-danger-subtle'
                                   : enrolledCount > 0
-                                  ? 'bg-primary-subtle text-primary border border-primary-subtle'
-                                  : 'bg-light text-muted border'
-                              }`}
+                                    ? 'bg-primary-subtle text-primary border border-primary-subtle'
+                                    : 'bg-light text-muted border'
+                                }`}
                               style={{ fontSize: '0.68rem' }}
                             >
                               {capacityPct}% Full

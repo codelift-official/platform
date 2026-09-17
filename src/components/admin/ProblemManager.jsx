@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Table, Button, Badge, Modal, Form, Card, Tabs, Tab } from 'react-bootstrap';
 import { useData } from '../../contexts/DataContext';
-import { 
-  FaCode, 
-  FaPlus, 
-  FaEdit, 
-  FaTrash, 
-  FaUndo, 
-  FaLock, 
-  FaEye, 
-  FaLightbulb, 
+import {
+  FaCode,
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaUndo,
+  FaLock,
+  FaEye,
+  FaLightbulb,
   FaTrophy,
   FaCheckCircle,
   FaSearch
@@ -17,12 +17,12 @@ import {
 import toast from 'react-hot-toast';
 
 export default function ProblemManager() {
-  const { 
-    codingProblems = [], 
-    addCodingProblem, 
-    updateCodingProblem, 
-    deleteCodingProblem, 
-    resetCodingProblemsToSeed 
+  const {
+    codingProblems = [],
+    addCodingProblem,
+    updateCodingProblem,
+    deleteCodingProblem,
+    resetCodingProblemsToSeed
   } = useData();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,8 +69,8 @@ export default function ProblemManager() {
     setFormStarterCode(prob.starterCode || '');
     setFormHints(Array.isArray(prob.hints) && prob.hints.length ? [...prob.hints] : ['']);
     setFormVisibleTests(
-      Array.isArray(prob.testCases) && prob.testCases.length 
-        ? prob.testCases.map(tc => ({ ...tc })) 
+      Array.isArray(prob.testCases) && prob.testCases.length
+        ? prob.testCases.map(tc => ({ ...tc }))
         : [{ input: '', expected: '' }]
     );
     setFormHiddenTests(
@@ -155,23 +155,20 @@ export default function ProblemManager() {
           <h3 className="fw-bold mb-1" style={{ color: 'var(--text-primary)' }}>
             <FaCode className="me-2 text-primary" /> Code Arena Problem Manager
           </h3>
-          <p className="text-secondary small mb-0">
-            Manage Python coding challenges, starter templates, visible tests, and hidden test cases for real judging.
-          </p>
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          <Button 
-            variant="outline-secondary" 
-            size="sm" 
+          <Button
+            variant="outline-secondary"
+            size="sm"
             className="rounded-pill px-3 d-flex align-items-center gap-1.5"
             onClick={handleResetSeed}
           >
             <FaUndo /> Reset to 20 Seed Questions
           </Button>
-          <Button 
-            variant="primary" 
-            size="sm" 
+          <Button
+            variant="primary"
+            size="sm"
             className="rounded-pill px-3.5 d-flex align-items-center gap-1.5"
             onClick={openAddModal}
           >
@@ -287,13 +284,12 @@ export default function ProblemManager() {
                       </div>
                     </td>
                     <td>
-                      <span className={`badge rounded-pill ${
-                        (prob.difficulty || 'Easy').toLowerCase() === 'hard' 
-                          ? 'arena-badge-hard' 
+                      <span className={`badge rounded-pill ${(prob.difficulty || 'Easy').toLowerCase() === 'hard'
+                          ? 'arena-badge-hard'
                           : (prob.difficulty || '').toLowerCase() === 'medium'
-                          ? 'arena-badge-medium'
-                          : 'arena-badge-easy'
-                      }`}>
+                            ? 'arena-badge-medium'
+                            : 'arena-badge-easy'
+                        }`}>
                         {prob.difficulty || 'Easy'}
                       </span>
                     </td>

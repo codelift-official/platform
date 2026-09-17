@@ -146,13 +146,13 @@ export default function TestSubmissions() {
   const [filterBatchId, setFilterBatchId] = useState('');
   const [filterStudentSearch, setFilterStudentSearch] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo]   = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
   /* Answer modal state */
   const [reviewAttempt, setReviewAttempt] = useState(null);
-  const [reviewTest, setReviewTest]       = useState(null);
+  const [reviewTest, setReviewTest] = useState(null);
   const [reviewStudent, setReviewStudent] = useState(null);
-  const [showModal, setShowModal]         = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   /* Derive filtered attempts */
   const filtered = useMemo(() => {
@@ -231,9 +231,6 @@ export default function TestSubmissions() {
             <FaClipboardList className="brand-text" />
             <span>Test Submissions</span>
           </h4>
-          <p className="text-muted small mb-0">
-            View, filter, and review all student test attempts. Click "View Answers" for a detailed breakdown.
-          </p>
         </div>
         <Button
           variant="outline-success"
@@ -343,7 +340,7 @@ export default function TestSubmissions() {
               </thead>
               <tbody style={{ fontSize: '0.875rem' }}>
                 {filtered.map(attempt => {
-                  const st   = students.find(s => s.id === attempt.studentId);
+                  const st = students.find(s => s.id === attempt.studentId);
                   const test = tests.find(t => t.id === attempt.testId);
                   const batch = batches.find(b => b.id === st?.batchId);
                   const pct = attempt.totalQuestions ? Math.round((attempt.score / attempt.totalQuestions) * 100) : 0;

@@ -216,7 +216,7 @@ export default function StudentManager() {
 
     // Offer WhatsApp confirmation
     const waText = `Hello ${student.name},\n\nYour CodeLift Student Portal password has been reset by Administration to default: *${defaultPwd}*.\n\nLogin URL: ${window.location.origin}/login\nEmail: ${student.email}\n\nPlease login and change your password in account settings if desired.`;
-    
+
     if (student.phone) {
       window.open(buildWhatsAppUrl(student.phone, waText), '_blank');
     }
@@ -349,9 +349,6 @@ export default function StudentManager() {
             <FaUsers className="brand-text" />
             <span>Student Management</span>
           </h4>
-          <p className="text-muted small mb-0">
-            Enroll students, manage tuition fees & concessions, reset passwords, and control portal access.
-          </p>
         </div>
         <div className="d-flex align-items-center gap-2">
           {passwordResetRequests.length > 0 && (

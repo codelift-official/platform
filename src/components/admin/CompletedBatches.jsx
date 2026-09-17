@@ -116,9 +116,6 @@ export default function CompletedBatches() {
             </span>
             <span>Completed Batches & Alumni Archive</span>
           </h4>
-          <p className="text-muted small mb-0">
-            Historical cohorts, student graduation records, and archived course performance analytics.
-          </p>
         </div>
         <div style={{ maxWidth: 300 }} className="w-100">
           <InputGroup size="sm">

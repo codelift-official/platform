@@ -548,9 +548,6 @@ export default function CertificateDesigner() {
             <FaCertificate style={{ color: 'var(--bs-primary)' }} />
             <span>Advanced Certificate Studio</span>
           </h4>
-          <p className="text-muted small mb-0">
-            Professional-grade template editor with live debounced rendering, typographic controls, and instant PDF preview.
-          </p>
         </div>
         <div className="d-flex gap-2 flex-wrap">
           <Button
