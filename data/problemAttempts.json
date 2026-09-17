@@ -1,18 +1,1 @@
-[
-  {
-    "id": "pa-1",
-    "studentId": "stu-1",
-    "problemId": "prob-two-sum",
-    "codeSubmitted": "def two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []",
-    "passed": true,
-    "score": 100,
-    "testResults": [
-      { "input": "[2, 7, 11, 15], 9", "expected": "[0, 1]", "actual": "[0, 1]", "passed": true },
-      { "input": "[3, 2, 4], 6", "expected": "[1, 2]", "actual": "[1, 2]", "passed": true }
-    ],
-    "attemptedAt": "2026-02-14T12:00:00.000Z",
-    "timeTaken": 180,
-    "hintsUsed": 0,
-    "status": "Completed"
-  }
-]
+[]

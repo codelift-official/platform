@@ -1,7 +1,1 @@
-[
-  { "id": "fee-001", "studentId": "stu-1", "amount": 25000, "paidAt": "2026-01-15T12:00:00Z", "mode": "UPI", "status": "PAID" },
-  { "id": "fee-002", "studentId": "stu-2", "amount": 15000, "paidAt": "2026-02-01T10:00:00Z", "mode": "Bank Transfer", "status": "PAID" },
-  { "id": "fee-003", "studentId": "stu-3", "amount": 25000, "paidAt": "2026-01-18T11:00:00Z", "mode": "Cash", "status": "PAID" },
-  { "id": "fee-004", "studentId": "stu-4", "amount": 10000, "paidAt": "2026-02-10T14:00:00Z", "mode": "UPI", "status": "PAID" },
-  { "id": "fee-005", "studentId": "stu-4", "amount": 15000, "paidAt": null, "mode": "Bank Transfer", "status": "PENDING" }
-]
+[]

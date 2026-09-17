@@ -1,14 +1,1 @@
-[
-  {
-    "id": "cbatch-fswd-fall2025",
-    "originalBatchId": "batch-fswd-fall2025",
-    "name": "Full Stack Web Dev (Fall 2025)",
-    "description": "Fall 2025 Intensive Cohort – Completed with distinction.",
-    "startDate": "2025-08-01",
-    "endDate": "2025-12-20",
-    "completedAt": "2025-12-20T17:00:00Z",
-    "studentIds": ["std-001"],
-    "testIds": ["attempt-001"],
-    "assignmentIds": ["sub-001"]
-  }
-]
+[]

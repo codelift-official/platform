@@ -1,13 +1,1 @@
-[
-  {
-    "id": "sub-001",
-    "studentId": "stu-1",
-    "assignmentId": "asgn-001",
-    "batchId": "batch-fswd-morning",
-    "fileUrls": ["https://github.com/rahulsharma/portfolio"],
-    "notes": "Deployed on GitHub Pages. Used CSS Grid for layout.",
-    "submittedAt": "2026-02-09T18:00:00Z",
-    "grade": 92,
-    "feedback": "Excellent responsive design!"
-  }
-]
+[]

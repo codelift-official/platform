@@ -1,16 +1,1 @@
-[
-  {
-    "id": "cert-001",
-    "studentId": "stu-1",
-    "studentName": "Rahul Sharma",
-    "courseName": "Full Stack Web Development",
-    "issuedAt": "2026-04-01T10:00:00Z",
-    "certificateId": "CERT-2026-0001",
-    "isIssued": true,
-    "isRevoked": false,
-    "instituteName": "CodeLift Engineering Academy",
-    "signatoryName": "Vikram Nair",
-    "signatoryTitle": "Director, CodeLift Academy",
-    "certTitle": "CERTIFICATE OF COMPLETION"
-  }
-]
+[]
