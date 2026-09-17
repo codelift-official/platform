@@ -456,6 +456,16 @@
 
 /* ─── Responsive adjustments ──────────────────────────────────────── */
 @media (max-width: 991px) {
+  .cl-arena-hero {
+    text-align: center;
+  }
+  .cl-arena-hero .cl-arena-badge {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cl-arena-title {
+    text-align: center !important;
+  }
   .cl-arena-stats-strip {
     grid-template-columns: repeat(2, 1fr);
   }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import PublicThemeSelector from './PublicThemeSelector';
 import {
   FaGraduationCap,
   FaBook,
@@ -40,6 +41,12 @@ export default function Navbar() {
   const isHome = location.pathname === '/';
   const isCoursesActive = location.pathname.startsWith('/courses');
   const isProblemsActive = location.pathname.startsWith('/problems');
+
+  const isLoggedIn = Boolean(isAdmin || isStudent || auth || currentUser);
+  const isPublicPage = ['/', '/courses', '/problems'].some((p) =>
+    p === '/' ? location.pathname === '/' : (location.pathname === p || location.pathname.startsWith(p + '/'))
+  );
+  const showPublicThemeSelector = !isLoggedIn && isPublicPage;
 
   const handleHomeClick = (e) => {
     setNavExpanded(false);
@@ -93,16 +100,19 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Hamburger Toggler */}
-        <button
-          className="navbar-toggler border-0 shadow-none p-1"
-          type="button"
-          aria-expanded={navExpanded}
-          aria-label="Toggle navigation"
-          onClick={() => setNavExpanded(!navExpanded)}
-        >
-          <span className="navbar-toggler-icon" />
-        </button>
+        {/* Mobile items / toggler */}
+        <div className="d-flex align-items-center gap-2 d-lg-none">
+          {showPublicThemeSelector && <PublicThemeSelector />}
+          <button
+            className="navbar-toggler border-0 shadow-none p-1"
+            type="button"
+            aria-expanded={navExpanded}
+            aria-label="Toggle navigation"
+            onClick={() => setNavExpanded(!navExpanded)}
+          >
+            <span className="navbar-toggler-icon" />
+          </button>
+        </div>
 
         <div className={`collapse navbar-collapse ${navExpanded ? 'show' : ''}`} id="navbarContent">
           {/* Navigation Links */}
@@ -232,10 +242,21 @@ export default function Navbar() {
                 </ul>
               </div>
             ) : (
-              <div className="d-flex align-items-center gap-2 w-100 w-lg-auto justify-content-start">
+              <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 w-100 w-lg-auto justify-content-start">
+                {showPublicThemeSelector && (
+                  <div className="d-none d-lg-block">
+                    <PublicThemeSelector />
+                  </div>
+                )}
+                {showPublicThemeSelector && (
+                  <div className="d-flex d-lg-none align-items-center justify-content-between p-2 rounded-3 mb-1" style={{ background: 'color-mix(in srgb, var(--card-bg) 60%, var(--bg-body))', border: '1px solid var(--border-color)' }}>
+                    <span className="small fw-semibold" style={{ color: 'var(--text-secondary)' }}>Theme Preview</span>
+                    <PublicThemeSelector />
+                  </div>
+                )}
                 <Link
                   to="/login"
-                  className="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold"
+                  className="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold text-center"
                   onClick={() => setNavExpanded(false)}
                 >
                   Student Portal

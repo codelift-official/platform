@@ -2020,16 +2020,20 @@ input:-webkit-autofill:focus {
 @media (max-width: 991px) {
   .cl-hero,
   .hero-section {
-    padding: 48px 0 40px;
-    min-height: auto;
+    padding: 24px 0 24px !important;
+    min-height: auto !important;
+    margin-bottom: 0 !important;
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .cl-hero,
   .hero-section {
-    padding: 24px 0 32px;
-    min-height: auto;
+    padding: 14px 0 24px !important;
+    min-height: auto !important;
+  }
+  .hero-content {
+    padding-top: 0 !important;
   }
 }
 
@@ -2213,11 +2217,14 @@ input:-webkit-autofill:focus {
     line-height: 1.6 !important;
   }
 
-  .cl-hero-cta-group {
+  .cl-hero-cta-group:not(.d-none) {
     display: flex;
     flex-direction: column;
     width: 100%;
     gap: 10px !important;
+  }
+  .cl-hero-cta-group.d-none {
+    display: none !important;
   }
 
   .cl-hero .btn-explore,
@@ -2920,8 +2927,8 @@ input:-webkit-autofill:focus {
 .cl-delay-3 { transition-delay: 0.3s; }
 
 @media (max-width: 768px) {
-  .cl-hero { padding: 100px 0 60px; }
-  .cl-hero h1 { font-size: 2rem; }
+  .cl-hero { padding: 14px 0 24px !important; }
+  .cl-hero h1 { font-size: 1.85rem; }
   .cl-contact-form { padding: 28px 20px; }
   .cl-contact-info-card { padding: 28px 20px; }
   .cl-modal-box { padding: 24px 18px; }

@@ -86,14 +86,14 @@ export default function ProblemCatalog() {
       <section className="cl-arena-hero">
         <div className="container max-w-7xl">
           <div className="row align-items-center g-4">
-            <div className="col-lg-8">
+            <div className="col-lg-8 text-center text-lg-start d-flex flex-column align-items-center align-items-lg-start">
               <span className="cl-arena-badge">
                 <span className="live-dot" /> 50+ Real-World Coding Challenges
               </span>
               <h1 className="cl-arena-title">Problem Solving Arena</h1>
 
 
-              <div className="d-flex flex-wrap gap-3 align-items-center">
+              <div className="d-flex flex-wrap gap-3 align-items-center justify-content-center justify-content-lg-start">
                 <button
                   type="button"
                   className={`btn rounded-pill px-4 fw-bold d-inline-flex align-items-center gap-2 ${showLeaderboard ? 'btn-warning text-dark' : 'btn-outline-light'

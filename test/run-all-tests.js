@@ -16,6 +16,7 @@ import { runEnrollmentAndMarketplaceTests } from './enrollment-journey-and-marke
 import { runProblemEditorialTests } from './problem-solutions.test.js';
 import { runBatchManagementAndQuizzesTests } from './batch-management-and-quizzes.test.js';
 import { runTestDeletionAndTechThumbnailsTests } from './test-deletion-and-tech-thumbnails.test.js';
+import { runHomepageMobileAndThemeTests } from './homepage-mobile-and-theme.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -115,6 +116,15 @@ async function runAll() {
     suiteResults.push({ name: 'Test Deletion, Categories & Tech Thumbnails', passed: r10.passedCount, total: r10.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Test Deletion, Categories & Tech Thumbnails', error: err.message, ok: false });
+  }
+
+  try {
+    const r11 = await runHomepageMobileAndThemeTests();
+    totalPassed += r11.passedCount;
+    totalTests += r11.totalCount;
+    suiteResults.push({ name: 'Homepage Mobile Fixes & Public Theme Selector', passed: r11.passedCount, total: r11.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Homepage Mobile Fixes & Public Theme Selector', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

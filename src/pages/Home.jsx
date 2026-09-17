@@ -119,10 +119,10 @@ export default function Home() {
               {/* Trust badge */}
               <div className="cl-hero-trust-badge mb-2 mb-md-3">
                 <span className="live-dot" />
-                <span>Admissions Open <span className="badge-dash">–</span> {new Date().getFullYear()} Cohorts</span>
+                <span>Admissions Open <span className="badge-dash">–</span> {new Date().getFullYear()} Courses</span>
               </div>
 
-              <h1 className="mb-3 mb-md-4">
+              <h1 className="mb-3 mb-md-4 learn-build-grow">
                 Learn{' '}
                 <span className="highlight">
                   — Build —
@@ -130,12 +130,25 @@ export default function Home() {
                 Grow
               </h1>
 
-              <p className="lead-text mb-4" style={{ color: 'var(--text-secondary)' }}>
-                Master software engineering with mentor-led cohort bootcamps, hands-on production
-                projects, and an interactive problem-solving arena.
-              </p>
+              {/* Mobile Radar Showcase */}
+              <div className="col-12 d-lg-none mt-3 mb-3">
+                <div className="cl-mobile-radar-card">
+                  <div className="cl-mobile-radar-header">
+                    <span className="cl-mobile-radar-badge">
+                      <span className="live-dot" /> Live Tech Stack
+                    </span>
+                    <span className="cl-mobile-radar-hint">Interactive Skills Radar</span>
+                  </div>
+                  <div className="cl-mobile-radar-viewport">
+                    <RadarRings showLabels={true} nucleusSize="sm" />
+                  </div>
+                  <div className="cl-mobile-radar-caption">
+                    Skills you'll build at CodeLift.
+                  </div>
+                </div>
+              </div>
 
-              <div className="d-flex flex-wrap gap-3 cl-hero-cta-group">
+              <div className="d-none d-lg-flex flex-wrap gap-3 cl-hero-cta-group">
                 <button className="btn-explore" onClick={() => scrollTo('courses')}>
                   Explore Courses <FaArrowRight style={{ fontSize: '0.8rem' }} />
                 </button>
@@ -148,23 +161,6 @@ export default function Home() {
             {/* Right side — radar occupies visually on desktop */}
             <div className="col-lg-5 col-xl-6 d-none d-lg-block" />
 
-            {/* Mobile Radar Showcase */}
-            <div className="col-12 d-lg-none mt-3">
-              <div className="cl-mobile-radar-card">
-                <div className="cl-mobile-radar-header">
-                  <span className="cl-mobile-radar-badge">
-                    <span className="live-dot" /> Live Tech Stack
-                  </span>
-                  <span className="cl-mobile-radar-hint">Interactive Skills Radar</span>
-                </div>
-                <div className="cl-mobile-radar-viewport">
-                  <RadarRings showLabels={true} nucleusSize="sm" />
-                </div>
-                <div className="cl-mobile-radar-caption">
-                  Orbiting technologies mastered across CodeLift full-stack &amp; data cohorts
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -175,16 +171,16 @@ export default function Home() {
           {/* Section Header */}
           <div className="text-center mb-3 mb-md-4">
             <div className="cl-eyebrow" style={{ color: 'var(--bs-primary)' }}>Flagship Programs</div>
-            <h2 className="cl-section-title fw-bold mb-2">Live Cohort Bootcamps</h2>
+            <h2 className="cl-section-title fw-bold mb-2">Live Courses</h2>
             <p className="cl-section-sub mx-auto mb-4" style={{ maxWidth: '600px' }}>
-              Master high-impact skills with mentor-led cohorts featuring live problem
+              Master high-impact skills with live problem
               solving, production deployments, and career placement guidance.
             </p>
 
             {/* Quick Track Filter Pills */}
-            <div className="cl-cohort-filter-pills">
+            {/* <div className="cl-cohort-filter-pills">
               {[
-                { id: 'all', label: `All Cohorts (${allCohorts.length})` },
+                { id: 'all', label: `All Courses (${allCohorts.length})` },
                 { id: 'web', label: 'Full-Stack Web' },
                 { id: 'python', label: 'Python & AI' },
                 { id: 'data', label: 'Data Analytics' },
@@ -198,7 +194,7 @@ export default function Home() {
                   {pill.label}
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Courses Grid */}
@@ -213,15 +209,15 @@ export default function Home() {
               </h5>
               <p className="mb-3" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 {selectedCohortTrack === 'all'
-                  ? 'New cohorts and curriculum modules are currently being prepared. Check back soon or speak with an advisor!'
-                  : 'Explore all available cohorts or check back for upcoming batch dates.'}
+                  ? 'New Courses and curriculum modules are currently being prepared. Check back soon or speak with an advisor!'
+                  : 'Explore all available courses or check back for upcoming batch dates.'}
               </p>
               <button
                 type="button"
                 className="btn btn-outline-success rounded-pill px-4 fw-bold btn-sm"
                 onClick={() => setSelectedCohortTrack('all')}
               >
-                View All Cohorts
+                View All Courses
               </button>
             </div>
           ) : (
@@ -338,19 +334,15 @@ export default function Home() {
         <div className="container pt-4 pb-4">
           {/* Header */}
           <div className="row align-items-center g-4 g-lg-5 mb-5">
-            <div className="col-lg-6">
+            <div className="col-lg-6 text-center text-lg-start d-flex flex-column align-items-center align-items-lg-start">
               <div className="cl-eyebrow" style={{ color: 'var(--bs-primary)' }}>Interactive Learning</div>
               <h2 className="cl-section-title fw-bold mb-3">
                 Problem Solving{' '}
                 <span style={{ color: 'var(--bs-primary)' }}>Arena</span>
               </h2>
-              <p className="mb-4" style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.7 }}>
-                Sharpen your algorithmic thinking with 50+ real-world challenges in Python,
-                Data Structures, SQL, and more — with live test feedback and XP rewards.
-              </p>
 
               {/* Stats row */}
-              <div className="cl-arena-spot-stats">
+              <div className="cl-arena-spot-stats justify-content-center justify-content-lg-start">
                 <div className="cl-arena-spot-stat">
                   <span className="cl-arena-spot-stat-num">50+</span>
                   <span className="cl-arena-spot-stat-label">Coding Challenges</span>
@@ -363,16 +355,16 @@ export default function Home() {
                 <div className="cl-arena-spot-stat-divider" />
                 <div className="cl-arena-spot-stat">
                   <span className="cl-arena-spot-stat-num">Live IDE</span>
-                  <span className="cl-arena-spot-stat-label">Instant Test Runner</span>
+                  <span className="cl-arena-spot-stat-label">Instant Test</span>
                 </div>
               </div>
 
               <Link
                 to="/problems"
                 id="home-arena-cta"
-                className="cl-arena-spot-cta"
+                className="cl-arena-spot-cta align-self-center align-self-lg-start"
               >
-                <FaTerminal size={15} /> Enter the Arena
+                Enter the Arena
                 <FaArrowRight size={13} style={{ marginLeft: 4 }} />
               </Link>
             </div>
@@ -428,25 +420,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Sample Problem Cards */}
-          <div className="row g-3">
-            {ARENA_PREVIEW_PROBLEMS.map((prob, i) => (
-              <div key={prob.id} className="col-md-4">
-                <Link to={`/problems/${prob.id}`} className="cl-arena-preview-card" style={{ animationDelay: `${i * 0.08}s` }}>
-                  <div className="d-flex align-items-center justify-content-between mb-2">
-                    <span className="cl-arena-prev-diff-label">{prob.difficulty}</span>
-                    <span className="cl-arena-prev-cat-tag">{prob.category}</span>
-                  </div>
-                  <h6 className="cl-arena-prev-title">{prob.title}</h6>
-                  <p className="cl-arena-prev-desc">{prob.desc}</p>
-                  <div className="cl-arena-prev-footer">
-                    <span className="cl-arena-prev-xp-info">+{prob.xp} XP</span>
-                    <span className="cl-arena-prev-cta">Solve <FaArrowRight size={10} /></span>
-                  </div>
-                </Link>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

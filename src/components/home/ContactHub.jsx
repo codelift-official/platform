@@ -45,9 +45,6 @@ export default function ContactHub() {
           >
             Contact &amp; Campus Hub
           </h2>
-          <p className="text-secondary mx-auto mb-0" style={{ maxWidth: '600px', fontSize: '0.96rem' }}>
-            Have questions about upcoming cohorts, syllabus, or career transitions? Reach out directly or visit our campus in Nagpur.
-          </p>
         </div>
 
         {/* Unified Combined Contact & Social Hub */}
@@ -64,9 +61,6 @@ export default function ContactHub() {
                   <h3 className="contact-hero-title">
                     Interested in Joining CodeLift?
                   </h3>
-                  <p className="contact-hero-desc">
-                    Share your details and our senior counselor will reach out on WhatsApp to discuss your career goals, syllabus, and upcoming batches.
-                  </p>
                 </div>
 
                 <div className="contact-hero-action">
@@ -78,10 +72,6 @@ export default function ContactHub() {
                     <span>Request Callback / Syllabus</span>
                     <FiSend size={16} />
                   </button>
-                  <div className="contact-hero-hint d-flex align-items-center justify-content-center gap-1.5 mt-2 text-secondary small">
-                    <FiClock size={13} />
-                    <span>Counseling hours: Mon–Sat 10:00 AM – 7:30 PM</span>
-                  </div>
                 </div>
 
                 {/* Integrated Direct Contact Footnote */}

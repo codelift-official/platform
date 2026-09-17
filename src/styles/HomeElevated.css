@@ -1072,3 +1072,83 @@
   }
 }
 
+/* ─── Mobile Hero Spacing & Tagline (< 992px) ───────────────────────── */
+@media (max-width: 991px) {
+  /* Fix 2 — Reduce mobile gap below radar */
+  .home-radar,
+  .hero-radar-wrapper,
+  .cl-hero-radar,
+  .cl-mobile-radar-card,
+  .cl-hero .col-12.d-lg-none {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .hero-section,
+  .cl-hero,
+  .cl-hero-section {
+    padding-bottom: 24px !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Next section tighter on mobile */
+  .flagship-section,
+  .programs-section,
+  #courses {
+    padding-top: 24px !important;
+    margin-top: 0 !important;
+  }
+
+  /* Fix 3 — Center "Learn Build Grow" on Mobile */
+  .learn-build-grow,
+  .cl-hero h1,
+  .tagline,
+  .hero-tagline {
+    text-align: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .cl-hero-trust-badge {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: flex !important;
+    width: fit-content !important;
+  }
+
+  /* Center Problem Solving Arena on Mobile */
+  .cl-arena-spotlight-section .col-lg-6:first-child {
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  .cl-arena-spotlight-section .cl-eyebrow {
+    text-align: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .cl-arena-spotlight-section .cl-section-title {
+    text-align: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .cl-arena-spot-stats {
+    justify-content: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: center !important;
+  }
+
+  .cl-arena-spot-cta {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    justify-content: center !important;
+    align-self: center !important;
+  }
+}
+
+
