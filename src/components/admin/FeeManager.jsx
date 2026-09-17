@@ -526,7 +526,7 @@ export default function FeeManager() {
 
             {/* Selected Student Financial Snapshot Banner */}
             {selectedStudent && (
-              <div className="p-3 bg-light rounded-3 mb-3 border">
+              <div className="p-3 rounded-3 mb-3 border" style={{ background: 'var(--card-bg-alt, rgba(255,255,255,0.04))', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
                 <div className="d-flex align-items-center gap-2 mb-2 text-primary fw-semibold small">
                   <FaInfoCircle />
                   <span>Student Tuition Summary</span>

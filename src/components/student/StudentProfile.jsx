@@ -231,10 +231,7 @@ export default function StudentProfile() {
               </div>
 
               <div className="border-top pt-3 text-start small" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="d-flex justify-content-between py-1 text-muted">
-                  <span>Student ID:</span>
-                  <span className="font-monospace text-primary fw-semibold">{student.id}</span>
-                </div>
+
                 <div className="d-flex justify-content-between py-1 text-muted">
                   <span>Enrolled Since:</span>
                   <span style={{ color: 'var(--text-primary)' }}>

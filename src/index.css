@@ -3858,6 +3858,117 @@ html {
   font-weight: 600;
 }
 
+/* ── Code Arena Hero Banner & Stat Cards (100% Theme Adaptive) ── */
+.arena-hero-banner {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme*="dark"] .arena-hero-banner,
+[data-bs-theme="dark"] .arena-hero-banner {
+  background: linear-gradient(
+    135deg,
+    var(--card-bg) 0%,
+    color-mix(in srgb, var(--card-bg) 84%, var(--bs-primary, #15803d)) 65%,
+    color-mix(in srgb, var(--card-bg) 72%, var(--bs-primary, #15803d)) 100%
+  ) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+[data-theme="forest-green"] .arena-hero-banner,
+[data-theme="emerald"] .arena-hero-banner,
+[data-theme="dark-green"] .arena-hero-banner,
+[data-theme="navy-blue"] .arena-hero-banner,
+[data-theme="indigo"] .arena-hero-banner,
+[data-theme="teal"] .arena-hero-banner,
+[data-theme="amber"] .arena-hero-banner,
+[data-theme="rose"] .arena-hero-banner,
+[data-theme="purple"] .arena-hero-banner,
+[data-theme="neutral"] .arena-hero-banner,
+:root:not([data-theme*="dark"]) .arena-hero-banner {
+  background: linear-gradient(
+    135deg,
+    var(--card-bg) 0%,
+    color-mix(in srgb, var(--card-bg) 94%, var(--bs-primary, #15803d)) 100%
+  ) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.arena-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(var(--bs-primary-rgb, 21, 128, 61), 0.12);
+  color: var(--bs-primary);
+  border: 1px solid rgba(var(--bs-primary-rgb, 21, 128, 61), 0.25);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.arena-hero-title {
+  color: var(--text-primary) !important;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.arena-hero-desc {
+  color: var(--text-secondary) !important;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.arena-progress-track {
+  height: 10px;
+  background: var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.arena-stat-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+[data-theme*="dark"] .arena-stat-card,
+[data-bs-theme="dark"] .arena-stat-card {
+  background: color-mix(in srgb, var(--card-bg) 82%, rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.arena-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--bs-primary-rgb, 21, 128, 61), 0.4);
+}
+
+.arena-stat-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.arena-stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.arena-stat-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
 .arena-badge-ready {
   background: rgba(148, 163, 184, 0.12) !important;
   color: var(--text-secondary, #94a3b8) !important;

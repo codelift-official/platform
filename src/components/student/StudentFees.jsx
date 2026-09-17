@@ -32,19 +32,61 @@ export default function StudentFees() {
         </p>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (100% Theme Adaptive) */}
       <div className="row g-3 mb-3">
         {[
-          { label: 'Total Course Fee', value: formatAmount(totalFee), color: '#171717', bg: '#F8FAFC', icon: <FaMoneyBillWave /> },
-          { label: 'Amount Paid', value: formatAmount(totalPaid), color: '#15803D', bg: '#F0FDF4', icon: <FaCheckCircle /> },
-          { label: 'Pending Amount', value: formatAmount(pendingBalance), color: pendingBalance > 0 ? '#BE123C' : '#15803D', bg: pendingBalance > 0 ? '#FEF2F2' : '#F0FDF4', icon: <FaClock /> },
-        ].map(({ label, value, color, bg, icon }) => (
+          {
+            label: 'Total Course Fee',
+            value: formatAmount(totalFee),
+            color: 'var(--text-primary)',
+            iconColor: 'var(--bs-primary)',
+            iconBg: 'rgba(var(--bs-primary-rgb, 21, 128, 61), 0.12)',
+            icon: <FaMoneyBillWave />
+          },
+          {
+            label: 'Amount Paid',
+            value: formatAmount(totalPaid),
+            color: 'var(--bs-success, #16A34A)',
+            iconColor: 'var(--bs-success, #16A34A)',
+            iconBg: 'rgba(var(--bs-success-rgb, 22, 163, 74), 0.12)',
+            icon: <FaCheckCircle />
+          },
+          {
+            label: 'Pending Amount',
+            value: formatAmount(pendingBalance),
+            color: pendingBalance > 0 ? 'var(--bs-danger, #DC2626)' : 'var(--bs-success, #16A34A)',
+            iconColor: pendingBalance > 0 ? 'var(--bs-danger, #DC2626)' : 'var(--bs-success, #16A34A)',
+            iconBg: pendingBalance > 0 ? 'rgba(var(--bs-danger-rgb, 220, 38, 38), 0.12)' : 'rgba(var(--bs-success-rgb, 22, 163, 74), 0.12)',
+            icon: <FaClock />
+          },
+        ].map(({ label, value, color, iconColor, iconBg, icon }) => (
           <div key={label} className="col-md-4">
-            <div className="card border-0 rounded-4" style={{ background: bg, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+            <div
+              className="card border-0 rounded-4"
+              style={{
+                background: 'var(--card-bg)',
+                border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-card, 0 2px 10px rgba(0,0,0,0.05))'
+              }}
+            >
               <div className="card-body p-4">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <span style={{ color, fontSize: '1.1rem' }}>{icon}</span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <span
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: iconBg,
+                      color: iconColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    {icon}
+                  </span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{label}</span>
                 </div>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
               </div>
@@ -54,7 +96,7 @@ export default function StudentFees() {
       </div>
 
       {/* Payment Progress */}
-      <div className="card border-0 rounded-4 mb-4" style={{ background: 'var(--card-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+      <div className="card border-0 rounded-4 mb-4" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         <div className="card-body p-4">
           <div className="d-flex justify-content-between mb-2">
             <span style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>Payment Progress</span>
@@ -65,7 +107,7 @@ export default function StudentFees() {
               style={{
                 width: `${paidPercent}%`,
                 height: '100%',
-                background: pendingBalance > 0 ? 'linear-gradient(90deg, #15803D, #34d399)' : 'linear-gradient(90deg, #15803D, #22c55e)',
+                background: pendingBalance > 0 ? 'linear-gradient(90deg, var(--bs-primary), #34d399)' : 'linear-gradient(90deg, var(--bs-primary), #22c55e)',
                 borderRadius: 6,
                 transition: 'width 0.6s ease',
               }}
@@ -80,7 +122,7 @@ export default function StudentFees() {
       </div>
 
       {/* Payment History */}
-      <div className="card border-0 rounded-4" style={{ background: 'var(--card-bg)', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+      <div className="card border-0 rounded-4" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         <div className="card-body p-4">
           <h6 style={{ fontWeight: 800, color: 'var(--text-primary)', marginBottom: 16 }}>Payment History</h6>
           {myFees.length === 0 ? (
@@ -117,11 +159,11 @@ export default function StudentFees() {
                         <span style={{
                           fontSize: '0.72rem',
                           fontWeight: 700,
-                          padding: '3px 10px',
+                          padding: '4px 12px',
                           borderRadius: '50px',
-                          background: fee.status === 'PAID' ? '#DCFCE7' : '#FEF2F2',
-                          color: fee.status === 'PAID' ? '#15803D' : '#BE123C',
-                          border: `1px solid ${fee.status === 'PAID' ? '#BBF7D0' : '#FECACA'}`,
+                          background: fee.status === 'PAID' ? 'rgba(var(--bs-success-rgb, 22, 163, 74), 0.15)' : 'rgba(var(--bs-danger-rgb, 220, 38, 38), 0.15)',
+                          color: fee.status === 'PAID' ? 'var(--bs-success, #16803D)' : 'var(--bs-danger, #BE123C)',
+                          border: `1px solid ${fee.status === 'PAID' ? 'rgba(var(--bs-success-rgb, 22, 163, 74), 0.3)' : 'rgba(var(--bs-danger-rgb, 220, 38, 38), 0.3)'}`,
                         }}>
                           {fee.status}
                         </span>

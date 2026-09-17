@@ -142,6 +142,34 @@ export function runThemeConsistencyTests() {
     assert(!loginCode.includes('Modal.Title className="fw-bold fs-5 d-flex align-items-center gap-2" style={{ color: \'#15803D\' }}'), 'Reset modal title must not hardcode #15803D');
   });
 
+  // ── 8. StudentFees.jsx Theme Awareness ──
+  test('StudentFees.jsx KPI cards and Total Course Fee respect theme CSS variables', () => {
+    const feesPath = path.join(rootDir, 'src', 'components', 'student', 'StudentFees.jsx');
+    const feesCode = fs.readFileSync(feesPath, 'utf8');
+
+    assert(!feesCode.includes("bg: '#F8FAFC'"), 'StudentFees must not hardcode #F8FAFC bg');
+    assert(!feesCode.includes("color: '#171717'"), 'StudentFees must not hardcode #171717 color');
+    assert(feesCode.includes('Total Course Fee'), 'StudentFees must include Total Course Fee card');
+    assert(feesCode.includes('var(--card-bg)'), 'StudentFees must use var(--card-bg)');
+    assert(feesCode.includes('var(--text-primary)'), 'StudentFees must use var(--text-primary)');
+    assert(feesCode.includes('var(--bs-primary)'), 'StudentFees must use var(--bs-primary)');
+  });
+
+  // ── 9. CodingArena.jsx Hero & Stat Cards Theme Awareness ──
+  test('CodingArena.jsx hero banner and stat cards respect theme without hardcoded dark values', () => {
+    const arenaPath = path.join(rootDir, 'src', 'components', 'student', 'CodingArena.jsx');
+    const arenaCode = fs.readFileSync(arenaPath, 'utf8');
+
+    assert(!arenaCode.includes('#0f172a 0%, #1e1b4b 50%'), 'CodingArena must not hardcode dark navy gradient');
+    assert(arenaCode.includes('arena-hero-banner'), 'CodingArena must use arena-hero-banner');
+    assert(arenaCode.includes('arena-stat-card'), 'CodingArena must use arena-stat-card');
+    assert(arenaCode.includes('Python Lists & Logic Journey'), 'CodingArena must display Python Lists & Logic Journey');
+    assert(arenaCode.includes('20 structured coding challenges designed by your tutor'), 'CodingArena must display tutor challenges description');
+    assert(arenaCode.includes('Overall Mastery'), 'CodingArena must display Overall Mastery');
+    assert(arenaCode.includes('Total XP'), 'CodingArena must display Total XP');
+    assert(arenaCode.includes('Open Access'), 'CodingArena must display Open Access mode');
+  });
+
   console.log(`✨ All ${passCount}/${totalCount} UI Theme Consistency tests PASSED!`);
   return { passedCount: passCount, totalCount };
 }

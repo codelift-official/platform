@@ -102,39 +102,36 @@ export default function CodingArena() {
 
   return (
     <div className="container-fluid px-0">
-      {/* ── Hero Banner & Journey Progress ── */}
-      <div
-        className="card border-0 rounded-4 mb-4 text-white overflow-hidden shadow-sm"
-        style={{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #064e3b 100%)',
-          position: 'relative'
-        }}
-      >
+      {/* ── Hero Banner & Journey Progress (100% Theme Adaptive) ── */}
+      <div className="card border-0 rounded-4 mb-4 arena-hero-banner shadow-sm">
         <div className="card-body p-4 p-md-5">
           <div className="row align-items-center g-4">
             <div className="col-lg-7">
-              <div className="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill mb-3" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}>
-                <FaCode style={{ color: '#4ade80' }} />
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, letterSpacing: '0.5px' }}>
-                  CODING ROUND READINESS ARENA
-                </span>
+              <div className="arena-hero-badge mb-3">
+                <FaCode style={{ color: 'var(--bs-primary)' }} />
+                <span>CODING ROUND READINESS ARENA</span>
               </div>
-              <h2 className="fw-extrabold mb-2 text-white" style={{ letterSpacing: '-0.5px' }}>
-                Problem Solving
+              <h2 className="arena-hero-title mb-2">
+                Python Lists & Logic Journey
               </h2>
+              <p className="arena-hero-desc mb-4" style={{ maxWidth: 540 }}>
+                20 structured coding challenges designed by your tutor. Write authentic Python code, pass visible and hidden test cases, and clear your coding rounds with confidence!
+              </p>
 
               {/* Progress track */}
               <div style={{ maxWidth: 480 }}>
-                <div className="d-flex justify-content-between text-white-50 small mb-2">
-                  <span>Overall Mastery</span>
-                  <span className="text-white fw-bold">{solvedCount} of {totalProblems} Solved ({progressPercent}%)</span>
+                <div className="d-flex justify-content-between small mb-2">
+                  <span className="fw-semibold" style={{ color: 'var(--text-secondary)' }}>Overall Mastery</span>
+                  <span className="fw-bold" style={{ color: 'var(--text-primary)' }}>
+                    {solvedCount} of {totalProblems} Solved ({progressPercent}%)
+                  </span>
                 </div>
-                <div style={{ height: 10, background: 'rgba(255,255,255,0.15)', borderRadius: 6, overflow: 'hidden' }}>
+                <div className="arena-progress-track">
                   <div
                     style={{
                       height: '100%',
                       width: `${progressPercent}%`,
-                      background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
+                      background: 'linear-gradient(90deg, var(--bs-primary, #10b981) 0%, #34d399 100%)',
                       borderRadius: 6,
                       transition: 'width 0.6s ease'
                     }}
@@ -147,40 +144,46 @@ export default function CodingArena() {
             <div className="col-lg-5">
               <div className="row g-3">
                 <div className="col-6">
-                  <div className="p-3 rounded-4" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <div className="d-flex align-items-center gap-2 text-warning mb-1">
-                      <FaTrophy />
-                      <span className="small fw-semibold text-white-50">Total XP</span>
+                  <div className="arena-stat-card">
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <FaTrophy style={{ color: '#f59e0b' }} />
+                      <span className="arena-stat-label">Total XP</span>
                     </div>
-                    <div className="fs-3 fw-bold text-white">{earnedXp} <span className="fs-6 text-white-50 fw-normal">/ {totalPossibleXp}</span></div>
+                    <div className="arena-stat-value">
+                      {earnedXp} <span className="fs-6 fw-normal" style={{ color: 'var(--text-secondary)' }}>/ {totalPossibleXp}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="col-6">
-                  <div className="p-3 rounded-4" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <div className="d-flex align-items-center gap-2 text-success mb-1">
-                      <FaCheckCircle style={{ color: '#4ade80' }} />
-                      <span className="small fw-semibold text-white-50">Solved</span>
+                  <div className="arena-stat-card">
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <FaCheckCircle style={{ color: '#10b981' }} />
+                      <span className="arena-stat-label">Solved</span>
                     </div>
-                    <div className="fs-3 fw-bold text-white">{solvedCount} <span className="fs-6 text-white-50 fw-normal">Problems</span></div>
+                    <div className="arena-stat-value">
+                      {solvedCount} <span className="fs-6 fw-normal" style={{ color: 'var(--text-secondary)' }}>Problems</span>
+                    </div>
                   </div>
                 </div>
                 <div className="col-6">
-                  <div className="p-3 rounded-4" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <div className="d-flex align-items-center gap-2 text-info mb-1">
-                      <FaFire style={{ color: '#38bdf8' }} />
-                      <span className="small fw-semibold text-white-50">Remaining</span>
+                  <div className="arena-stat-card">
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <FaFire style={{ color: '#0ea5e9' }} />
+                      <span className="arena-stat-label">Remaining</span>
                     </div>
-                    <div className="fs-3 fw-bold text-white">{Math.max(0, totalProblems - solvedCount)}</div>
+                    <div className="arena-stat-value">
+                      {Math.max(0, totalProblems - solvedCount)}
+                    </div>
                   </div>
                 </div>
                 <div className="col-6">
-                  <div className="p-3 rounded-4" style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <div className="d-flex align-items-center gap-2 text-white-50 mb-1">
-                      <FaLockOpen style={{ color: '#a78bfa' }} />
-                      <span className="small fw-semibold text-white-50">Mode</span>
+                  <div className="arena-stat-card">
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <FaLockOpen style={{ color: '#8b5cf6' }} />
+                      <span className="arena-stat-label">Mode</span>
                     </div>
-                    <div className="fs-6 fw-bold text-white mt-1">Open Access</div>
-                    <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>Pick any question</div>
+                    <div className="fs-6 fw-bold" style={{ color: 'var(--text-primary)' }}>Open Access</div>
+                    <div className="arena-stat-sub">Pick any question</div>
                   </div>
                 </div>
               </div>
