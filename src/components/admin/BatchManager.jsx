@@ -140,7 +140,10 @@ export default function BatchManager() {
   const getBatchTests = (batch) => {
     if (!batch) return [];
     return tests.filter(
-      (t) => Array.isArray(t.assignedBatchIds) && t.assignedBatchIds.includes(batch.id)
+      (t) =>
+        (Array.isArray(t.assignedBatchIds) && t.assignedBatchIds.includes(batch.id)) ||
+        (Array.isArray(t.batchIds) && t.batchIds.includes(batch.id)) ||
+        (Array.isArray(batch.testIds) && batch.testIds.includes(t.id))
     );
   };
 
@@ -1383,9 +1386,7 @@ export default function BatchManager() {
         const totalSubmissionsNeeded = batchAssignments.length * batchStudents.length;
         const completedSubmissionsCount = submissions.filter((sub) => studentIds.includes(sub.studentId)).length;
 
-        const batchTests = tests.filter(
-          (t) => Array.isArray(t.assignedBatchIds) && t.assignedBatchIds.includes(completionModalBatch.id)
-        );
+        const batchTests = getBatchTests(completionModalBatch);
         const totalTestsNeeded = batchTests.length * batchStudents.length;
         const completedTestsCount = testAttempts.filter((ta) => studentIds.includes(ta.studentId)).length;
 

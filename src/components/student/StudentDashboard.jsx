@@ -57,29 +57,55 @@ export default function StudentDashboard() {
     getBatchHistory
   } = useData();
 
-  const student = Array.isArray(students) ? students.find(s => s.id === auth?.studentId) : null;
-  const batch = Array.isArray(batches) ? batches.find(b => b.id === student?.batchId) : null;
+  const student = Array.isArray(students)
+    ? students.find(s =>
+        (auth?.studentId && (s.id === auth.studentId || s.legacyId === auth.studentId)) ||
+        (auth?.id && (s.id === auth.id || s.legacyId === auth.id)) ||
+        (auth?.userId && (s.id === auth.userId || s.legacyId === auth.userId)) ||
+        (auth?.email && s.email?.toLowerCase() === auth.email?.toLowerCase())
+      )
+    : null;
+
+  const studentBatchIds = Array.from(new Set([
+    student?.batchId,
+    ...(batches || []).filter(b => b.studentIds?.includes(student?.id) || b.studentIds?.includes(student?.legacyId)).map(b => b.id)
+  ].filter(Boolean)));
+
+  const batch = Array.isArray(batches) ? batches.find(b => studentBatchIds.includes(b.id)) : null;
   const historyBatches = getBatchHistory ? getBatchHistory(student?.id) : [];
 
   const batchCourses = Array.isArray(courses)
     ? courses.filter(c => {
-      if (!student?.batchId) return false;
+      if (studentBatchIds.length === 0) return false;
       if (Array.isArray(batch?.courseIds)) {
         return batch.courseIds.includes(c.id);
       }
-      return c.batchId === student.batchId || c.batchIds?.includes(student.batchId);
+      return studentBatchIds.includes(c.batchId) || studentBatchIds.some(bId => c.batchIds?.includes(bId));
     })
     : [];
   const activeCourses = batchCourses;
   const allTopics = activeCourses.flatMap(c => (c.modules || []).flatMap(m => Array.isArray(m?.topics) ? m.topics : []));
   const completedTopics = allTopics.filter(t => t?.id && (student?.progress?.[t.id] === 'completed' || student?.progress?.[t.id] === true || student?.quizAttempts?.[t.id]?.passed));
 
-  const myAssignments = Array.isArray(assignments) ? assignments.filter(a => a?.batchIds?.includes(student?.batchId)) : [];
-  const mySubmissions = Array.isArray(submissions) ? submissions.filter(s => s?.studentId === student?.id) : [];
-  const myAttempts = Array.isArray(testAttempts) ? testAttempts.filter(a => a?.studentId === student?.id) : [];
-  const myCerts = Array.isArray(certificates) ? certificates.filter(c => c?.studentId === student?.id) : [];
+  const myAssignments = Array.isArray(assignments)
+    ? assignments.filter(a => {
+        const allowed = [...(a?.batchIds || []), ...(a?.assignedBatchIds || []), ...(a?.batchId ? [a.batchId] : [])];
+        return studentBatchIds.some(bId => allowed.includes(bId));
+      })
+    : [];
+  const mySubmissions = Array.isArray(submissions)
+    ? submissions.filter(s => s?.studentId === student?.id || (student?.legacyId && s?.studentId === student?.legacyId))
+    : [];
+  const myAttempts = Array.isArray(testAttempts)
+    ? testAttempts.filter(a => a?.studentId === student?.id || (student?.legacyId && a?.studentId === student?.legacyId))
+    : [];
+  const myCerts = Array.isArray(certificates)
+    ? certificates.filter(c => c?.studentId === student?.id || (student?.legacyId && c?.studentId === student?.legacyId))
+    : [];
 
-  const myCodingAttempts = Array.isArray(codingAttempts) ? codingAttempts.filter(a => a?.studentId === student?.id) : [];
+  const myCodingAttempts = Array.isArray(codingAttempts)
+    ? codingAttempts.filter(a => a?.studentId === student?.id || (student?.legacyId && a?.studentId === student?.legacyId))
+    : [];
   const solvedCodingProblems = (codingProblems || []).filter(p => myCodingAttempts.some(a => a.problemId === p.id && a.passed));
 
   const progress = progressPercent(student, courses, batch);

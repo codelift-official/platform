@@ -1,7 +1,7 @@
 {
   "name": "codelift-platform",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,7 +17,9 @@
     "db:seed": "node scripts/migrate-json-to-supabase.js",
     "db:verify": "node scripts/db-migrate.js --verify",
     "db:all": "node scripts/db-migrate.js --all",
-    "db:export": "node scripts/export-supabase-to-json.js"
+    "db:export": "node scripts/export-supabase-to-json.js",
+    "db:backup": "node scripts/export-supabase-to-json.js",
+    "db:clean": "node scripts/clean-db.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

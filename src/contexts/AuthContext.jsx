@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
+import studentsSeed from '../../data/students.json';
 
 const AuthContext = createContext(null);
 
@@ -212,18 +213,14 @@ export function AuthProvider({ children }) {
   };
 
   const loginStudent = async (studentOrCreds) => {
-    // Helper to get cached students
-    const getCachedStudents = () => {
-      try {
-        return JSON.parse(localStorage.getItem('codelift_students_cache') || '[]');
-      } catch {
-        return [];
-      }
+    // Helper to get fallback students in offline mode
+    const getFallbackStudents = () => {
+      return Array.isArray(studentsSeed) ? studentsSeed : [];
     };
 
     if (!isSupabaseConfigured) {
       const email = (studentOrCreds?.email || '').trim().toLowerCase();
-      const cached = getCachedStudents();
+      const cached = getFallbackStudents();
       const matched = cached.find((s) => (s.email || '').toLowerCase() === email);
 
       if (matched) {

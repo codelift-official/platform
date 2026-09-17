@@ -11,7 +11,8 @@ import {
   FaExternalLinkAlt,
   FaFileCode,
   FaWhatsapp,
-  FaPaperPlane
+  FaPaperPlane,
+  FaTrash
 } from 'react-icons/fa';
 import NotificationModal from '../common/NotificationModal';
 import {
@@ -28,7 +29,7 @@ const assignmentSchema = z.object({
 });
 
 export default function GradingPanel() {
-  const { assignments = [], submissions = [], students = [], batches = [], addAssignment, gradeSubmission } = useData();
+  const { assignments = [], submissions = [], students = [], batches = [], addAssignment, deleteAssignment, gradeSubmission } = useData();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedBatches, setSelectedBatches] = useState([]);
@@ -38,6 +39,16 @@ export default function GradingPanel() {
   const [gradeInput, setGradeInput] = useState('');
   const [feedbackInput, setFeedbackInput] = useState('');
   const [activeNotification, setActiveNotification] = useState(null);
+
+  const handleDeleteAssignment = async (id, title) => {
+    if (window.confirm(`Are you sure you want to delete assignment "${title}"? This will permanently remove all associated student submissions.`)) {
+      try {
+        await deleteAssignment(id);
+      } catch (err) {
+        console.error('Error deleting assignment:', err);
+      }
+    }
+  };
 
   const {
     register,
@@ -224,6 +235,7 @@ export default function GradingPanel() {
                   <th>Deadline</th>
                   <th>Max Marks</th>
                   <th>Submissions</th>
+                  <th className="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -250,6 +262,18 @@ export default function GradingPanel() {
                         <Badge bg="light" text="dark" className="border">
                           {subCount} submitted
                         </Badge>
+                      </td>
+                      <td className="text-end">
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDeleteAssignment(asgn.id, asgn.title)}
+                          title="Delete assignment"
+                          className="d-inline-flex align-items-center gap-1"
+                        >
+                          <FaTrash size={12} />
+                          <span>Delete</span>
+                        </Button>
                       </td>
                     </tr>
                   );

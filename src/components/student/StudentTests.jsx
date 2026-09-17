@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
 import toast from 'react-hot-toast';
@@ -36,20 +36,36 @@ function ScoreCircle({ score, total }) {
 
 export default function StudentTests() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const testIdParam = searchParams.get('testId');
   const { auth } = useAuth();
   const { students, tests, testAttempts, submitTestAttempt, batches } = useData();
 
-  const student = students.find(s => s.id === auth?.studentId);
-  const myTests = tests.filter(t => t.assignedBatchIds?.includes(student?.batchId));
+  const student = (students || []).find(s =>
+    (auth?.studentId && (s.id === auth.studentId || s.legacyId === auth.studentId)) ||
+    (auth?.id && (s.id === auth.id || s.legacyId === auth.id)) ||
+    (auth?.userId && (s.id === auth.userId || s.legacyId === auth.userId)) ||
+    (auth?.email && s.email?.toLowerCase() === auth.email?.toLowerCase())
+  );
+
+  const studentBatchIds = Array.from(new Set([
+    student?.batchId,
+    ...(batches || []).filter(b => b.studentIds?.includes(student?.id) || b.studentIds?.includes(student?.legacyId)).map(b => b.id)
+  ].filter(Boolean)));
+
+  const myTests = (tests || []).filter(t => {
+    const assignedBatches = [...(t.assignedBatchIds || []), ...(t.batchIds || [])];
+    const matchesBatch = studentBatchIds.some(bId => assignedBatches.includes(bId));
+    const inBatchTestIds = (batches || []).some(b =>
+      studentBatchIds.includes(b.id) && Array.isArray(b.testIds) && b.testIds.includes(t.id)
+    );
+    return matchesBatch || inBatchTestIds;
+  });
 
   const [activeTest, setActiveTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState(null);
-
-  const getAttempt = (testId) =>
-    testAttempts.filter(a => a.studentId === student?.id && a.testId === testId)
-      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
 
   const startTest = (test) => {
     setActiveTest(test);
@@ -58,28 +74,51 @@ export default function StudentTests() {
     setResult(null);
   };
 
+  useEffect(() => {
+    if (testIdParam && myTests.length > 0 && !activeTest) {
+      const targetTest = myTests.find(t => t.id === testIdParam);
+      if (targetTest) {
+        startTest(targetTest);
+      }
+    }
+  }, [testIdParam, myTests, activeTest]);
+
+  const getAttempt = (testId) =>
+    (testAttempts || [])
+      .filter(a => (a.studentId === student?.id || (student?.legacyId && a.studentId === student.legacyId)) && a.testId === testId)
+      .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+
   const handleAnswer = (qIndex, optIndex) => {
     if (submitted) return;
     setAnswers(prev => ({ ...prev, [qIndex]: optIndex }));
   };
 
   const handleSubmitTest = () => {
-    const unanswered = activeTest.questions.filter((_, i) => answers[i] === undefined);
+    if (!activeTest) return;
+    const questions = activeTest.questions || [];
+    if (questions.length === 0) {
+      toast.error('This test has no questions to evaluate.');
+      return;
+    }
+    const unanswered = questions.filter((_, i) => answers[i] === undefined);
     if (unanswered.length > 0) {
       toast.error(`Please answer all ${unanswered.length} remaining question(s).`);
       return;
     }
-    const score = activeTest.questions.reduce((acc, q, i) => acc + (answers[i] === q.correctAnswer ? 1 : 0), 0);
+    const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.correctAnswer ? 1 : 0), 0);
     const passingPercentage = activeTest.passingPercentage !== undefined ? activeTest.passingPercentage : 70;
-    const percentage = Math.round((score / activeTest.questions.length) * 100);
+    const percentage = Math.round((score / questions.length) * 100);
+
+    const targetStudentId = student?.id || auth?.studentId || auth?.id || auth?.userId;
+    const targetBatchId = student?.batchId || studentBatchIds[0] || null;
 
     const attempt = submitTestAttempt({
-      studentId: student.id,
+      studentId: targetStudentId,
       testId: activeTest.id,
-      batchId: student.batchId,
-      answers: activeTest.questions.map((_, i) => answers[i]),
+      batchId: targetBatchId,
+      answers: questions.map((_, i) => answers[i]),
       score,
-      totalQuestions: activeTest.questions.length,
+      totalQuestions: questions.length,
       percentage,
       passingPercentage,
     });

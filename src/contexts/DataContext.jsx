@@ -85,16 +85,7 @@ function normalizeCourse(c) {
 export function DataProvider({ children }) {
   // Collections State initialized with local seeds for instant render
   const [users, setUsers] = useState(usersSeed);
-  const [students, setStudents] = useState(() => {
-    try {
-      const saved = localStorage.getItem('codelift_students_cache');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-    return isSupabaseConfigured ? [] : (studentsSeed || []);
-  });
+  const [students, setStudents] = useState(() => (isSupabaseConfigured ? [] : (studentsSeed || [])));
   // NOTE: passwordResetRequests is derived on-the-fly from students (reset_requested flag on Supabase).
   // No useState needed here — see the derived const below in this component.
 
@@ -113,39 +104,9 @@ export function DataProvider({ children }) {
   const [certificateTemplates, setCertificateTemplates] = useState(certificateTemplatesSeed);
   const [completedBatches, setCompletedBatches] = useState(completedBatchesSeed);
   const [problemAttempts, setProblemAttempts] = useState(problemAttemptsSeed);
-  const [codingProblems, setCodingProblems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('codelift_coding_problems');
-      return saved ? JSON.parse(saved) : codingProblemsSeed;
-    } catch {
-      return codingProblemsSeed;
-    }
-  });
-  const [codingAttempts, setCodingAttempts] = useState(() => {
-    try {
-      const saved = localStorage.getItem('codelift_coding_attempts');
-      return saved ? JSON.parse(saved) : codingAttemptsSeed;
-    } catch {
-      return codingAttemptsSeed;
-    }
-  });
+  const [codingProblems, setCodingProblems] = useState(codingProblemsSeed);
+  const [codingAttempts, setCodingAttempts] = useState(codingAttemptsSeed);
   const [platformSettings, setPlatformSettings] = useState(DEFAULT_PLATFORM_SETTINGS);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('codelift_coding_problems', JSON.stringify(codingProblems));
-    } catch (e) {
-      console.warn('Could not save codingProblems to localStorage:', e);
-    }
-  }, [codingProblems]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('codelift_coding_attempts', JSON.stringify(codingAttempts));
-    } catch (e) {
-      console.warn('Could not save codingAttempts to localStorage:', e);
-    }
-  }, [codingAttempts]);
 
   // Note: passwordResetRequests is derived on-the-fly from students.filter(s => s.reset_requested)
   // No localStorage persistence needed — Supabase is the single source of truth for the flag.
@@ -157,9 +118,6 @@ export function DataProvider({ children }) {
       if (data.users?.length) setUsers(data.users);
       if (Array.isArray(data.students)) {
         setStudents(data.students);
-        try {
-          localStorage.setItem('codelift_students_cache', JSON.stringify(data.students));
-        } catch (e) {}
       }
       if (data.categories?.length) setCategories(data.categories);
       if (data.courses?.length) setCourses(data.courses.map(normalizeCourse));
@@ -258,13 +216,7 @@ export function DataProvider({ children }) {
         concessionReason: created.concession_reason !== undefined ? created.concession_reason : (newStudent.concessionReason || '')
       } : newStudent;
 
-      setStudents((prev) => {
-        const updated = prev.map((s) => s.id === assignedId ? finalized : s);
-        try {
-          localStorage.setItem('codelift_students_cache', JSON.stringify(updated));
-        } catch (e) {}
-        return updated;
-      });
+      setStudents((prev) => prev.map((s) => s.id === assignedId ? finalized : s));
       return finalized;
     } catch (e) {
       console.error('[DataContext] addStudent failed on Supabase:', e);
@@ -273,13 +225,7 @@ export function DataProvider({ children }) {
   };
 
   const updateStudent = async (studentId, updates) => {
-    setStudents((prev) => {
-      const updated = prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...updates } : s));
-      try {
-        localStorage.setItem('codelift_students_cache', JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
+    setStudents((prev) => prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...updates } : s)));
     try {
       await supabaseDataService.updateStudent(studentId, updates);
     } catch (e) {
@@ -298,13 +244,7 @@ export function DataProvider({ children }) {
   };
 
   const deleteStudent = async (studentId) => {
-    setStudents((prev) => {
-      const updated = prev.filter((s) => s.id !== studentId && s.legacyId !== studentId);
-      try {
-        localStorage.setItem('codelift_students_cache', JSON.stringify(updated));
-      } catch (e) {}
-      return updated;
-    });
+    setStudents((prev) => prev.filter((s) => s.id !== studentId && s.legacyId !== studentId));
     try {
       await supabaseDataService.deleteStudent(studentId);
     } catch (e) {
@@ -628,30 +568,46 @@ export function DataProvider({ children }) {
     setTests((prev) =>
       prev.map((t) => {
         if (t.id === testId) {
-          const assigned = Array.isArray(t.assignedBatchIds) ? t.assignedBatchIds : [];
-          return { ...t, assignedBatchIds: Array.from(new Set([...assigned, batchId])) };
+          const assigned = Array.isArray(t.assignedBatchIds) ? t.assignedBatchIds : (Array.isArray(t.batchIds) ? t.batchIds : []);
+          const updated = Array.from(new Set([...assigned, batchId]));
+          return { ...t, assignedBatchIds: updated, batchIds: updated };
         }
         return t;
       })
     );
-    const targetTest = tests.find((t) => t.id === testId);
-    const updatedBatchIds = Array.from(new Set([...(targetTest?.assignedBatchIds || []), batchId]));
-    supabaseDataService.updateTest(testId, { assignedBatchIds: updatedBatchIds }).catch((e) => console.error(e));
+    setBatches((prev) =>
+      prev.map((b) => {
+        if (b.id === batchId) {
+          const testIds = Array.isArray(b.testIds) ? b.testIds : [];
+          return { ...b, testIds: Array.from(new Set([...testIds, testId])) };
+        }
+        return b;
+      })
+    );
+    supabaseDataService.attachTestToBatch(testId, batchId).catch((e) => console.error('[DataContext] attachTestToBatch failed:', e));
   };
 
   const unassignTestFromBatch = (testId, batchId) => {
     setTests((prev) =>
       prev.map((t) => {
         if (t.id === testId) {
-          const assigned = Array.isArray(t.assignedBatchIds) ? t.assignedBatchIds : [];
-          return { ...t, assignedBatchIds: assigned.filter((id) => id !== batchId) };
+          const assigned = Array.isArray(t.assignedBatchIds) ? t.assignedBatchIds : (Array.isArray(t.batchIds) ? t.batchIds : []);
+          const updated = assigned.filter((id) => id !== batchId);
+          return { ...t, assignedBatchIds: updated, batchIds: updated };
         }
         return t;
       })
     );
-    const targetTest = tests.find((t) => t.id === testId);
-    const updatedBatchIds = (targetTest?.assignedBatchIds || []).filter((id) => id !== batchId);
-    supabaseDataService.updateTest(testId, { assignedBatchIds: updatedBatchIds }).catch((e) => console.error(e));
+    setBatches((prev) =>
+      prev.map((b) => {
+        if (b.id === batchId) {
+          const testIds = Array.isArray(b.testIds) ? b.testIds : [];
+          return { ...b, testIds: testIds.filter((id) => id !== testId) };
+        }
+        return b;
+      })
+    );
+    supabaseDataService.detachTestFromBatch(testId, batchId).catch((e) => console.error('[DataContext] detachTestFromBatch failed:', e));
   };
 
   const assignStudentToBatch = (studentId, batchId) => {
@@ -1226,7 +1182,6 @@ export function DataProvider({ children }) {
 
   const resetCodingProblemsToSeed = () => {
     setCodingProblems(codingProblemsSeed);
-    localStorage.setItem('codelift_coding_problems', JSON.stringify(codingProblemsSeed));
     toast.success('Reset all coding problems to seed questions!');
   };
 
@@ -1252,17 +1207,34 @@ export function DataProvider({ children }) {
 
   // ── TESTS & ATTEMPTS ────────────────────────────────────────────────────────
   const addTest = (testData) => {
+    const rawBatchIds = Array.isArray(testData.assignedBatchIds)
+      ? testData.assignedBatchIds
+      : (Array.isArray(testData.batchIds) ? testData.batchIds : []);
     const newTest = {
       id: testData.id || genId('test'),
       title: testData.title || 'Untitled Test',
       description: testData.description || '',
       passingPercentage: testData.passingPercentage !== undefined ? Number(testData.passingPercentage) : 70,
       allowRetake: Boolean(testData.allowRetake),
-      assignedBatchIds: testData.assignedBatchIds || [],
+      assignedBatchIds: rawBatchIds,
+      batchIds: rawBatchIds,
       questions: testData.questions || [],
       createdAt: new Date().toISOString()
     };
     setTests((prev) => [newTest, ...prev]);
+
+    if (rawBatchIds.length > 0) {
+      setBatches((prev) =>
+        prev.map((b) => {
+          if (rawBatchIds.includes(b.id)) {
+            const testIds = Array.isArray(b.testIds) ? b.testIds : [];
+            return { ...b, testIds: Array.from(new Set([...testIds, newTest.id])) };
+          }
+          return b;
+        })
+      );
+    }
+
     supabaseDataService.addTest(newTest).catch((e) => console.error(e));
     return newTest;
   };
@@ -1354,6 +1326,75 @@ export function DataProvider({ children }) {
     supabaseDataService.gradeSubmission(submissionId, grade, feedback).catch((e) => console.error(e));
   };
 
+  const addAssignment = async (assignmentData) => {
+    const rawBatchIds = Array.isArray(assignmentData.batchIds)
+      ? assignmentData.batchIds
+      : (assignmentData.assignedBatchIds || (assignmentData.batchId ? [assignmentData.batchId] : []));
+    const normalizedBatchIds = rawBatchIds.length > 0 ? rawBatchIds : (batches || []).map((b) => b.id);
+
+    const newAssignment = {
+      id: assignmentData.id || genId('asgn'),
+      title: assignmentData.title || 'Untitled Assignment',
+      description: assignmentData.description || '',
+      deadline: assignmentData.deadline || assignmentData.dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      dueDate: assignmentData.deadline || assignmentData.dueDate || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      batchIds: normalizedBatchIds,
+      assignedBatchIds: normalizedBatchIds,
+      batchId: normalizedBatchIds[0] || null,
+      maxMarks: Number(assignmentData.maxMarks || assignmentData.maxScore) || 100,
+      maxScore: Number(assignmentData.maxMarks || assignmentData.maxScore) || 100,
+      passingMarks: Number(assignmentData.passingMarks) || 50,
+      instructions: assignmentData.instructions || '',
+      attachments: assignmentData.attachments || [],
+      status: assignmentData.status || 'Active',
+      createdAt: new Date().toISOString()
+    };
+
+    setAssignments((prev) => [newAssignment, ...(Array.isArray(prev) ? prev : [])]);
+
+    setBatches((prev) =>
+      prev.map((b) => {
+        if (normalizedBatchIds.includes(b.id)) {
+          const assignmentIds = Array.isArray(b.assignmentIds) ? b.assignmentIds : [];
+          return { ...b, assignmentIds: Array.from(new Set([...assignmentIds, newAssignment.id])) };
+        }
+        return b;
+      })
+    );
+
+    try {
+      await supabaseDataService.addAssignment(newAssignment);
+      toast.success('Assignment created and assigned to batch!');
+    } catch (e) {
+      console.error('[DataContext] addAssignment failed:', e);
+      toast.error('Failed to create assignment on database.');
+      throw e;
+    }
+    return newAssignment;
+  };
+
+  const deleteAssignment = async (assignmentId) => {
+    setAssignments((prev) => (Array.isArray(prev) ? prev.filter((a) => a.id !== assignmentId) : []));
+    setSubmissions((prev) => (Array.isArray(prev) ? prev.filter((s) => s.assignmentId !== assignmentId) : []));
+    setBatches((prev) =>
+      prev.map((b) => {
+        if (Array.isArray(b.assignmentIds) && b.assignmentIds.includes(assignmentId)) {
+          return { ...b, assignmentIds: b.assignmentIds.filter((id) => id !== assignmentId) };
+        }
+        return b;
+      })
+    );
+
+    try {
+      await supabaseDataService.deleteAssignment(assignmentId);
+      toast.success('Assignment and associated submissions deleted permanently.');
+    } catch (e) {
+      console.error('[DataContext] deleteAssignment failed:', e);
+      toast.error('Failed to delete assignment from database.');
+      throw e;
+    }
+  };
+
   // ── PLATFORM SETTINGS ───────────────────────────────────────────────────────
   const updatePlatformSettings = (newSettings) => {
     setPlatformSettings((prev) => ({ ...prev, ...newSettings }));
@@ -1372,9 +1413,6 @@ export function DataProvider({ children }) {
     if (Array.isArray(dbSource.students || payload.students)) {
       const st = dbSource.students || payload.students;
       setStudents(st);
-      try {
-        localStorage.setItem('codelift_students_cache', JSON.stringify(st));
-      } catch (e) {}
     }
     if (Array.isArray(dbSource.categories || payload.categories)) setCategories(dbSource.categories || payload.categories);
     if (Array.isArray(dbSource.courses || payload.courses)) setCourses(dbSource.courses || payload.courses);
@@ -1399,16 +1437,10 @@ export function DataProvider({ children }) {
     if (Array.isArray(dbSource.codingProblems || dbSource.coding_problems || payload.codingProblems)) {
       const cp = dbSource.codingProblems || dbSource.coding_problems || payload.codingProblems;
       setCodingProblems(cp);
-      try {
-        localStorage.setItem('codelift_coding_problems', JSON.stringify(cp));
-      } catch (e) {}
     }
     if (Array.isArray(dbSource.codingAttempts || dbSource.coding_attempts || payload.codingAttempts)) {
       const ca = dbSource.codingAttempts || dbSource.coding_attempts || payload.codingAttempts;
       setCodingAttempts(ca);
-      try {
-        localStorage.setItem('codelift_coding_attempts', JSON.stringify(ca));
-      } catch (e) {}
     }
     if (Array.isArray(dbSource.enrollments || payload.enrollments)) setEnrollments(dbSource.enrollments || payload.enrollments);
     if (Array.isArray(dbSource.coupons || payload.coupons)) setCoupons(dbSource.coupons || payload.coupons);
@@ -1529,6 +1561,8 @@ export function DataProvider({ children }) {
         deleteFee,
         markTopicComplete,
         saveQuizAttempt,
+        addAssignment,
+        deleteAssignment,
         addSubmission,
         gradeSubmission,
         issueCertificate,

@@ -642,13 +642,6 @@ export default function LandingPage() {
       })
     };
 
-    // Save in local storage
-    try {
-      const existing = JSON.parse(localStorage.getItem('codelift_enrollments') || '[]');
-      existing.push(enrollmentRecord);
-      localStorage.setItem('codelift_enrollments', JSON.stringify(existing));
-    } catch (e) {}
-
     // Show confirmation
     alert(
       ` Application Confirmed! (Ref #${enrollmentId})\n\nStudent: ${custName}\nSelected Tracks: ${totalCartCount}\nTotal Tuition: ₹${grandTotalFee.toLocaleString()}\nCohort: ${custBatch}\n\nOur admissions team will contact you shortly!`

@@ -36,12 +36,26 @@ function statusInfo(assignment, submission) {
 
 export default function StudentAssignments() {
   const { auth } = useAuth();
-  const { students, assignments, submissions, addSubmission } = useData();
+  const { students, assignments, submissions, addSubmission, batches } = useData();
 
-  const student = students.find(s => s.id === auth?.studentId);
-  const myAssignments = assignments
-    .filter(a => a.batchIds?.includes(student?.batchId))
-    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+  const student = (students || []).find(s =>
+    (auth?.studentId && (s.id === auth.studentId || s.legacyId === auth.studentId)) ||
+    (auth?.id && (s.id === auth.id || s.legacyId === auth.id)) ||
+    (auth?.userId && (s.id === auth.userId || s.legacyId === auth.userId)) ||
+    (auth?.email && s.email?.toLowerCase() === auth.email?.toLowerCase())
+  );
+
+  const studentBatchIds = Array.from(new Set([
+    student?.batchId,
+    ...(batches || []).filter(b => b.studentIds?.includes(student?.id) || b.studentIds?.includes(student?.legacyId)).map(b => b.id)
+  ].filter(Boolean)));
+
+  const myAssignments = (assignments || [])
+    .filter(a => {
+      const allowed = [...(a.batchIds || []), ...(a.assignedBatchIds || []), ...(a.batchId ? [a.batchId] : [])];
+      return studentBatchIds.some(bId => allowed.includes(bId));
+    })
+    .sort((a, b) => new Date(a.deadline || a.dueDate) - new Date(b.deadline || b.dueDate));
 
   const [submitModal, setSubmitModal] = useState(null);
   const [notes, setNotes] = useState('');
@@ -49,15 +63,18 @@ export default function StudentAssignments() {
   const [viewModal, setViewModal] = useState(null);
 
   const getSubmission = (assignmentId) =>
-    submissions.find(s => s.studentId === student?.id && s.assignmentId === assignmentId);
+    (submissions || []).find(
+      s => (s.studentId === student?.id || (student?.legacyId && s.studentId === student.legacyId)) && s.assignmentId === assignmentId
+    );
 
   const handleSubmit = () => {
     if (!fileUrl.trim() && !notes.trim()) {
       toast.error('Please add a link or notes before submitting.');
       return;
     }
+    const targetStudentId = student?.id || auth?.studentId || auth?.id || auth?.userId;
     addSubmission({
-      studentId: student.id,
+      studentId: targetStudentId,
       assignmentId: submitModal.id,
       fileUrls: fileUrl.trim() ? [fileUrl.trim()] : [],
       notes: notes.trim(),

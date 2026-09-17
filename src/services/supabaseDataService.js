@@ -839,6 +839,24 @@ export async function detachCourseFromBatch(courseId, batchId) {
   return true;
 }
 
+export async function attachTestToBatch(testId, batchId) {
+  const { error } = await supabase
+    .from('batch_tests')
+    .upsert({ batch_id: batchId, test_id: testId }, { onConflict: 'batch_id,test_id' });
+  if (error) handleSupabaseError(error, 'Failed to attach test to batch');
+  return true;
+}
+
+export async function detachTestFromBatch(testId, batchId) {
+  const { error } = await supabase
+    .from('batch_tests')
+    .delete()
+    .eq('batch_id', batchId)
+    .eq('test_id', testId);
+  if (error) handleSupabaseError(error, 'Failed to detach test from batch');
+  return true;
+}
+
 // ==============================================================================
 // COURSE MUTATIONS
 // ==============================================================================
@@ -1259,6 +1277,87 @@ export async function gradeSubmission(submissionId, grade, feedback) {
     .single();
 
   if (error) handleSupabaseError(error, 'Failed to grade submission');
+  return data;
+}
+
+export async function addAssignment(assignmentData) {
+  const assignmentId = assignmentData.id || genUUID();
+  const insertPayload = {
+    id: assignmentId,
+    title: assignmentData.title,
+    description: assignmentData.description || '',
+    deadline: assignmentData.deadline || null,
+    max_marks: Number(assignmentData.maxMarks || assignmentData.max_marks || 100),
+    type: assignmentData.type || 'PROJECT'
+  };
+
+  const { data, error } = await supabase
+    .from('assignments')
+    .insert(insertPayload)
+    .select()
+    .single();
+
+  if (error) handleSupabaseError(error, 'Failed to add assignment');
+
+  const batchIds = Array.isArray(assignmentData.batchIds) ? assignmentData.batchIds : [];
+  if (batchIds.length > 0) {
+    const rows = batchIds.map((bId) => ({ batch_id: bId, assignment_id: assignmentId }));
+    const { error: baError } = await supabase.from('batch_assignments').insert(rows);
+    if (baError) console.error('[supabaseDataService] batch_assignments insert note:', baError.message);
+  }
+
+  return { ...insertPayload, batchIds };
+}
+
+export async function deleteAssignment(assignmentId) {
+  // 1. Delete associated student submissions to avoid stale submission records
+  await supabase.from('submissions').delete().eq('assignment_id', assignmentId);
+  // 2. Delete junction links in batch_assignments
+  await supabase.from('batch_assignments').delete().eq('assignment_id', assignmentId);
+  // 3. Delete the assignment record itself
+  const { error } = await supabase.from('assignments').delete().eq('id', assignmentId);
+  if (error) handleSupabaseError(error, 'Failed to delete assignment');
+  return true;
+}
+
+export async function attachAssignmentToBatch(assignmentId, batchId) {
+  const { error } = await supabase
+    .from('batch_assignments')
+    .upsert({ batch_id: batchId, assignment_id: assignmentId }, { onConflict: 'batch_id,assignment_id' });
+  if (error) handleSupabaseError(error, 'Failed to attach assignment to batch');
+  return true;
+}
+
+export async function detachAssignmentFromBatch(assignmentId, batchId) {
+  const { error } = await supabase
+    .from('batch_assignments')
+    .delete()
+    .eq('batch_id', batchId)
+    .eq('assignment_id', assignmentId);
+  if (error) handleSupabaseError(error, 'Failed to detach assignment from batch');
+  return true;
+}
+
+export async function addEnrollment(enrollmentData) {
+  const enrollmentId = enrollmentData.id || genUUID();
+  const insertPayload = {
+    id: enrollmentId,
+    student_id: enrollmentData.studentId,
+    course_id: enrollmentData.courseId,
+    coupon_id: enrollmentData.couponId || null,
+    status: enrollmentData.status || 'PENDING',
+    amount: Number(enrollmentData.amount || 0),
+    discount_applied: Number(enrollmentData.discountApplied || 0),
+    enrolled_at: enrollmentData.enrolledAt || new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from('enrollments')
+    .insert(insertPayload)
+    .select()
+    .single();
+
+  if (error) handleSupabaseError(error, 'Failed to add enrollment');
   return data;
 }
 

@@ -149,21 +149,7 @@ export default function Navbar() {
                 onClick={() => setNavExpanded(false)}
               >
                 <FaCode size={13} />
-                <span>Problem Arena</span>
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link
-                to="/#contact"
-                className="nav-link fw-semibold px-3 py-1.5 rounded-3 d-flex align-items-center gap-2"
-                style={{
-                  color: 'var(--text-secondary)',
-                  transition: 'all 0.18s ease'
-                }}
-                onClick={handleContactClick}
-              >
-                <FaPhoneAlt size={12} />
-                <span>Contact</span>
+                <span>Code Arena</span>
               </Link>
             </li>
           </ul>

@@ -37,3 +37,6 @@ Thumbs.db
 supabase/storage/**
 supabase/.temp/**
 scratch/
+backups/
+before_cleanup.txt
+
