@@ -259,12 +259,74 @@ export default function StudentCourses() {
 
   const toggleSidebar = () => setIsSidebarHidden(prev => !prev);
 
+  // ── Helper to save last topic ──
+  const saveLastTopic = useCallback((courseId, mIdx, tIdx, topicId) => {
+    if (!courseId) return;
+    try {
+      localStorage.setItem(`codelift_last_topic_${courseId}`, JSON.stringify({
+        moduleIndex: mIdx,
+        topicIndex: tIdx,
+        topicId: topicId || ''
+      }));
+    } catch (_) {}
+  }, []);
+
+  const modules = activeCourse?.modules || [];
+  const currentModule = modules[currentModuleIndex] || modules[0];
+  const topics = currentModule?.topics || [];
+  const currentTopic = topics[currentTopicIndex] || topics[0];
+
   useEffect(() => {
+    if (!activeCourse) return;
+    const courseId = activeCourse.id;
+    const courseModules = activeCourse.modules || [];
+
+    try {
+      const saved = localStorage.getItem(`codelift_last_topic_${courseId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const mIdx = typeof parsed.moduleIndex === 'number' ? parsed.moduleIndex : 0;
+        const tIdx = typeof parsed.topicIndex === 'number' ? parsed.topicIndex : 0;
+        if (courseModules[mIdx] && courseModules[mIdx].topics?.[tIdx]) {
+          setCurrentModuleIndex(mIdx);
+          setCurrentTopicIndex(tIdx);
+          setExpandedSections(new Set([0, mIdx]));
+          return;
+        }
+        if (parsed.topicId) {
+          for (let m = 0; m < courseModules.length; m++) {
+            const t = (courseModules[m].topics || []).findIndex(top => top.id === parsed.topicId);
+            if (t !== -1) {
+              setCurrentModuleIndex(m);
+              setCurrentTopicIndex(t);
+              setExpandedSections(new Set([0, m]));
+              return;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: Check student.progress to find first incomplete topic
+    if (student?.progress && courseModules.length > 0) {
+      for (let m = 0; m < courseModules.length; m++) {
+        const t = (courseModules[m].topics || []).findIndex(
+          top => student.progress[top.id] !== 'completed' && student.progress[top.id] !== true
+        );
+        if (t !== -1) {
+          setCurrentModuleIndex(m);
+          setCurrentTopicIndex(t);
+          setExpandedSections(new Set([0, m]));
+          return;
+        }
+      }
+    }
+
     setCurrentModuleIndex(0);
     setCurrentTopicIndex(0);
     setExpandedSections(new Set([0]));
     setMobileDrawerOpen(false);
-  }, [selectedCourseId]);
+  }, [selectedCourseId, activeCourse?.id]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -279,11 +341,6 @@ export default function StudentCourses() {
     }
     return () => { document.body.style.overflow = ''; };
   }, [mobileDrawerOpen]);
-
-  const modules = activeCourse?.modules || [];
-  const currentModule = modules[currentModuleIndex] || modules[0];
-  const topics = currentModule?.topics || [];
-  const currentTopic = topics[currentTopicIndex] || topics[0];
 
   const getCourseStats = useCallback((course) => {
     const allTopics = (course.modules || []).flatMap(m => m.topics || []);
@@ -324,23 +381,14 @@ export default function StudentCourses() {
     return hasQuiz ? isQuizPassed : (isProgressMarked || isQuizPassed);
   }, [student]);
 
+  // All topics accessible - unlock every topic in topicList
   const unlockedTopicIds = useMemo(() => {
     const unlocked = new Set();
     for (let i = 0; i < topicList.length; i++) {
-      const item = topicList[i];
-      if (i === 0) {
-        unlocked.add(item.id);
-      } else {
-        const prev = topicList[i - 1];
-        if (unlocked.has(prev.id) && checkTopicCompleted(prev.id, prev.hasQuiz)) {
-          unlocked.add(item.id);
-        } else {
-          break;
-        }
-      }
+      unlocked.add(topicList[i].id);
     }
     return unlocked;
-  }, [topicList, checkTopicCompleted]);
+  }, [topicList]);
 
   const currentHasQuiz = (Array.isArray(currentTopic?.quizQuestions) && currentTopic.quizQuestions.length > 0) ||
     (currentTopicIndex === (topics.length - 1) && Array.isArray(currentModule?.quizQuestions) && currentModule.quizQuestions.length > 0);
@@ -374,6 +422,7 @@ export default function StudentCourses() {
     setCurrentTopicIndex(tIdx);
     setExpandedSections(prev => new Set([...prev, mIdx]));
     setMobileDrawerOpen(false);
+    saveLastTopic(activeCourse?.id, mIdx, tIdx, targetTopic?.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -385,43 +434,51 @@ export default function StudentCourses() {
   const handleNextLecture = () => {
     if (isLastLecture) return;
 
+    // Auto-complete topic when user clicks Next without blocking
     if (!isCurrentTopicCompleted) {
-      if (currentHasQuiz) {
-        toast.error('Please complete the topic assessment before proceeding.');
-        const quizEl = document.getElementById('topic-assessment-section');
-        if (quizEl) {
-          quizEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        return;
-      } else {
-        if (student && activeCourse && currentTopic) {
-          markTopicComplete(student.id, currentTopic.id, activeCourse.id);
-        }
+      if (student && activeCourse && currentTopic) {
+        markTopicComplete(student.id, currentTopic.id, activeCourse.id);
       }
     }
 
+    let nextM = currentModuleIndex;
+    let nextT = currentTopicIndex;
+
     if (currentTopicIndex < topics.length - 1) {
-      setCurrentTopicIndex(prev => prev + 1);
+      nextT = currentTopicIndex + 1;
+      setCurrentTopicIndex(nextT);
     } else {
-      const nextMod = currentModuleIndex + 1;
-      setCurrentModuleIndex(nextMod);
+      nextM = currentModuleIndex + 1;
+      nextT = 0;
+      setCurrentModuleIndex(nextM);
       setCurrentTopicIndex(0);
-      setExpandedSections(prev => new Set([...prev, nextMod]));
+      setExpandedSections(prev => new Set([...prev, nextM]));
     }
+
+    const nextTopicObj = modules[nextM]?.topics?.[nextT];
+    saveLastTopic(activeCourse?.id, nextM, nextT, nextTopicObj?.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePrevLecture = () => {
     if (isFirstLecture) return;
+    let prevM = currentModuleIndex;
+    let prevT = currentTopicIndex;
+
     if (currentTopicIndex > 0) {
-      setCurrentTopicIndex(prev => prev - 1);
+      prevT = currentTopicIndex - 1;
+      setCurrentTopicIndex(prevT);
     } else {
-      const prevMod = currentModuleIndex - 1;
-      const prevTopics = modules[prevMod]?.topics || [];
-      setCurrentModuleIndex(prevMod);
-      setCurrentTopicIndex(Math.max(0, prevTopics.length - 1));
-      setExpandedSections(prev => new Set([...prev, prevMod]));
+      prevM = currentModuleIndex - 1;
+      const prevTopics = modules[prevM]?.topics || [];
+      prevT = Math.max(0, prevTopics.length - 1);
+      setCurrentModuleIndex(prevM);
+      setCurrentTopicIndex(prevT);
+      setExpandedSections(prev => new Set([...prev, prevM]));
     }
+
+    const prevTopicObj = modules[prevM]?.topics?.[prevT];
+    saveLastTopic(activeCourse?.id, prevM, prevT, prevTopicObj?.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
