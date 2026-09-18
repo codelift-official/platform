@@ -3,6 +3,9 @@ import { Navbar, Container, Button } from 'react-bootstrap';
 import { Link, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ProfileDropdown from './ProfileDropdown';
+import PageLoader from './PageLoader';
+import { useData } from '../../contexts/DataContext';
+import { isSupabaseConfigured } from '../../services/supabaseClient';
 import { ADMIN_NAV_ITEMS } from '../../config/navigation';
 import { FaCode } from 'react-icons/fa';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
@@ -14,6 +17,8 @@ export default function Layout({
   brandLink = '/admin/dashboard',
   children
 }) {
+  const { isHydrated, isLoading } = useData();
+  const isDataLoading = (!isHydrated && isSupabaseConfigured) || (isLoading && isSupabaseConfigured);
   const hasItems = Array.isArray(items) && items.length > 0;
 
   // Single source of truth for sidebar open state
@@ -114,7 +119,14 @@ export default function Layout({
             minWidth: 0
           }}
         >
-          {children || <Outlet />}
+          {isDataLoading ? (
+            <PageLoader
+              title={title ? `Loading ${title}...` : 'Loading Portal...'}
+              message="Synchronizing real-time records and curriculum..."
+            />
+          ) : (
+            children || <Outlet />
+          )}
         </main>
       </div>
     </div>

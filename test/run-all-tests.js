@@ -21,6 +21,7 @@ import { run56ModuleCourseImportVisibilityTests } from './course-import-56m-visi
 import { runMandatoryCourseProgressionTests } from './mandatory-course-progression.test.js';
 import { runArenaCurriculumTests } from './code-arena-curriculum.test.js';
 import { runStudentCreationAndQuizAttemptsTests } from './student-creation-and-quiz-attempts.test.js';
+import { runPageLoaderHydrationTests } from './page-loader-hydration.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -165,6 +166,15 @@ async function runAll() {
     suiteResults.push({ name: 'Student Creation & Quiz Attempts Schema Resilience', passed: r15.passedCount, total: r15.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Student Creation & Quiz Attempts Schema Resilience', error: err.message, ok: false });
+  }
+
+  try {
+    const r16 = runPageLoaderHydrationTests();
+    totalPassed += r16.passedCount;
+    totalTests += r16.totalCount;
+    suiteResults.push({ name: 'Universal PageLoader & Hydration Resilience', passed: r16.passedCount, total: r16.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Universal PageLoader & Hydration Resilience', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

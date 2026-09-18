@@ -5,6 +5,8 @@ import Navbar from '../components/common/Navbar';
 import SEO from '../components/common/SEO';
 import CourseEnrollModal from '../components/common/CourseEnrollModal';
 import CourseTechThumbnail from '../components/common/CourseTechThumbnail';
+import PageLoader from '../components/common/PageLoader';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 import { resolveCourseFee } from '../utils/feeUtils';
 import {
   FaSearch,
@@ -18,7 +20,8 @@ import {
 import './CourseCatalog.css';
 
 export default function CourseCatalog() {
-  const { courses, categories, batches } = useData();
+  const { courses, categories, batches, isHydrated, isLoading } = useData();
+  const isDataLoading = (!isHydrated && isSupabaseConfigured) || (isLoading && isSupabaseConfigured);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -237,7 +240,12 @@ export default function CourseCatalog() {
         </div>
 
         {/* Course Cards Grid */}
-        {sortedCourses.length === 0 ? (
+        {isDataLoading ? (
+          <PageLoader
+            title="Loading Course Catalog..."
+            message="Fetching verified courses, tracks, and live cohort schedules..."
+          />
+        ) : sortedCourses.length === 0 ? (
           <div className="text-center py-5 rounded-4 shadow-sm border" style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
             <FaBookOpen className="text-muted fs-1 mb-3 opacity-50" />
             <h5 className="fw-bold" style={{ color: 'var(--text-primary)' }}>No matching courses found</h5>

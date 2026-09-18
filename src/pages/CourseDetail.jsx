@@ -8,6 +8,8 @@ import CheckoutModal from '../components/common/CheckoutModal';
 import InvoiceModal from '../components/common/InvoiceModal';
 import CourseEnrollModal from '../components/common/CourseEnrollModal';
 import CourseTechThumbnail from '../components/common/CourseTechThumbnail';
+import PageLoader from '../components/common/PageLoader';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
 import {
   FaStar, FaCheckCircle, FaBookOpen, FaLock,
@@ -22,7 +24,8 @@ export default function CourseDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { auth, currentUser } = useAuth();
-  const { courses, categories, enrollments, payments, batches } = useData();
+  const { courses, categories, enrollments, payments, batches, isHydrated, isLoading } = useData();
+  const isDataLoading = (!isHydrated && isSupabaseConfigured) || (isLoading && isSupabaseConfigured);
 
   const [showCheckout, setShowCheckout] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
@@ -30,7 +33,7 @@ export default function CourseDetail() {
   const [stickyVisible, setStickyVisible] = useState(false);
   const heroRef = useRef(null);
 
-  const course = courses.find(c => c.slug === slug || c.id === slug);
+  const course = (courses || []).find(c => c.slug === slug || c.id === slug);
   const feeInfo = resolveCourseFee(course, batches);
   const courseForEnroll = course ? {
     ...course,
@@ -48,6 +51,18 @@ export default function CourseDetail() {
     if (heroRef.current) observer.observe(heroRef.current);
     return () => observer.disconnect();
   }, [course]);
+
+  if (isDataLoading) {
+    return (
+      <div style={{ backgroundColor: 'var(--bg-body, #0f172a)', color: 'var(--text-primary)', minHeight: '100vh' }}>
+        <Navbar />
+        <PageLoader
+          title="Loading Course Details..."
+          message="Retrieving syllabus modules, live schedules, and certification criteria..."
+        />
+      </div>
+    );
+  }
 
   if (!course) {
     return (

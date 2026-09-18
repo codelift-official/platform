@@ -20,6 +20,8 @@ import RadarRings from '../components/common/RadarRings';
 import ContactHub from '../components/home/ContactHub';
 import FloatingWhatsApp from '../components/common/FloatingWhatsApp';
 import CourseEnrollModal from '../components/common/CourseEnrollModal';
+import PageLoader from '../components/common/PageLoader';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 import { useData } from '../contexts/DataContext';
 import { resolveCourseFee } from '../utils/feeUtils';
 import { resolveCourseTech } from '../components/common/CourseTechThumbnail';
@@ -68,7 +70,8 @@ export const ARENA_PREVIEW_PROBLEMS = [
 
 export default function Home() {
 
-  const { courses, batches } = useData();
+  const { courses, batches, isHydrated, isLoading } = useData();
+  const isDataLoading = (!isHydrated && isSupabaseConfigured) || (isLoading && isSupabaseConfigured);
   const [selectedCourseForEnroll, setSelectedCourseForEnroll] = useState(null);
   const [selectedCohortTrack, setSelectedCohortTrack] = useState('all');
 
@@ -198,7 +201,13 @@ export default function Home() {
           </div>
 
           {/* Courses Grid */}
-          {filteredCohorts.length === 0 ? (
+          {isDataLoading ? (
+            <PageLoader
+              title="Loading Cohorts..."
+              message="Fetching live cohort schedules and curriculum modules..."
+              minHeight="260px"
+            />
+          ) : filteredCohorts.length === 0 ? (
             <div
               className="text-center py-5 rounded-4 border"
               style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}

@@ -90,22 +90,22 @@ export function DataProvider({ children }) {
   // NOTE: passwordResetRequests is derived on-the-fly from students (reset_requested flag on Supabase).
   // No useState needed here — see the derived const below in this component.
 
-  const [categories, setCategories] = useState(categoriesSeed);
-  const [courses, setCourses] = useState(() => (coursesSeed || []).map(normalizeCourse));
-  const [enrollments, setEnrollments] = useState(enrollmentsSeed);
-  const [coupons, setCoupons] = useState(couponsSeed);
-  const [payments, setPayments] = useState(paymentsSeed);
-  const [batches, setBatches] = useState(batchesSeed);
-  const [fees, setFees] = useState(feesSeed);
-  const [tests, setTests] = useState(testsSeed);
-  const [testAttempts, setTestAttempts] = useState(attemptsSeed);
-  const [assignments, setAssignments] = useState(assignmentsSeed);
-  const [submissions, setSubmissions] = useState(submissionsSeed);
-  const [certificates, setCertificates] = useState(certificatesSeed);
-  const [certificateTemplates, setCertificateTemplates] = useState(certificateTemplatesSeed);
-  const [completedBatches, setCompletedBatches] = useState(completedBatchesSeed);
-  const [problemAttempts, setProblemAttempts] = useState(problemAttemptsSeed);
-  const [codingProblems, setCodingProblems] = useState(codingProblemsSeed);
+  const [categories, setCategories] = useState(() => (isSupabaseConfigured ? [] : (categoriesSeed || [])));
+  const [courses, setCourses] = useState(() => (isSupabaseConfigured ? [] : (coursesSeed || []).map(normalizeCourse)));
+  const [enrollments, setEnrollments] = useState(() => (isSupabaseConfigured ? [] : (enrollmentsSeed || [])));
+  const [coupons, setCoupons] = useState(() => (isSupabaseConfigured ? [] : (couponsSeed || [])));
+  const [payments, setPayments] = useState(() => (isSupabaseConfigured ? [] : (paymentsSeed || [])));
+  const [batches, setBatches] = useState(() => (isSupabaseConfigured ? [] : (batchesSeed || [])));
+  const [fees, setFees] = useState(() => (isSupabaseConfigured ? [] : (feesSeed || [])));
+  const [tests, setTests] = useState(() => (isSupabaseConfigured ? [] : (testsSeed || [])));
+  const [testAttempts, setTestAttempts] = useState(() => (isSupabaseConfigured ? [] : (attemptsSeed || [])));
+  const [assignments, setAssignments] = useState(() => (isSupabaseConfigured ? [] : (assignmentsSeed || [])));
+  const [submissions, setSubmissions] = useState(() => (isSupabaseConfigured ? [] : (submissionsSeed || [])));
+  const [certificates, setCertificates] = useState(() => (isSupabaseConfigured ? [] : (certificatesSeed || [])));
+  const [certificateTemplates, setCertificateTemplates] = useState(() => (isSupabaseConfigured ? [] : (certificateTemplatesSeed || [])));
+  const [completedBatches, setCompletedBatches] = useState(() => (isSupabaseConfigured ? [] : (completedBatchesSeed || [])));
+  const [problemAttempts, setProblemAttempts] = useState(() => (isSupabaseConfigured ? [] : (problemAttemptsSeed || [])));
+  const [codingProblems, setCodingProblems] = useState(() => (isSupabaseConfigured ? [] : (codingProblemsSeed || [])));
   const [codingAttempts, setCodingAttempts] = useState(() => {
     try {
       const cached = localStorage.getItem('codelift_coding_attempts');
