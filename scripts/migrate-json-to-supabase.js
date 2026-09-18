@@ -197,7 +197,7 @@ export async function runJsonSeedMigration(existingClient = null, options = {}) 
           b.id,
           b.name,
           b.description || '',
-          b.capacity || 30,
+          b.capacity || 10,
           b.feeAmount || b.fee || 0,
           b.startDate || null,
           b.isActive !== false,

@@ -60,11 +60,11 @@ export default function StudentDashboard() {
 
   const student = Array.isArray(students)
     ? students.find(s =>
-        (auth?.studentId && (s.id === auth.studentId || s.legacyId === auth.studentId)) ||
-        (auth?.id && (s.id === auth.id || s.legacyId === auth.id)) ||
-        (auth?.userId && (s.id === auth.userId || s.legacyId === auth.userId)) ||
-        (auth?.email && s.email?.toLowerCase() === auth.email?.toLowerCase())
-      )
+      (auth?.studentId && (s.id === auth.studentId || s.legacyId === auth.studentId)) ||
+      (auth?.id && (s.id === auth.id || s.legacyId === auth.id)) ||
+      (auth?.userId && (s.id === auth.userId || s.legacyId === auth.userId)) ||
+      (auth?.email && s.email?.toLowerCase() === auth.email?.toLowerCase())
+    )
     : null;
 
   const studentBatchIds = Array.from(new Set([
@@ -100,9 +100,9 @@ export default function StudentDashboard() {
 
   const myAssignments = Array.isArray(assignments)
     ? assignments.filter(a => {
-        const allowed = [...(a?.batchIds || []), ...(a?.assignedBatchIds || []), ...(a?.batchId ? [a.batchId] : [])];
-        return studentBatchIds.some(bId => allowed.includes(bId));
-      })
+      const allowed = [...(a?.batchIds || []), ...(a?.assignedBatchIds || []), ...(a?.batchId ? [a.batchId] : [])];
+      return studentBatchIds.some(bId => allowed.includes(bId));
+    })
     : [];
   const mySubmissions = Array.isArray(submissions)
     ? submissions.filter(s => s?.studentId === student?.id || (student?.legacyId && s?.studentId === student?.legacyId))
@@ -219,50 +219,6 @@ export default function StudentDashboard() {
       </div>
 
       {/* ── Refer & Earn Section ── */}
-      <div className="card border-0 rounded-4 mb-4 shadow-sm" style={{ background: 'linear-gradient(135deg, rgba(21, 128, 61, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%)', border: '1px solid rgba(21, 128, 61, 0.2)' }}>
-        <div className="card-body p-4">
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div>
-              <div className="d-flex align-items-center gap-2 mb-1">
-                <h6 className="fw-bold mb-0" style={{ color: 'var(--text-primary)', fontSize: '1.05rem' }}>
-                  Refer & Earn Program
-                </h6>
-                <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small">
-                  ₹500 Reward / Referral
-                </span>
-              </div>
-              <p className="small mb-0" style={{ color: 'var(--text-secondary)' }}>
-                Share your unique code with friends. When they enroll at CodeLift, they get <strong>₹500 OFF</strong> tuition, and you receive <strong>₹500 Cash/Voucher</strong>!
-              </p>
-            </div>
-
-            {/* Code Box & Actions */}
-            <div className="d-flex align-items-center gap-2 p-2 rounded-3 border shadow-sm flex-shrink-0" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
-              <div className="px-2">
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Your Referral Code
-                </div>
-                <code className="fw-bold fs-6" style={{ color: 'var(--bs-primary)', letterSpacing: '1px' }}>
-                  LIFT-{(student?.name || 'STUDENT').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4)}{new Date().getFullYear()}
-                </code>
-              </div>
-              <button
-                type="button"
-                className="btn btn-primary fw-bold px-3 py-2 d-flex align-items-center justify-content-center gap-1.5"
-                style={{ minHeight: '44px' }}
-                onClick={() => {
-                  const code = `LIFT-${(student?.name || 'STUDENT').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4)}${new Date().getFullYear()}`;
-                  navigator.clipboard.writeText(code);
-                  toast.success('Referral code copied to clipboard.');
-                }}
-              >
-                <FaCopy size={14} />
-                <span>Copy</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* ── Completed Cohorts History Section (If Graduated / Completed Batch) ── */}
       {(student?.isGraduated || historyBatches.length > 0 || (student?.completedBatchIds || []).length > 0) && (

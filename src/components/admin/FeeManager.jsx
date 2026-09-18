@@ -156,7 +156,7 @@ export default function FeeManager() {
       .reduce((sum, f) => sum + (Number(f.amount) || 0), 0)
     : 0;
   const selectedStudentTotal = selectedStudent
-    ? Number(selectedStudent.totalFee) || selectedStudentBatch?.feeAmount || 45000
+    ? Number(selectedStudent.totalFee) || selectedStudentBatch?.feeAmount || 0
     : 0;
   const selectedStudentPending = Math.max(0, selectedStudentTotal - selectedStudentPaid);
 
