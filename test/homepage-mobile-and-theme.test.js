@@ -111,6 +111,29 @@ export async function runHomepageMobileAndThemeTests() {
     assert(homeJsx.includes('align-self-center align-self-lg-start'), 'Arena CTA must have align-self-center on mobile');
   });
 
+  // 9. Navbar FaCode import integrity
+  test('Navbar.jsx imports FaCode for Code Arena navigation item', () => {
+    const navJsx = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'Navbar.jsx'), 'utf8');
+    assert(navJsx.includes('FaCode'), 'Navbar.jsx must import FaCode');
+    assert(/import\s*\{[^}]*FaCode[^}]*\}\s*from\s*['"]react-icons\/fa['"]/.test(navJsx), 'FaCode must be explicitly imported from react-icons/fa');
+  });
+
+  // 10. RadarRings center nucleus logo uniformity
+  test('RadarRings.jsx renders uniform CodeLift text in center nucleus', () => {
+    const radarJsx = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'RadarRings.jsx'), 'utf8');
+    assert(radarJsx.includes('<span className="rr-nucleus-logo">CodeLift</span>'), 'Radar nucleus logo must be uniform CodeLift without split colored Li');
+    assert(!radarJsx.includes('<span className="rr-nucleus-logo">\n            <span>Code</span>'), 'Radar nucleus must not contain split spans for Code/Li/ft');
+  });
+
+  // 11. Favicon links and circular asset presence
+  test('index.html references root favicon and public icons exist', () => {
+    const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+    assert(indexHtml.includes('href="/favicon.png"'), 'index.html must reference root /favicon.png');
+    assert(indexHtml.includes('href="/favicon.ico"'), 'index.html must reference root /favicon.ico');
+    assert(fs.existsSync(path.join(rootDir, 'public', 'favicon.ico')), 'public/favicon.ico must exist');
+    assert(fs.existsSync(path.join(rootDir, 'public', 'favicon.png')), 'public/favicon.png must exist');
+  });
+
   for (const { name, fn } of tests) {
     try {
       fn();

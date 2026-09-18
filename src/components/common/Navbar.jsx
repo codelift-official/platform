@@ -9,7 +9,8 @@ import {
   FaSignOutAlt,
   FaRocket,
   FaHome,
-  FaPhoneAlt
+  FaPhoneAlt,
+  FaCode
 } from 'react-icons/fa';
 
 export default function Navbar() {

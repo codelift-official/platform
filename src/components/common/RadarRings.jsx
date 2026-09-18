@@ -116,11 +116,7 @@ export default function RadarRings({
         <div className="rr-nucleus-pulse" />
         <div className="rr-nucleus-pulse rr-nucleus-pulse-2" />
         <div className="rr-nucleus-core">
-          <span className="rr-nucleus-logo">
-            <span>Code</span>
-            <span style={{ color: 'var(--bs-primary, #22c55e)' }}>Li</span>
-            <span>ft</span>
-          </span>
+          <span className="rr-nucleus-logo">CodeLift</span>
         </div>
       </div>
     </div>
