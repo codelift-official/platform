@@ -68,8 +68,27 @@ export function runBatchManagementAndQuizzesTests() {
   console.log('  ✓ Student views and preview navigator render quiz questions and badges seamlessly');
   passedCount++;
 
-  console.log(`✨ All ${passedCount}/${totalCount} Batch Management & Course Quiz tests PASSED!`);
-  return { passedCount, totalCount };
+  assert(batchManagerJsx.includes('gap-2 p-1 rounded-pill'), 'BatchManager must use gap-2 on filter pills container');
+  assert(batchManagerJsx.includes('d-inline-flex align-items-center gap-2 border-0'), 'BatchManager filter pill buttons must use gap-2');
+  console.log('  ✓ BatchManager filter status pills prevent badge overlap with proper flex gap and inline-flex');
+  passedCount++;
+
+  // 9. Verify StudentProfile and AdminProfile view password toggles and password fallback resilience
+  const studentProfileJsx = fs.readFileSync('src/components/student/StudentProfile.jsx', 'utf8');
+  const adminProfileJsx = fs.readFileSync('src/components/admin/AdminProfile.jsx', 'utf8');
+  assert(studentProfileJsx.includes('FiEye') && studentProfileJsx.includes('FiEyeOff'), 'StudentProfile must import FiEye and FiEyeOff');
+  assert(studentProfileJsx.includes('showCurrentPassword') && studentProfileJsx.includes('showNewPassword') && studentProfileJsx.includes('showConfirmPassword'), 'StudentProfile must have visibility toggles for all 3 password inputs');
+  assert(studentProfileJsx.includes('codelift_student_pwd_'), 'StudentProfile must verify/persist student password locally');
+  assert(studentProfileJsx.includes("'codelift123'"), 'StudentProfile must recognize platform standard default codelift123');
+
+  assert(adminProfileJsx.includes('FiEye') && adminProfileJsx.includes('FiEyeOff'), 'AdminProfile must import FiEye and FiEyeOff');
+  assert(adminProfileJsx.includes('showCurrentPassword') && adminProfileJsx.includes('showNewPassword') && adminProfileJsx.includes('showConfirmPassword'), 'AdminProfile must have visibility toggles for all 3 password inputs');
+  assert(adminProfileJsx.includes('codelift_admin_pwd'), 'AdminProfile must verify/persist admin password locally');
+  console.log('  ✓ StudentProfile and AdminProfile support view password toggles and password update resilience');
+  passedCount++;
+
+  console.log(`✨ All ${passedCount}/${totalCount + 2} Batch Management & Course Quiz tests PASSED!`);
+  return { passedCount, totalCount: totalCount + 2 };
 }
 
 if (process.argv[1]?.endsWith('batch-management-and-quizzes.test.js')) {

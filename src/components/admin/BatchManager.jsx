@@ -406,7 +406,7 @@ export default function BatchManager() {
         </div>
 
         {/* Status Filter Pills */}
-        <div className="d-flex gap-1.5 p-1 rounded-pill border bg-body" style={{ borderColor: 'var(--border-color)' }}>
+        <div className="d-flex gap-2 p-1 rounded-pill border bg-body" style={{ borderColor: 'var(--border-color)' }}>
           {[
             { id: 'ALL', label: 'All', count: batches.length },
             { id: 'ACTIVE', label: 'Active', count: batches.filter((b) => b.isActive && !b.isCompleted).length },
@@ -417,12 +417,23 @@ export default function BatchManager() {
               key={tab.id}
               type="button"
               onClick={() => setFilterStatus(tab.id)}
-              className={`btn btn-sm rounded-pill px-3 py-1 d-flex align-items-center gap-1.5 border-0 fw-semibold ${filterStatus === tab.id ? 'btn-primary text-white shadow-sm' : 'text-muted bg-transparent'
+              className={`btn btn-sm rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2 border-0 fw-semibold transition-all ${filterStatus === tab.id ? 'btn-primary text-white shadow-sm' : 'text-muted bg-transparent'
                 }`}
-              style={{ fontSize: '0.8rem' }}
+              style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}
             >
               <span>{tab.label}</span>
-              <span className={`badge rounded-pill ${filterStatus === tab.id ? 'bg-white text-primary' : 'bg-secondary bg-opacity-25 text-body'}`} style={{ fontSize: '0.7rem' }}>
+              <span
+                className="rounded-pill d-inline-flex align-items-center justify-content-center fw-bold"
+                style={{
+                  fontSize: '0.7rem',
+                  lineHeight: 1,
+                  padding: '2px 7px',
+                  minWidth: '18px',
+                  height: '18px',
+                  background: filterStatus === tab.id ? 'rgba(255, 255, 255, 0.28)' : 'rgba(128, 128, 128, 0.18)',
+                  color: filterStatus === tab.id ? '#ffffff' : 'inherit'
+                }}
+              >
                 {tab.count}
               </span>
             </button>
@@ -581,7 +592,7 @@ export default function BatchManager() {
                               title="Manage Students, Courses, Tests & Settings"
                             >
                               <FaCogs size={12} />
-                              <span>Manage</span>
+                              <span> Manage</span>
                             </Button>
 
                             {/* Quick Edit */}
