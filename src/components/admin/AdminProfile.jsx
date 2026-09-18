@@ -44,46 +44,69 @@ export default function AdminProfile() {
     setPasswordMsg({ type: '', text: '' });
 
     if (!currentPassword) {
+      toast.error('Please enter your current password');
       setPasswordMsg({ type: 'danger', text: 'Please enter your current password.' });
       return;
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      setPasswordMsg({ type: 'danger', text: 'New password must be at least 6 characters long.' });
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      setPasswordMsg({ type: 'danger', text: 'New passwords do not match.' });
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      setPasswordMsg({ type: 'danger', text: 'New passwords do not match.' });
+    if (!newPassword || newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      setPasswordMsg({ type: 'danger', text: 'Password must be at least 8 characters.' });
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      toast.error('New password must be different from current password');
+      setPasswordMsg({ type: 'danger', text: 'New password must be different from current password.' });
       return;
     }
 
     setIsChangingPassword(true);
     try {
-      // 1. Verify current password by attempting sign-in
-      const { error: verifyErr } = await supabase.auth.signInWithPassword({
-        email: adminEmail,
-        password: currentPassword
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      const email = user?.email || adminEmail;
 
-      if (verifyErr) {
-        throw new Error('Current password is incorrect.');
+      if (!email) {
+        throw new Error('User session not found. Please log in again.');
       }
 
-      // 2. Update to new password via Supabase Auth
-      const { error: updateErr } = await supabase.auth.updateUser({
-        password: newPassword
+      // 1. Verify current password
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
       });
 
-      if (updateErr) throw updateErr;
+      if (verifyError) {
+        toast.error('Current password is incorrect');
+        setPasswordMsg({ type: 'danger', text: 'Current password is incorrect.' });
+        return;
+      }
 
-      toast.success('Administrator password changed successfully.');
-      setPasswordMsg({ type: 'success', text: 'Password successfully updated!' });
+      // 2. Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        toast.error(updateError.message);
+        setPasswordMsg({ type: 'danger', text: updateError.message });
+        return;
+      }
+
+      toast.success('Password updated successfully');
+      setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
       console.error('[AdminProfile] Password update failed:', err);
+      toast.error(err.message || 'Failed to update password');
       setPasswordMsg({ type: 'danger', text: err.message || 'Failed to update password.' });
     } finally {
       setIsChangingPassword(false);
@@ -293,8 +316,8 @@ export default function AdminProfile() {
                       <Form.Control
                         type="password"
                         required
-                        minLength={6}
-                        placeholder="Min 6 characters"
+                        minLength={8}
+                        placeholder="Min 8 characters"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         disabled={isChangingPassword}
@@ -310,7 +333,7 @@ export default function AdminProfile() {
                       <Form.Control
                         type="password"
                         required
-                        minLength={6}
+                        minLength={8}
                         placeholder="Re-enter new password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
