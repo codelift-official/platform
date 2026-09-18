@@ -44,6 +44,16 @@ export default function Layout({
         <Container fluid className="px-md-3">
           <div className="d-flex align-items-center gap-2">
             <Navbar.Brand as={Link} to={brandLink} className="d-flex align-items-center gap-2 m-0 ms-1">
+              <img
+                src={`${import.meta.env.BASE_URL}logo.jpg`}
+                alt="CodeLift"
+                className="brand-logo"
+                width={36}
+                height={36}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
               <span className="brand-text fw-bold fs-5 d-flex align-items-center gap-2">
                 {brandIcon && (
                   <span

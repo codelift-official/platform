@@ -4059,6 +4059,21 @@ html {
 }
 
 /* ── Navbar — Brand ── */
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--bs-primary);
+  flex-shrink: 0;
+}
+@media (max-width: 767px) {
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 .cl-nav-brand {
   display: inline-flex;
   align-items: center;

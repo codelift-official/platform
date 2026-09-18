@@ -51,7 +51,19 @@ export default function InstituteNavbar() {
       <div className="container">
         {/* Brand */}
         <Link to="/" className="navbar-brand cl-nav-brand" onClick={() => setExpanded(false)}>
-          <span className="cl-nav-brand-icon">
+          <img
+            src={`${import.meta.env.BASE_URL}logo.jpg`}
+            alt="CodeLift"
+            className="brand-logo"
+            width={36}
+            height={36}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fb = e.currentTarget.nextElementSibling;
+              if (fb) fb.style.display = 'inline-flex';
+            }}
+          />
+          <span className="cl-nav-brand-icon d-none">
             <FaGraduationCap />
           </span>
           <span>

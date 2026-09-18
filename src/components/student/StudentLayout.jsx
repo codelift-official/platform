@@ -15,7 +15,6 @@ export default function StudentLayout() {
   return (
     <Layout
       title="Student Portal"
-      brandIcon={<FaGraduationCap size={18} />}
       brandLink="/student/dashboard"
       items={STUDENT_NAV_ITEMS}
     />

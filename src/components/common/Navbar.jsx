@@ -82,8 +82,20 @@ export default function Navbar() {
           to="/"
           onClick={handleHomeClick}
         >
+          <img
+            src={`${import.meta.env.BASE_URL}logo.jpg`}
+            alt="CodeLift"
+            className="brand-logo"
+            width={36}
+            height={36}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fb = e.currentTarget.nextElementSibling;
+              if (fb) fb.style.display = 'inline-flex';
+            }}
+          />
           <div
-            className="d-flex align-items-center justify-content-center rounded-3 text-white fw-bold"
+            className="d-none align-items-center justify-content-center rounded-3 text-white fw-bold"
             style={{
               width: 36,
               height: 36,
