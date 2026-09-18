@@ -223,7 +223,7 @@ export default function StudentManager() {
     toast.success(`Password reset to default "${defaultPwd}" for ${student.name}!`);
 
     // Offer WhatsApp confirmation
-    const waText = `Hello ${student.name},\n\nYour CodeLift Student Portal password has been reset by Administration to default: *${defaultPwd}*.\n\nLogin URL: ${window.location.origin}/login\nEmail: ${student.email}\n\nPlease login and change your password in account settings if desired.`;
+    const waText = `Hello ${student.name},\n\nWelcome to the CodeLift Student Portal!\n\nYour account has been set up successfully by the Administration. You can use the following details to log in:\n\nEmail: ${student.email}\nPassword: *${defaultPwd}*\n\nLogin URL: ${window.location.origin}/platform/login\n\nWe’re excited to have you with us. Happy learning!`;
 
     if (student.phone) {
       window.open(buildWhatsAppUrl(student.phone, waText), '_blank');
