@@ -252,7 +252,7 @@ export default function StudentManager() {
     toast.success(`New password updated for ${passwordEditStudent.name}!`);
 
     if (passwordEditStudent.phone) {
-      const waText = `Hello ${passwordEditStudent.name},\n\nYour CodeLift Student Portal password has been updated by Administration to: *${newPwd}*.\n\nLogin URL: ${window.location.origin}/login\nEmail: ${passwordEditStudent.email}`;
+      const waText = `Hello ${student.name},\n\nWelcome to the CodeLift Student Portal!\n\nYour account has been set up successfully by the Administration. You can use the following details to log in:\n\nEmail: ${student.email}\nPassword: *${defaultPwd}*\n\nLogin URL: ${window.location.origin}/platform/login\n\nWe’re excited to have you with us. Happy learning!`;
       window.open(buildWhatsAppUrl(passwordEditStudent.phone, waText), '_blank');
     }
 
@@ -1028,7 +1028,7 @@ export default function StudentManager() {
                               const student = students.find((s) => s.id === req.studentId);
                               const targetPhone = req.studentPhone || student?.phone;
                               if (targetPhone) {
-                                const waMsg = `Hello ${req.studentName},\n\nYour CodeLift Student Portal password reset request has been resolved by Administration.\n\nNew Default Password: *codelift123*\nPortal URL: ${window.location.origin}/login\nEmail: ${req.studentEmail}\n\nPlease login and continue your studies! 🚀`;
+                                const waMsg = `Hello ${req.studentName},\n\nWelcome to the CodeLift Student Portal!\n\nYour account has been set up successfully by the Administration. You can use the following details to log in:\n\nEmail: ${req.studentEmail}\nPassword: codelift123\n\nLogin URL: ${window.location.origin}/platform/login\n\nWe’re excited to have you with us. Happy learning!`;
                                 window.open(buildWhatsAppUrl(targetPhone, waMsg), '_blank');
                               }
                             }}
