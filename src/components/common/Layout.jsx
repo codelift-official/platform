@@ -7,13 +7,12 @@ import PageLoader from './PageLoader';
 import { useData } from '../../contexts/DataContext';
 import { isSupabaseConfigured } from '../../services/supabaseClient';
 import { ADMIN_NAV_ITEMS } from '../../config/navigation';
-import { FaCode } from 'react-icons/fa';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 export default function Layout({
   items = ADMIN_NAV_ITEMS,
-  title = 'CodeLift Admin',
-  brandIcon = <FaCode className="brand-text" size={16} />,
+  title = 'CodeLift',
+  brandIcon = null,
   brandLink = '/admin/dashboard',
   children
 }) {
@@ -59,16 +58,10 @@ export default function Layout({
                   e.currentTarget.style.display = 'none';
                 }}
               />
-              <span className="brand-text fw-bold fs-5 d-flex align-items-center gap-2">
-                {brandIcon && (
-                  <span
-                    className="p-1.5 rounded-3 border d-inline-flex align-items-center justify-content-center"
-                    style={{ backgroundColor: 'rgba(var(--bs-primary-rgb), 0.1)' }}
-                  >
-                    {brandIcon}
-                  </span>
-                )}
-                <span>{title}</span>
+              <span className="brand-text fw-bold fs-5 d-flex align-items-center">
+                <span style={{ color: 'var(--text-primary)' }}>Code</span>
+                <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+                <span style={{ color: 'var(--text-primary)' }}>ft</span>
               </span>
             </Navbar.Brand>
 

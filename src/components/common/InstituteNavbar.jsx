@@ -50,7 +50,7 @@ export default function InstituteNavbar() {
     <nav className={`cl-navbar navbar navbar-expand-lg fixed-top py-2 ${scrolled ? 'scrolled' : ''}`}>
       <div className="container">
         {/* Brand */}
-        <Link to="/" className="navbar-brand cl-nav-brand" onClick={() => setExpanded(false)}>
+        <Link to="/" className="navbar-brand cl-nav-brand d-flex align-items-center gap-2" onClick={() => setExpanded(false)}>
           <img
             src={`${import.meta.env.BASE_URL}logo.jpg`}
             alt="CodeLift"
@@ -59,15 +59,12 @@ export default function InstituteNavbar() {
             height={36}
             onError={(e) => {
               e.currentTarget.style.display = 'none';
-              const fb = e.currentTarget.nextElementSibling;
-              if (fb) fb.style.display = 'inline-flex';
             }}
           />
-          <span className="cl-nav-brand-icon d-none">
-            <FaGraduationCap />
-          </span>
-          <span>
-            Code<span className="cl-nav-brand-accent">Lift</span>
+          <span className="fw-bold fs-5 d-flex align-items-center">
+            <span style={{ color: 'var(--text-primary)' }}>Code</span>
+            <span className="cl-nav-brand-accent" style={{ color: 'var(--bs-primary)' }}>Li</span>
+            <span style={{ color: 'var(--text-primary)' }}>ft</span>
           </span>
         </Link>
 

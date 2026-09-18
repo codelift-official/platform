@@ -56,7 +56,7 @@ export default function FeeStatus() {
     ? Number(student.totalFee)
     : (studentBatch?.feeAmount !== undefined && studentBatch?.feeAmount !== null)
       ? Number(studentBatch.feeAmount)
-      : (student ? 0 : 45000);
+      : (student ? 0 : 0);
   const paidTotal = studentFees
     .filter((f) => f.status === 'PAID')
     .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);

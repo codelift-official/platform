@@ -64,7 +64,7 @@ export default function StudentManager() {
 
   // Fee Concession / Structure Modal State
   const [feeEditStudent, setFeeEditStudent] = useState(null);
-  const [feeBaseAmount, setFeeBaseAmount] = useState('45000');
+  const [feeBaseAmount, setFeeBaseAmount] = useState('0');
   const [feeConcessionAmount, setFeeConcessionAmount] = useState('0');
   const [feeConcessionReason, setFeeConcessionReason] = useState('Referral Code');
 
@@ -170,7 +170,7 @@ export default function StudentManager() {
   // Open Fee Concession Modal
   const onStartFeeEdit = (student) => {
     const batch = batchList.find((b) => b.id === student.batchId);
-    const standardFee = batch?.feeAmount || 45000;
+    const standardFee = batch?.feeAmount || 0;
     const base = student.baseFee || (Number(student.totalFee) > 0 ? Number(student.totalFee) + Number(student.concessionAmount || 0) : standardFee);
     const concession = student.concessionAmount || 0;
 
@@ -463,7 +463,7 @@ export default function StudentManager() {
                 ) : (
                   filteredStudents.map((std) => {
                     const batch = batchList.find((b) => b.id === std.batchId);
-                    const netTotal = Number(std.totalFee || batch?.feeAmount || 45000);
+                    const netTotal = Number(std.totalFee || batch?.feeAmount || 0);
                     const concession = Number(std.concessionAmount) || 0;
                     const paid = Number(std.paidFee) || 0;
                     const pending = Math.max(0, netTotal - paid);
@@ -794,7 +794,7 @@ export default function StudentManager() {
             <div className="p-3 bg-light rounded-3 mb-3 small border">
               <div><strong>Student:</strong> {feeEditStudent?.name} ({feeEditStudent?.email})</div>
               <div><strong>Batch:</strong> {batchList.find((b) => b.id === feeEditStudent?.batchId)?.name || 'Cohort'}</div>
-              <div><strong>Standard Batch Fee:</strong> ₹{(batchList.find((b) => b.id === feeEditStudent?.batchId)?.feeAmount || 45000).toLocaleString()}</div>
+              <div><strong>Standard Batch Fee:</strong> ₹{(batchList.find((b) => b.id === feeEditStudent?.batchId)?.feeAmount || 0).toLocaleString()}</div>
             </div>
 
             <div className="row g-3 mb-3">
@@ -1097,7 +1097,7 @@ export default function StudentManager() {
               <div><strong>Student:</strong> {feeModalStudent?.name} ({feeModalStudent?.email})</div>
               <div><strong>Batch:</strong> {batchList.find((b) => b.id === feeModalStudent?.batchId)?.name || 'Cohort'}</div>
               <div className="mt-1">
-                <span>Net Total Fee: <strong>₹{Number(feeModalStudent?.totalFee || 45000).toLocaleString()}</strong></span>
+                <span>Net Total Fee: <strong>₹{Number(feeModalStudent?.totalFee || 0).toLocaleString()}</strong></span>
                 <span className="ms-3">Paid: <strong className="text-success">₹{Number(feeModalStudent?.paidFee || 0).toLocaleString()}</strong></span>
               </div>
             </div>

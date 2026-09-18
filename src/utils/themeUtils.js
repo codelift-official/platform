@@ -8,7 +8,7 @@ import { getCookie } from './cookieUtils.js';
 export const THEMES = [
   { id: 'forest-green', name: 'Forest Green', color: '#15803D', accent: '#15803D', dark: false },
   { id: 'emerald', name: 'Emerald & White', color: '#059669', accent: '#059669', dark: false },
-  { id: 'dark-green', name: 'Dark Green / Black', color: '#065F46', accent: '#065F46', dark: false },
+  { id: 'dark-green', name: 'Dark Green / Black', color: '#10B981', accent: '#10B981', dark: true },
   { id: 'navy-blue', name: 'Navy Blue', color: '#1E3A8A', accent: '#1E3A8A', dark: false },
   { id: 'indigo', name: 'Indigo & Gray', color: '#4338CA', accent: '#4338CA', dark: false },
   { id: 'teal', name: 'Teal', color: '#0D9488', accent: '#0D9488', dark: false },

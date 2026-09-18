@@ -90,7 +90,7 @@ export function runStudentCreationAndQuizAttemptsTests() {
   console.log('  ✓ DataContext.jsx exposes isHydrated and loading states synced with Supabase hydration');
   passedCount++;
 
-  // 8. Verify StudentFees.jsx and FeeStatus.jsx render loader on initial load and prevent 45000 flash
+  // 8. Verify StudentFees.jsx and FeeStatus.jsx render loader on initial load and prevent 3000 flash
   const studentFeesJs = fs.readFileSync('src/components/student/StudentFees.jsx', 'utf8');
   const feeStatusJs = fs.readFileSync('src/components/student/FeeStatus.jsx', 'utf8');
   assert(
@@ -106,14 +106,14 @@ export function runStudentCreationAndQuizAttemptsTests() {
     'FeeStatus.jsx must render spinner loader while data is loading'
   );
   assert(
-    !studentFeesJs.includes("const totalFee = Number(student?.totalFee) || batch?.feeAmount || 45000;"),
-    'StudentFees.jsx must not blindly fall back to 45000 on load'
+    !studentFeesJs.includes("const totalFee = Number(student?.totalFee) || batch?.feeAmount || 3000;"),
+    'StudentFees.jsx must not blindly fall back to 3000 on load'
   );
   assert(
-    !feeStatusJs.includes("const totalFee = Number(student?.totalFee) || studentBatch?.feeAmount || 45000;"),
-    'FeeStatus.jsx must not blindly fall back to 45000 on load'
+    !feeStatusJs.includes("const totalFee = Number(student?.totalFee) || studentBatch?.feeAmount || 3000;"),
+    'FeeStatus.jsx must not blindly fall back to 3000 on load'
   );
-  console.log('  ✓ StudentFees.jsx & FeeStatus.jsx show sleek spinner loader and prevent 45000 flash on load');
+  console.log('  ✓ StudentFees.jsx & FeeStatus.jsx show sleek spinner loader and prevent 3000 flash on load');
   passedCount++;
 
   console.log(`✨ All ${passedCount}/${totalCount} Student Creation & Schema Resilience tests PASSED!`);

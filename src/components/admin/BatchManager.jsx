@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Badge, Modal, Form, Alert, Card, Nav, ProgressBar } from 'react-bootstrap';
+import { Table, Button, Badge, Modal, Form, Alert, Card, Nav, ProgressBar, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -88,9 +88,15 @@ export default function BatchManager() {
   // Sub-forms inside Hub
   const [showEnrollNewStudentForm, setShowEnrollNewStudentForm] = useState(false);
   const [newStudentData, setNewStudentData] = useState({ name: '', email: '', phone: '' });
+  const [activeHubTab, setActiveHubTab] = useState('courses'); // 'courses' | 'tests' | 'students'
   const [selectedExistingStudentId, setSelectedExistingStudentId] = useState('');
   const [selectedCourseToAttach, setSelectedCourseToAttach] = useState('');
   const [selectedTestToAssign, setSelectedTestToAssign] = useState('');
+
+  // Per-action mutation loaders to prevent race conditions and duplicate clicks
+  const [detachingCourseId, setDetachingCourseId] = useState(null);
+  const [unassigningTestId, setUnassigningTestId] = useState(null);
+  const [removingStudentId, setRemovingStudentId] = useState(null);
 
   // Quick Test Creator in Hub
   const [showCreateTestForm, setShowCreateTestForm] = useState(false);
@@ -255,10 +261,19 @@ export default function BatchManager() {
     setSelectedExistingStudentId('');
   };
 
-  const handleRemoveStudentFromBatch = (studentId, studentName) => {
-    if (window.confirm(`Are you sure you want to remove "${studentName}" from ${currentBatch.name}? They will become an unassigned student.`)) {
-      removeStudentFromBatch(studentId);
+  const handleRemoveStudentFromBatch = async (studentId, studentName) => {
+    if (!window.confirm(`Are you sure you want to remove "${studentName}" from ${currentBatch.name}? They will become an unassigned student.`)) {
+      return;
+    }
+    try {
+      setRemovingStudentId(studentId);
+      await removeStudentFromBatch(studentId);
       toast.success(`Student "${studentName}" unassigned from batch.`);
+    } catch (err) {
+      console.error(`[BatchManager] Failed to remove student ${studentId}:`, err);
+      toast.error(`Failed to remove student "${studentName}".`);
+    } finally {
+      setRemovingStudentId(null);
     }
   };
 
@@ -276,10 +291,19 @@ export default function BatchManager() {
     setSelectedCourseToAttach('');
   };
 
-  const handleDetachCourse = (courseId, courseTitle) => {
-    if (window.confirm(`Remove course "${courseTitle}" from this batch? Students will no longer see it in cohort curriculum.`)) {
-      detachCourseFromBatch(courseId, currentBatch.id);
+  const handleDetachCourse = async (courseId, courseTitle) => {
+    if (!window.confirm(`Remove course "${courseTitle}" from this batch? Students will no longer see it in cohort curriculum.`)) {
+      return;
+    }
+    try {
+      setDetachingCourseId(courseId);
+      await detachCourseFromBatch(courseId, currentBatch.id);
       toast.success(`Course "${courseTitle}" detached from batch.`);
+    } catch (err) {
+      console.error(`[BatchManager] Failed to detach course ${courseId}:`, err);
+      toast.error(`Failed to detach course "${courseTitle}".`);
+    } finally {
+      setDetachingCourseId(null);
     }
   };
 
@@ -297,10 +321,19 @@ export default function BatchManager() {
     setSelectedTestToAssign('');
   };
 
-  const handleUnassignTest = (testId, testTitle) => {
-    if (window.confirm(`Unassign test "${testTitle}" from ${currentBatch.name}?`)) {
-      unassignTestFromBatch(testId, currentBatch.id);
+  const handleUnassignTest = async (testId, testTitle) => {
+    if (!window.confirm(`Unassign test "${testTitle}" from ${currentBatch.name}?`)) {
+      return;
+    }
+    try {
+      setUnassigningTestId(testId);
+      await unassignTestFromBatch(testId, currentBatch.id);
       toast.success(`Test "${testTitle}" unassigned from batch.`);
+    } catch (err) {
+      console.error(`[BatchManager] Failed to unassign test ${testId}:`, err);
+      toast.error(`Failed to unassign test "${testTitle}".`);
+    } finally {
+      setUnassigningTestId(null);
     }
   };
 
@@ -867,12 +900,22 @@ export default function BatchManager() {
                                     <Button
                                       variant="outline-danger"
                                       size="sm"
+                                      disabled={removingStudentId === st.id}
                                       onClick={() => handleRemoveStudentFromBatch(st.id, st.name)}
                                       className="d-inline-flex align-items-center gap-1 rounded-pill px-2.5"
                                       title="Remove student from this batch"
                                     >
-                                      <FaUnlink size={11} />
-                                      <span>Remove</span>
+                                      {removingStudentId === st.id ? (
+                                        <>
+                                          <Spinner size="sm" animation="border" style={{ width: '0.75rem', height: '0.75rem' }} />
+                                          <span>Removing...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <FaUnlink size={11} />
+                                          <span>Remove</span>
+                                        </>
+                                      )}
                                     </Button>
                                   </td>
                                 </tr>
@@ -972,12 +1015,22 @@ export default function BatchManager() {
                                   <Button
                                     variant="outline-danger"
                                     size="sm"
+                                    disabled={detachingCourseId === c.id}
                                     onClick={() => handleDetachCourse(c.id, c.title)}
-                                    className="rounded-pill px-2.5 py-1 text-nowrap"
+                                    className="rounded-pill px-2.5 py-1 text-nowrap d-inline-flex align-items-center"
                                     title="Detach from batch"
                                   >
-                                    <FaUnlink size={11} className="me-1" />
-                                    <span>Detach</span>
+                                    {detachingCourseId === c.id ? (
+                                      <>
+                                        <Spinner size="sm" animation="border" className="me-1" style={{ width: '0.75rem', height: '0.75rem' }} />
+                                        <span>Detaching...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FaUnlink size={11} className="me-1" />
+                                        <span>Detach</span>
+                                      </>
+                                    )}
                                   </Button>
                                 </div>
 
@@ -1139,12 +1192,22 @@ export default function BatchManager() {
                                 <Button
                                   variant="outline-danger"
                                   size="sm"
+                                  disabled={unassigningTestId === t.id}
                                   onClick={() => handleUnassignTest(t.id, t.title)}
-                                  className="rounded-pill px-2.5 py-1 text-nowrap"
+                                  className="rounded-pill px-2.5 py-1 text-nowrap d-inline-flex align-items-center"
                                   title="Unassign from batch"
                                 >
-                                  <FaUnlink size={11} className="me-1" />
-                                  <span>Unassign</span>
+                                  {unassigningTestId === t.id ? (
+                                    <>
+                                      <Spinner size="sm" animation="border" className="me-1" style={{ width: '0.75rem', height: '0.75rem' }} />
+                                      <span>Unassigning...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FaUnlink size={11} className="me-1" />
+                                      <span>Unassign</span>
+                                    </>
+                                  )}
                                 </Button>
                               </div>
 

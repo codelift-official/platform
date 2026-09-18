@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Badge, Modal, Form, Card, Row, Col } from 'react-bootstrap';
+import { Table, Button, Badge, Modal, Form, Card, Row, Col, Spinner } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,13 +39,17 @@ export default function GradingPanel() {
   const [gradeInput, setGradeInput] = useState('');
   const [feedbackInput, setFeedbackInput] = useState('');
   const [activeNotification, setActiveNotification] = useState(null);
+  const [deletingAssignmentId, setDeletingAssignmentId] = useState(null);
 
   const handleDeleteAssignment = async (id, title) => {
     if (window.confirm(`Are you sure you want to delete assignment "${title}"? This will permanently remove all associated student submissions.`)) {
       try {
+        setDeletingAssignmentId(id);
         await deleteAssignment(id);
       } catch (err) {
-        console.error('Error deleting assignment:', err);
+        console.error('[GradingPanel] Error deleting assignment:', err);
+      } finally {
+        setDeletingAssignmentId(null);
       }
     }
   };
@@ -267,12 +271,22 @@ export default function GradingPanel() {
                         <Button
                           variant="outline-danger"
                           size="sm"
+                          disabled={deletingAssignmentId === asgn.id}
                           onClick={() => handleDeleteAssignment(asgn.id, asgn.title)}
                           title="Delete assignment"
                           className="d-inline-flex align-items-center gap-1"
                         >
-                          <FaTrash size={12} />
-                          <span>Delete</span>
+                          {deletingAssignmentId === asgn.id ? (
+                            <>
+                              <Spinner size="sm" animation="border" style={{ width: 12, height: 12 }} />
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FaTrash size={12} />
+                              <span>Delete</span>
+                            </>
+                          )}
                         </Button>
                       </td>
                     </tr>

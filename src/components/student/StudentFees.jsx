@@ -79,7 +79,7 @@ export default function StudentFees() {
     ? Number(student.totalFee)
     : (batch?.feeAmount !== undefined && batch?.feeAmount !== null)
       ? Number(batch.feeAmount)
-      : (student ? 0 : 45000);
+      : (student ? 0 : 0);
   const pendingBalance = Math.max(0, totalFee - totalPaid);
 
   const formatAmount = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;

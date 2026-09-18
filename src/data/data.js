@@ -153,7 +153,7 @@ export const SEED_BATCHES = [
     name: 'Full Stack Web Dev (Morning)',
     description: 'Master the MERN stack with real-world projects. Morning session for working professionals.',
     capacity: 30,
-    feeAmount: 45000,
+    feeAmount: 3000,
     startDate: '2026-01-15',
     isActive: true,
     isCompleted: false,
@@ -165,7 +165,7 @@ export const SEED_BATCHES = [
     name: 'Full Stack Web Dev (Evening)',
     description: 'Same curriculum, evening timing. Ideal for fresh graduates.',
     capacity: 25,
-    feeAmount: 45000,
+    feeAmount: 3000,
     startDate: '2026-01-20',
     isActive: true,
     isCompleted: false,
@@ -317,12 +317,12 @@ export const SEED_STUDENTS = [
 
 // ── FEES ──────────────────────────────────────────────────────────────────────
 export const SEED_FEES = [
-  { id: 'fee-001', studentId: 'std-001', amount: 45000, paidAt: '2026-01-15T12:00:00Z', mode: 'UPI', status: 'PAID' },
-  { id: 'fee-002', studentId: 'std-002', amount: 45000, paidAt: '2026-01-16T10:00:00Z', mode: 'Bank Transfer', status: 'PAID' },
+  { id: 'fee-001', studentId: 'std-001', amount: 3000, paidAt: '2026-01-15T12:00:00Z', mode: 'UPI', status: 'PAID' },
+  { id: 'fee-002', studentId: 'std-002', amount: 3000, paidAt: '2026-01-16T10:00:00Z', mode: 'Bank Transfer', status: 'PAID' },
   { id: 'fee-003', studentId: 'std-003', amount: 22500, paidAt: '2026-01-17T11:00:00Z', mode: 'Cash', status: 'PAID' },
   { id: 'fee-004', studentId: 'std-003', amount: 22500, paidAt: null, mode: 'UPI', status: 'PENDING' },
-  { id: 'fee-005', studentId: 'std-004', amount: 45000, paidAt: null, mode: 'Bank Transfer', status: 'PENDING' },
-  { id: 'fee-006', studentId: 'std-005', amount: 45000, paidAt: '2026-01-20T19:00:00Z', mode: 'UPI', status: 'PAID' },
+  { id: 'fee-005', studentId: 'std-004', amount: 3000, paidAt: null, mode: 'Bank Transfer', status: 'PENDING' },
+  { id: 'fee-006', studentId: 'std-005', amount: 3000, paidAt: '2026-01-20T19:00:00Z', mode: 'UPI', status: 'PAID' },
   { id: 'fee-007', studentId: 'std-008', amount: 35000, paidAt: '2026-02-01T11:00:00Z', mode: 'Bank Transfer', status: 'PAID' },
   { id: 'fee-008', studentId: 'std-009', amount: 35000, paidAt: null, mode: 'UPI', status: 'PENDING' }
 ];
@@ -730,7 +730,7 @@ export const SEED_CERTIFICATES = [
 // ── ACTIVITIES ────────────────────────────────────────────────────────────────
 export const SEED_ACTIVITIES = [
   { id: 'act-001', type: 'student_added', message: 'New student Rahul Sharma enrolled in Full Stack Web Dev (Morning)', createdAt: '2026-01-15T10:30:00Z' },
-  { id: 'act-002', type: 'fee_recorded', message: 'Fee of ₹45,000 recorded for Rahul Sharma (UPI)', createdAt: '2026-01-15T12:00:00Z' },
+  { id: 'act-002', type: 'fee_recorded', message: 'Fee of ₹3000 recorded for Rahul Sharma (UPI)', createdAt: '2026-01-15T12:00:00Z' },
   { id: 'act-003', type: 'student_added', message: 'New student Divya Nair enrolled in Data Analytics (Weekend)', createdAt: '2026-02-01T10:00:00Z' },
   { id: 'act-004', type: 'test_created', message: 'Test "JavaScript Fundamentals" created and assigned to 2 batches', createdAt: '2026-02-10T10:00:00Z' },
   { id: 'act-005', type: 'fee_recorded', message: 'Fee of ₹35,000 recorded for Divya Nair (Bank Transfer)', createdAt: '2026-02-01T11:00:00Z' },

@@ -3,7 +3,6 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Layout from '../common/Layout';
 import { STUDENT_NAV_ITEMS } from '../../config/navigation';
-import { FaGraduationCap } from 'react-icons/fa';
 
 export default function StudentLayout() {
   const { auth } = useAuth();
@@ -14,7 +13,7 @@ export default function StudentLayout() {
 
   return (
     <Layout
-      title="Student Portal"
+      title="CodeLift"
       brandLink="/student/dashboard"
       items={STUDENT_NAV_ITEMS}
     />

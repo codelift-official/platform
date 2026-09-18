@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import * as supabaseDataService from '../services/supabaseDataService';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
@@ -35,7 +35,7 @@ function genUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
@@ -113,17 +113,27 @@ export function DataProvider({ children }) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch (_) {}
+    } catch (_) { }
     return codingAttemptsSeed;
   });
   const [platformSettings, setPlatformSettings] = useState(DEFAULT_PLATFORM_SETTINGS);
+
+  // Active in-flight mutation counter to prevent stale background hydration race conditions
+  const activeMutationsRef = useRef(0);
 
   // Note: passwordResetRequests is derived on-the-fly from students.filter(s => s.reset_requested)
   // No localStorage persistence needed — Supabase is the single source of truth for the flag.
 
   const syncFromSupabase = useCallback(async () => {
+    // If there is an active delete or detach mutation in flight, do not fetch stale DB state
+    if (activeMutationsRef.current > 0) {
+      return;
+    }
     try {
       const data = await supabaseDataService.fetchAllData();
+      if (activeMutationsRef.current > 0) {
+        return;
+      }
 
       if (data.users?.length) setUsers(data.users);
       if (Array.isArray(data.students)) {
@@ -158,7 +168,7 @@ export function DataProvider({ children }) {
           });
           try {
             localStorage.setItem('codelift_coding_attempts', JSON.stringify(merged));
-          } catch (_) {}
+          } catch (_) { }
           return merged;
         });
       }
@@ -187,7 +197,7 @@ export function DataProvider({ children }) {
           if (isMounted) syncFromSupabase();
         });
         authSubscription = authData?.subscription;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     return () => {
@@ -263,7 +273,7 @@ export function DataProvider({ children }) {
             localStorage.removeItem(k);
           }
         });
-      } catch (_) {}
+      } catch (_) { }
     }
     setStudents((prev) => prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...updates } : s)));
     try {
@@ -284,12 +294,15 @@ export function DataProvider({ children }) {
   };
 
   const deleteStudent = async (studentId) => {
+    activeMutationsRef.current += 1;
     setStudents((prev) => prev.filter((s) => s.id !== studentId && s.legacyId !== studentId));
     try {
       await supabaseDataService.deleteStudent(studentId);
     } catch (e) {
       console.error('[DataContext] deleteStudent failed on Supabase:', e);
       throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
     }
   };
 
@@ -391,6 +404,7 @@ export function DataProvider({ children }) {
   };
 
   const deleteBatch = async (batchId) => {
+    activeMutationsRef.current += 1;
     // 1. Remove batch from batches list
     setBatches((prev) => prev.filter((b) => b.id !== batchId));
     // 2. Unassign students in local state
@@ -424,6 +438,9 @@ export function DataProvider({ children }) {
       await supabaseDataService.deleteBatch(batchId);
     } catch (e) {
       console.error('[DataContext] deleteBatch failed:', e);
+      throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
     }
   };
 
@@ -565,12 +582,15 @@ export function DataProvider({ children }) {
   };
 
   const deleteCourse = async (courseId) => {
+    activeMutationsRef.current += 1;
     setCourses((prev) => prev.filter((c) => c.id !== courseId));
     try {
       await supabaseDataService.deleteCourse(courseId);
     } catch (e) {
       console.error('[DataContext] deleteCourse failed:', e);
       throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
     }
   };
 
@@ -629,7 +649,8 @@ export function DataProvider({ children }) {
       .catch((e) => console.error('[DataContext] attachCourseToBatch failed:', e));
   };
 
-  const detachCourseFromBatch = (courseId, batchId) => {
+  const detachCourseFromBatch = async (courseId, batchId) => {
+    activeMutationsRef.current += 1;
     setBatches((prev) =>
       prev.map((b) => {
         if (b.id === batchId) {
@@ -654,9 +675,15 @@ export function DataProvider({ children }) {
         return c;
       })
     );
-    supabaseDataService
-      .detachCourseFromBatch(courseId, batchId)
-      .catch((e) => console.error('[DataContext] detachCourseFromBatch failed:', e));
+    try {
+      await supabaseDataService
+      .detachCourseFromBatch(courseId, batchId);
+    } catch (e) {
+      console.error('[DataContext] detachCourseFromBatch failed:', e);
+      throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
+    }
   };
 
   const assignTestToBatch = (testId, batchId) => {
@@ -682,7 +709,8 @@ export function DataProvider({ children }) {
     supabaseDataService.attachTestToBatch(testId, batchId).catch((e) => console.error('[DataContext] attachTestToBatch failed:', e));
   };
 
-  const unassignTestFromBatch = (testId, batchId) => {
+  const unassignTestFromBatch = async (testId, batchId) => {
+    activeMutationsRef.current += 1;
     setTests((prev) =>
       prev.map((t) => {
         if (t.id === testId) {
@@ -702,15 +730,30 @@ export function DataProvider({ children }) {
         return b;
       })
     );
-    supabaseDataService.detachTestFromBatch(testId, batchId).catch((e) => console.error('[DataContext] detachTestFromBatch failed:', e));
+    try {
+      await supabaseDataService.detachTestFromBatch(testId, batchId);
+    } catch (e) {
+      console.error('[DataContext] detachTestFromBatch failed:', e);
+      throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
+    }
   };
 
-  const assignStudentToBatch = (studentId, batchId) => {
-    updateStudent(studentId, { batchId });
+  const assignStudentToBatch = async (studentId, batchId) => {
+    return await updateStudent(studentId, { batchId });
   };
 
-  const removeStudentFromBatch = (studentId) => {
-    updateStudent(studentId, { batchId: '' });
+  const removeStudentFromBatch = async (studentId) => {
+    activeMutationsRef.current += 1;
+    try {
+      await updateStudent(studentId, { batchId: '' });
+    } catch (e) {
+      console.error('[DataContext] removeStudentFromBatch failed:', e);
+      throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
+    }
   };
 
   const createCourseFromJSON = async (jsonPayload, targetCourseId = null) => {
@@ -734,8 +777,8 @@ export function DataProvider({ children }) {
     const existingCourse = targetCourseId
       ? courses.find((c) => c.id === targetCourseId)
       : (data.id
-          ? courses.find((c) => c.id === data.id)
-          : courses.find((c) => c.title?.trim().toLowerCase() === data.title?.trim().toLowerCase()));
+        ? courses.find((c) => c.id === data.id)
+        : courses.find((c) => c.title?.trim().toLowerCase() === data.title?.trim().toLowerCase()));
 
     const baseSlug = (data.slug || data.title)
       .toLowerCase()
@@ -751,18 +794,18 @@ export function DataProvider({ children }) {
 
     const formattedModules = Array.isArray(data.modules)
       ? data.modules.map((m, mIdx) => ({
-          id: m.id || `mod-${Date.now()}-${mIdx}-${Math.random().toString(36).slice(2, 6)}`,
-          title: m.title || `Module ${mIdx + 1}`,
-          quizQuestions: Array.isArray(m.quizQuestions) ? m.quizQuestions : (Array.isArray(m.quiz_questions) ? m.quiz_questions : []),
-          topics: Array.isArray(m.topics)
-            ? m.topics.map((t, tIdx) => ({
-                id: t.id || `top-${Date.now()}-${mIdx}-${tIdx}-${Math.random().toString(36).slice(2, 6)}`,
-                title: t.title || `Topic ${tIdx + 1}`,
-                contentMd: t.contentMd || t.content_md || t.content || `# ${t.title || 'Topic'}\n\nContent for this topic.`,
-                quizQuestions: Array.isArray(t.quizQuestions) ? t.quizQuestions : (Array.isArray(t.quiz_questions) ? t.quiz_questions : [])
-              }))
-            : []
-        }))
+        id: m.id || `mod-${Date.now()}-${mIdx}-${Math.random().toString(36).slice(2, 6)}`,
+        title: m.title || `Module ${mIdx + 1}`,
+        quizQuestions: Array.isArray(m.quizQuestions) ? m.quizQuestions : (Array.isArray(m.quiz_questions) ? m.quiz_questions : []),
+        topics: Array.isArray(m.topics)
+          ? m.topics.map((t, tIdx) => ({
+            id: t.id || `top-${Date.now()}-${mIdx}-${tIdx}-${Math.random().toString(36).slice(2, 6)}`,
+            title: t.title || `Topic ${tIdx + 1}`,
+            contentMd: t.contentMd || t.content_md || t.content || `# ${t.title || 'Topic'}\n\nContent for this topic.`,
+            quizQuestions: Array.isArray(t.quizQuestions) ? t.quizQuestions : (Array.isArray(t.quiz_questions) ? t.quiz_questions : [])
+          }))
+          : []
+      }))
       : [];
 
     const { id: ignoredOldId, ...restOfData } = data;
@@ -919,7 +962,7 @@ export function DataProvider({ children }) {
         .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
 
       const batch = (batches || []).find((b) => b.id === student.batchId);
-      const totalFee = Number(student.totalFee) || batch?.feeAmount || (totalPaid > 0 ? totalPaid : 45000);
+      const totalFee = Number(student.totalFee) || batch?.feeAmount || (totalPaid > 0 ? totalPaid : 0);
       const feeStatus = totalPaid >= totalFee ? 'Paid' : totalPaid > 0 ? 'Partial' : 'Pending';
 
       const updated = { ...student, totalFee, paidFee: totalPaid, feeStatus };
@@ -1049,7 +1092,7 @@ export function DataProvider({ children }) {
     try {
       localStorage.setItem(`codelift_student_progress_${student.id}`, JSON.stringify(updatedProgress));
       localStorage.setItem(`codelift_student_quizzes_${student.id}`, JSON.stringify(updatedAttempts));
-    } catch (_) {}
+    } catch (_) { }
 
     updateStudent(student.id, {
       quizAttempts: updatedAttempts,
@@ -1095,7 +1138,7 @@ export function DataProvider({ children }) {
 
     try {
       localStorage.setItem(`codelift_student_progress_${student.id}`, JSON.stringify(updatedProgress));
-    } catch (_) {}
+    } catch (_) { }
 
     updateStudent(student.id, {
       progress: updatedProgress
@@ -1289,7 +1332,7 @@ export function DataProvider({ children }) {
       hiddenTestCases: Array.isArray(problemData.hiddenTestCases) ? problemData.hiddenTestCases : []
     };
     setCodingProblems((prev) => [...prev, newProblem]);
-    supabaseDataService.saveCodingProblem(newProblem).catch(() => {});
+    supabaseDataService.saveCodingProblem(newProblem).catch(() => { });
     toast.success('Problem created successfully!');
     return newProblem;
   };
@@ -1298,7 +1341,7 @@ export function DataProvider({ children }) {
     setCodingProblems((prev) => {
       const updated = prev.map((p) => (p.id === problemId ? { ...p, ...updates } : p));
       const target = updated.find((p) => p.id === problemId);
-      if (target) supabaseDataService.saveCodingProblem(target).catch(() => {});
+      if (target) supabaseDataService.saveCodingProblem(target).catch(() => { });
       return updated;
     });
     toast.success('Problem updated successfully!');
@@ -1306,7 +1349,7 @@ export function DataProvider({ children }) {
 
   const deleteCodingProblem = (problemId) => {
     setCodingProblems((prev) => prev.filter((p) => p.id !== problemId));
-    supabaseDataService.deleteCodingProblemSupabase(problemId).catch(() => {});
+    supabaseDataService.deleteCodingProblemSupabase(problemId).catch(() => { });
     toast.success('Problem deleted!');
   };
 
@@ -1334,10 +1377,10 @@ export function DataProvider({ children }) {
       const next = [newAttempt, ...(prev || []).filter(a => a.id !== newAttempt.id)];
       try {
         localStorage.setItem('codelift_coding_attempts', JSON.stringify(next));
-      } catch (_) {}
+      } catch (_) { }
       return next;
     });
-    supabaseDataService.addCodingAttempt(newAttempt).catch(() => {});
+    supabaseDataService.addCodingAttempt(newAttempt).catch(() => { });
     return newAttempt;
   };
 
@@ -1381,6 +1424,7 @@ export function DataProvider({ children }) {
   };
 
   const deleteTest = async (testId) => {
+    activeMutationsRef.current += 1;
     // 1. Remove test from tests state
     setTests((prev) => prev.filter((t) => t.id !== testId));
     // 2. Cascade delete associated attempts from local state
@@ -1398,6 +1442,8 @@ export function DataProvider({ children }) {
     } catch (e) {
       console.error('[DataContext] deleteTest failed:', e);
       throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
     }
   };
 
@@ -1526,6 +1572,7 @@ export function DataProvider({ children }) {
   };
 
   const deleteAssignment = async (assignmentId) => {
+    activeMutationsRef.current += 1;
     setAssignments((prev) => (Array.isArray(prev) ? prev.filter((a) => a.id !== assignmentId) : []));
     setSubmissions((prev) => (Array.isArray(prev) ? prev.filter((s) => s.assignmentId !== assignmentId) : []));
     setBatches((prev) =>
@@ -1544,6 +1591,40 @@ export function DataProvider({ children }) {
       console.error('[DataContext] deleteAssignment failed:', e);
       toast.error('Failed to delete assignment from database.');
       throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
+    }
+  };
+
+  const detachAssignmentFromBatch = async (assignmentId, batchId) => {
+    activeMutationsRef.current += 1;
+    setAssignments((prev) =>
+      (Array.isArray(prev) ? prev : []).map((a) => {
+        if (a.id === assignmentId) {
+          const bIds = Array.isArray(a.batchIds) ? a.batchIds.filter((id) => id !== batchId) : [];
+          return { ...a, batchIds: bIds, assignedBatchIds: bIds };
+        }
+        return a;
+      })
+    );
+    setBatches((prev) =>
+      prev.map((b) => {
+        if (b.id === batchId) {
+          const aIds = Array.isArray(b.assignmentIds) ? b.assignmentIds.filter((id) => id !== assignmentId) : [];
+          return { ...b, assignmentIds: aIds };
+        }
+        return b;
+      })
+    );
+    try {
+      await supabaseDataService.detachAssignmentFromBatch(assignmentId, batchId);
+      toast.success('Assignment unassigned from batch.');
+    } catch (e) {
+      console.error('[DataContext] detachAssignmentFromBatch failed:', e);
+      toast.error('Failed to unassign assignment from batch.');
+      throw e;
+    } finally {
+      activeMutationsRef.current = Math.max(0, activeMutationsRef.current - 1);
     }
   };
 
@@ -1675,7 +1756,7 @@ export function DataProvider({ children }) {
         }
       }
       sessionStorage.clear();
-    } catch (e) {}
+    } catch (e) { }
   };
 
   return (
@@ -1742,6 +1823,7 @@ export function DataProvider({ children }) {
         saveQuizAttempt,
         addAssignment,
         deleteAssignment,
+        detachAssignmentFromBatch,
         addSubmission,
         gradeSubmission,
         issueCertificate,
@@ -1750,11 +1832,11 @@ export function DataProvider({ children }) {
         updateCertificateTemplate,
         setActiveCertificateTemplate,
         deleteCertificateTemplate,
-        addReview: () => {},
-        replyReview: () => {},
-        addQuestion: () => {},
-        addAnswer: () => {},
-        upvoteAnswer: () => {},
+        addReview: () => { },
+        replyReview: () => { },
+        addQuestion: () => { },
+        addAnswer: () => { },
+        upvoteAnswer: () => { },
         recordProblemAttempt,
         addCodingProblem,
         updateCodingProblem,

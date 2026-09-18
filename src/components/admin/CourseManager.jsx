@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Card, Table, Button, Badge, Modal, Form, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Card, Table, Button, Badge, Modal, Form, Row, Col, OverlayTrigger, Tooltip, Spinner } from 'react-bootstrap';
 import { useData } from '../../contexts/DataContext';
 import {
   FaBook,
@@ -181,13 +181,19 @@ export default function CourseManager() {
     }
   };
 
+  const [deletingCourseId, setDeletingCourseId] = useState(null);
+
   const handleDeleteCourse = async (id, courseTitle) => {
     if (window.confirm(`Are you sure you want to delete "${courseTitle}"? This cannot be undone.`)) {
       try {
+        setDeletingCourseId(id);
         await deleteCourse(id);
         toast.success('Course deleted');
       } catch (err) {
+        console.error('[CourseManager] Failed to delete course:', err);
         toast.error(err.message || 'Failed to delete course');
+      } finally {
+        setDeletingCourseId(null);
       }
     }
   };
@@ -431,12 +437,17 @@ export default function CourseManager() {
                                 <Button
                                   variant="outline-danger"
                                   size="sm"
+                                  disabled={deletingCourseId === course.id}
                                   onClick={() => handleDeleteCourse(course.id, course.title)}
                                   className="d-inline-flex align-items-center justify-content-center rounded-2 p-1.5"
                                   style={{ width: 32, height: 32 }}
                                   aria-label="Delete Course"
                                 >
-                                  <FaTrash size={12} />
+                                  {deletingCourseId === course.id ? (
+                                    <Spinner size="sm" animation="border" style={{ width: 14, height: 14 }} />
+                                  ) : (
+                                    <FaTrash size={12} />
+                                  )}
                                 </Button>
                               </OverlayTrigger>
                             </div>

@@ -75,7 +75,7 @@ export default function FeeManager() {
     const std = studentList.find((s) => s.id === studentId);
     if (!std) return;
     const b = batchList.find((batch) => batch.id === std.batchId);
-    const totalCourseFee = Number(std.totalFee) || b?.feeAmount || 45000;
+    const totalCourseFee = Number(std.totalFee) || b?.feeAmount || 0;
     const alreadyPaid = feeList
       .filter((f) => f.studentId === studentId && f.status === 'PAID')
       .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);

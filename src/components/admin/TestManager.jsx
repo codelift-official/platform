@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Button, Badge, Modal, Form, Card } from 'react-bootstrap';
+import { Table, Button, Badge, Modal, Form, Card, Spinner } from 'react-bootstrap';
 import { useData } from '../../contexts/DataContext';
 import {
   FaClipboardList,
@@ -21,6 +21,7 @@ export default function TestManager() {
   const [allowRetake, setAllowRetake] = useState(false);
   const [selectedBatches, setSelectedBatches] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingTestId, setDeletingTestId] = useState(null);
   const [questions, setQuestions] = useState([
     {
       id: `q-1`,
@@ -33,13 +34,16 @@ export default function TestManager() {
   const handleDeleteTest = async (testId, testTitle) => {
     if (window.confirm(`Are you sure you want to delete test "${testTitle}"? This will permanently remove the test, all its questions, scheduled batch links, and student attempt submissions.`)) {
       setIsDeleting(true);
+      setDeletingTestId(testId);
       try {
         await deleteTest(testId);
         toast.success('Test and all associated records deleted successfully.');
       } catch (err) {
+        console.error('[TestManager] Failed to delete test:', err);
         toast.error(err.message || 'Failed to delete test');
       } finally {
         setIsDeleting(false);
+        setDeletingTestId(null);
       }
     }
   };
@@ -235,7 +239,11 @@ export default function TestManager() {
                           title="Delete Test"
                           aria-label="Delete Test"
                         >
-                          <FaTrash size={12} />
+                          {deletingTestId === test.id ? (
+                            <Spinner size="sm" animation="border" style={{ width: 14, height: 14 }} />
+                          ) : (
+                            <FaTrash size={12} />
+                          )}
                         </Button>
                       </td>
                     </tr>

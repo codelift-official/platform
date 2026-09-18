@@ -5,7 +5,6 @@ import PublicThemeSelector from './PublicThemeSelector';
 import {
   FaGraduationCap,
   FaBook,
-  FaCode,
   FaUserCircle,
   FaSignOutAlt,
   FaRocket,
@@ -90,25 +89,12 @@ export default function Navbar() {
             height={36}
             onError={(e) => {
               e.currentTarget.style.display = 'none';
-              const fb = e.currentTarget.nextElementSibling;
-              if (fb) fb.style.display = 'inline-flex';
             }}
           />
-          <div
-            className="d-none align-items-center justify-content-center rounded-3 text-white fw-bold"
-            style={{
-              width: 36,
-              height: 36,
-              background: 'linear-gradient(135deg, var(--bs-primary, #15803D) 0%, color-mix(in srgb, var(--bs-primary, #15803D) 80%, #000) 100%)',
-              fontSize: '1rem',
-              boxShadow: '0 3px 10px rgba(var(--bs-primary-rgb, 21,128,61), 0.35)',
-              flexShrink: 0
-            }}
-          >
-            <FaCode size={17} />
-          </div>
-          <span className="brand-text fw-extrabold" style={{ letterSpacing: '-0.5px', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
-            Code<span style={{ color: 'var(--bs-primary, #15803D)' }}>Lift</span>
+          <span className="brand-text fw-extrabold fs-5 d-flex align-items-center" style={{ letterSpacing: '-0.5px' }}>
+            <span style={{ color: 'var(--text-primary)' }}>Code</span>
+            <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+            <span style={{ color: 'var(--text-primary)' }}>ft</span>
           </span>
         </Link>
 
