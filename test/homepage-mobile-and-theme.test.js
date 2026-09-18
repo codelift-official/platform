@@ -134,6 +134,22 @@ export async function runHomepageMobileAndThemeTests() {
     assert(fs.existsSync(path.join(rootDir, 'public', 'favicon.png')), 'public/favicon.png must exist');
   });
 
+  // 12. Brand logo synchronization and cache-busting integrity
+  test('public logos match root assets and navbars include cache busters', () => {
+    const pubJpg = path.join(rootDir, 'public', 'logo.jpg');
+    const pubPng = path.join(rootDir, 'public', 'logo.png');
+    assert(fs.existsSync(pubJpg), 'public/logo.jpg must exist');
+    assert(fs.existsSync(pubPng), 'public/logo.png must exist');
+    if (fs.existsSync(path.join(rootDir, 'logo.jpg'))) {
+      assert.strictEqual(fs.statSync(pubJpg).size, fs.statSync(path.join(rootDir, 'logo.jpg')).size, 'public/logo.jpg must match root logo.jpg');
+    }
+    if (fs.existsSync(path.join(rootDir, 'logo.png'))) {
+      assert.strictEqual(fs.statSync(pubPng).size, fs.statSync(path.join(rootDir, 'logo.png')).size, 'public/logo.png must match root logo.png');
+    }
+    const navJsx = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'Navbar.jsx'), 'utf8');
+    assert(navJsx.includes('logo.jpg?v='), 'Navbar.jsx must include cache buster on logo.jpg');
+  });
+
   for (const { name, fn } of tests) {
     try {
       fn();

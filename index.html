@@ -50,6 +50,15 @@
             document.body.setAttribute('data-bs-theme', mode);
             document.body.setAttribute('data-theme-mode', mode);
           }
+
+          // Cache-bust favicon links so updated logos refresh immediately
+          var cacheBust = '?v=' + Date.now();
+          var fi = document.querySelector('link[rel="icon"]');
+          if (fi) fi.href = '/favicon.png' + cacheBust;
+          var si = document.querySelector('link[rel="shortcut icon"]');
+          if (si) si.href = '/favicon.ico' + cacheBust;
+          var ai = document.querySelector('link[rel="apple-touch-icon"]');
+          if (ai) ai.href = '/favicon.png' + cacheBust;
         } catch (e) {}
       })();
     </script>

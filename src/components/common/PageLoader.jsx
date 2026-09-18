@@ -103,7 +103,7 @@ export default function PageLoader({
             }}
           >
             <img
-              src={`${import.meta.env.BASE_URL}logo.jpg`}
+              src={`${import.meta.env.BASE_URL}logo.jpg?v=2`}
               alt="CodeLift"
               className="brand-logo"
               width={46}

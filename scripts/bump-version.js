@@ -63,6 +63,14 @@ export const BUILD_TIMESTAMP = "${timestamp}";
     pkg.version = `${nextNum.toFixed(1)}.0`;
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
   }
+
+  // Automatically sync root logos to public and regenerate favicon
+  try {
+    const { syncLogos } = await import('./sync-logos.js');
+    syncLogos();
+  } catch (syncErr) {
+    console.warn('[CodeLift Build] Logo sync note:', syncErr.message);
+  }
 } catch (err) {
   console.error('[CodeLift Build] Warning: Failed to bump version:', err.message);
 }
