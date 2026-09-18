@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FaBookOpen, FaCheckCircle, FaCircle, FaGraduationCap } from 'react-icons/fa';
 
 export default function CourseViewer() {
-  const { courses, updateStudentProgress } = useData();
+  const { courses } = useData();
   const { currentStudent } = useAuth();
 
   const progress = currentStudent?.progress || {};
@@ -22,13 +22,7 @@ export default function CourseViewer() {
   const completedCount = Object.keys(progress).length;
   const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
 
-  const isCompleted = (topicId) => progress[topicId] === 'completed';
-
-  const handleToggle = (topicId) => {
-    if (currentStudent) {
-      updateStudentProgress(currentStudent.id, topicId);
-    }
-  };
+  const isCompleted = (topicId) => progress[topicId] === 'completed' || progress[topicId] === true;
 
   return (
     <div className="space-y-4">
@@ -90,15 +84,16 @@ export default function CourseViewer() {
                               </span>
                             </div>
 
-                            <Button
-                              variant={done ? 'outline-success' : 'primary'}
-                              size="sm"
-                              onClick={() => handleToggle(topic.id)}
-                              className="d-flex align-items-center gap-1.5"
-                            >
-                              <FaCheckCircle size={12} />
-                              <span>{done ? 'Completed (Undo)' : 'Mark as Complete'}</span>
-                            </Button>
+                            {done ? (
+                              <Badge bg="success" className="d-flex align-items-center gap-1 px-2.5 py-1.5">
+                                <FaCheckCircle size={11} />
+                                <span>Completed</span>
+                              </Badge>
+                            ) : (
+                              <Badge bg="secondary" className="bg-opacity-10 text-secondary border px-2.5 py-1.5">
+                                <span>In Progress</span>
+                              </Badge>
+                            )}
                           </Card.Header>
 
                           <Card.Body className="px-4 py-3">

@@ -15,6 +15,112 @@ function fireConfetti() {
   } catch {}
 }
 
+function CopyCodeButton({ text }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    try {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (_) {}
+  };
+  return (
+    <button
+      type="button"
+      className="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill"
+      style={{ fontSize: '0.72rem' }}
+      onClick={handleCopy}
+      title="Copy code snippet"
+    >
+      {copied ? '✓ Copied' : 'Copy'}
+    </button>
+  );
+}
+
+export function renderQuizMarkdown(rawText) {
+  if (!rawText || typeof rawText !== 'string') return rawText;
+
+  // Split by fenced code blocks: ```[lang]\n...\n```
+  const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeBlockRegex.exec(rawText)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: rawText.slice(lastIndex, match.index) });
+    }
+    parts.push({
+      type: 'code',
+      lang: match[1] || 'python',
+      content: match[2].trimEnd()
+    });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < rawText.length) {
+    parts.push({ type: 'text', content: rawText.slice(lastIndex) });
+  }
+
+  // Helper for inline markdown: `code`, **bold**, *italic*
+  const renderInlineText = (text) => {
+    if (!text) return null;
+    const tokens = text.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g);
+    return tokens.map((token, i) => {
+      if (token.startsWith('`') && token.endsWith('`')) {
+        return (
+          <code key={i} className="quiz-inline-code">
+            {token.slice(1, -1)}
+          </code>
+        );
+      }
+      if (token.startsWith('**') && token.endsWith('**')) {
+        return <strong key={i}>{token.slice(2, -2)}</strong>;
+      }
+      if (token.startsWith('*') && token.endsWith('*')) {
+        return <em key={i}>{token.slice(1, -1)}</em>;
+      }
+      return token;
+    });
+  };
+
+  return (
+    <div className="quiz-markdown-content">
+      {parts.map((p, idx) => {
+        if (p.type === 'code') {
+          return (
+            <div key={idx} className="quiz-code-card my-2.5 rounded-3 overflow-hidden border">
+              <div className="quiz-code-header d-flex justify-content-between align-items-center px-3 py-1.5 small">
+                <span className="font-monospace fw-semibold" style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                  {p.lang || 'code'}
+                </span>
+                <CopyCodeButton text={p.content} />
+              </div>
+              <pre className="quiz-code-pre p-3 mb-0 font-monospace">
+                <code>{p.content}</code>
+              </pre>
+            </div>
+          );
+        }
+
+        // Text part: split by lines
+        const lines = p.content.split('\n');
+        return (
+          <div key={idx}>
+            {lines.map((line, lIdx) => (
+              <React.Fragment key={lIdx}>
+                {renderInlineText(line)}
+                {lIdx < lines.length - 1 && <br />}
+              </React.Fragment>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TopicQuiz({
   questions = [],
   topicTitle = '',
@@ -53,14 +159,11 @@ export default function TopicQuiz({
   });
 
   const percentage = Math.round((correctCount / questions.length) * 100);
-  const isPassed = percentage >= 75;
+  const isPassed = correctCount === questions.length;
 
   const getRating = (pct) => {
-    if (pct === 100) return 'Grade A+ (Perfect Score)';
-    if (pct >= 85) return 'Grade A (Exceptional)';
-    if (pct >= 75) return 'Grade B+ (Passed)';
-    if (pct >= 50) return 'Grade C (Average - Retake Recommended)';
-    return 'Grade F (Failed - Retake Required)';
+    if (pct === 100) return 'Grade A+ (Perfect)';
+    return 'Retake Required';
   };
 
   const handleSubmit = (e) => {
@@ -89,13 +192,11 @@ export default function TopicQuiz({
       });
     }
 
-    if (percentage === 100) {
+    if (isPassed) {
       fireConfetti();
-      toast.success(`Perfect score! ${correctCount}/${questions.length} (100%) - Quiz Passed!`);
-    } else if (isPassed) {
-      toast.success(`Quiz Passed! Score: ${correctCount}/${questions.length} (${percentage}%)`);
+      toast.success(`Score: ${correctCount}/${questions.length} - Quiz Passed!`);
     } else {
-      toast.error(`Score: ${correctCount}/${questions.length} (${percentage}%). Passing mark is 75%. Please review and retake.`);
+      toast.error(`Score: ${correctCount}/${questions.length}. Please review and retake.`);
     }
   };
 
@@ -121,9 +222,6 @@ export default function TopicQuiz({
           <div>
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <h6 className="fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>Topic MCQ Assessment & Quiz</h6>
-              <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1" style={{ fontSize: '0.72rem' }}>
-                75% to Pass
-              </span>
             </div>
             <span className="small text-muted">{questions.length} question{questions.length !== 1 ? 's' : ''} · 1 mark each</span>
           </div>
@@ -131,7 +229,7 @@ export default function TopicQuiz({
         <div className="d-flex align-items-center gap-2">
           {isSubmitted ? (
             <span className={`badge rounded-pill px-3 py-1.5 ${isPassed ? 'bg-success text-white' : 'bg-danger text-white'}`}>
-              {isPassed ? 'Passed' : 'Failed'}: {correctCount}/{questions.length} ({percentage}%)
+              {isPassed ? 'Passed' : 'Failed'}: {correctCount}/{questions.length}
             </span>
           ) : (
             <span className="badge bg-secondary bg-opacity-10 text-secondary border rounded-pill px-3 py-1.5">
@@ -160,10 +258,11 @@ export default function TopicQuiz({
               )}
               <div>
                 <div className="fw-bold fs-6">
-                  {isPassed ? 'Assessment Passed! Requirement Satisfied' : 'Passing Mark Not Met (Minimum 75% Required)'}
+                  {isPassed ? 'Assessment Passed' : 'Assessment Incomplete'}
                 </div>
                 <div className="small">
-                  Marks: <strong>{correctCount} / {questions.length}</strong> · {getRating(percentage)}
+                  Marks: <strong>{correctCount} / {questions.length}</strong>
+                  {!isPassed && ' · Retake required to complete this topic'}
                 </div>
               </div>
             </div>
@@ -199,8 +298,8 @@ export default function TopicQuiz({
                     <span className="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 font-monospace" style={{ fontSize: '0.8rem' }}>
                       Q{qIdx + 1}
                     </span>
-                    <div className="fw-semibold text-break" style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                      {q.question || q.text}
+                    <div className="fw-semibold text-break flex-grow-1" style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                      {renderQuizMarkdown(q.question || q.text)}
                     </div>
                   </div>
                   {isSubmitted && (
@@ -275,7 +374,7 @@ export default function TopicQuiz({
                         >
                           {LETTERS[optIdx] || optIdx + 1}
                         </span>
-                        <span className="small flex-grow-1">{optText}</span>
+                        <span className="small flex-grow-1 text-break">{renderQuizMarkdown(optText)}</span>
                         {isSubmitted && isOptionCorrect && (
                           <FaCheckCircle className="text-success ms-auto flex-shrink-0" />
                         )}
@@ -287,7 +386,8 @@ export default function TopicQuiz({
                 {/* Explanation if submitted */}
                 {isSubmitted && q.explanation && (
                   <div className="mt-3 p-2.5 rounded-3 border small" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.02))', color: 'var(--text-secondary)' }}>
-                    <strong>💡 Explanation:</strong> {q.explanation}
+                    <strong className="d-block mb-1">💡 Explanation:</strong>
+                    {renderQuizMarkdown(q.explanation)}
                   </div>
                 )}
               </div>

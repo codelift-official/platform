@@ -482,7 +482,7 @@ export default function CoursePreview({
     : (isLastTopicInCurrentModule && Array.isArray(currentModule?.quizQuestions) && currentModule.quizQuestions.length > 0 ? currentModule.quizQuestions : []);
   const hasQuiz = activeQuizQuestions.length > 0;
   const currentAttempt = activeTopic?.id ? quizAttempts?.[activeTopic.id] : null;
-  const isQuizPassed = Boolean(currentAttempt?.passed || (currentAttempt?.percentage >= 75));
+  const isQuizPassed = Boolean(currentAttempt?.passed);
   const isTopicCompleted = Boolean(
     studentProgress?.[activeTopic?.id] === 'completed' ||
     studentProgress?.[activeTopic?.id] === true ||
@@ -507,7 +507,7 @@ export default function CoursePreview({
   // Completed topics count (Topic with test requires passed test; pure reading topic requires mark complete)
   const completedCount = allTopics.filter((t) => {
     const hasQ = Array.isArray(t?.quizQuestions) && t.quizQuestions.length > 0;
-    const isPassed = quizAttempts?.[t?.id]?.passed || (quizAttempts?.[t?.id]?.percentage >= 75);
+    const isPassed = Boolean(quizAttempts?.[t?.id]?.passed);
     const isDone = studentProgress?.[t?.id] === 'completed' || studentProgress?.[t?.id] === true;
     return hasQ ? isPassed : isDone;
   }).length;
@@ -587,10 +587,10 @@ export default function CoursePreview({
 
   const handleNext = () => {
     // MANDATORY TEST CHECK:
-    // If active topic has a quiz and user is a student who has not passed it with >= 75%:
+    // If active topic has a quiz and user is a student who has not passed it:
     if (!isAdmin && hasQuiz && !isQuizPassed) {
       toast.error(
-        'Mandatory Topic Test Required: You must pass the assessment test (Score >= 75%) before proceeding.',
+        'Please pass the topic assessment test before proceeding.',
         { duration: 3000 }
       );
       const quizSection = document.getElementById('topic-assessment-section');
@@ -1113,7 +1113,7 @@ export default function CoursePreview({
                         ) : (
                           <span className="clean-chip clean-chip-warning">
                             <FaLock size={10} />
-                            <span>Assessment Required (75% to Pass)</span>
+                            <span>Assessment Required</span>
                           </span>
                         )
                       )}

@@ -105,7 +105,16 @@ export function DataProvider({ children }) {
   const [completedBatches, setCompletedBatches] = useState(completedBatchesSeed);
   const [problemAttempts, setProblemAttempts] = useState(problemAttemptsSeed);
   const [codingProblems, setCodingProblems] = useState(codingProblemsSeed);
-  const [codingAttempts, setCodingAttempts] = useState(codingAttemptsSeed);
+  const [codingAttempts, setCodingAttempts] = useState(() => {
+    try {
+      const cached = localStorage.getItem('codelift_coding_attempts');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return codingAttemptsSeed;
+  });
   const [platformSettings, setPlatformSettings] = useState(DEFAULT_PLATFORM_SETTINGS);
 
   // Note: passwordResetRequests is derived on-the-fly from students.filter(s => s.reset_requested)
@@ -117,7 +126,22 @@ export function DataProvider({ children }) {
 
       if (data.users?.length) setUsers(data.users);
       if (Array.isArray(data.students)) {
-        setStudents(data.students);
+        const hydratedStudents = data.students.map((s) => {
+          let localProg = {};
+          let localQuiz = {};
+          try {
+            const cp = localStorage.getItem(`codelift_student_progress_${s.id}`);
+            if (cp) localProg = JSON.parse(cp);
+            const cq = localStorage.getItem(`codelift_student_quizzes_${s.id}`);
+            if (cq) localQuiz = JSON.parse(cq);
+          } catch (_) {}
+          return {
+            ...s,
+            progress: { ...(s.progress || {}), ...localProg },
+            quizAttempts: { ...(s.quizAttempts || {}), ...localQuiz }
+          };
+        });
+        setStudents(hydratedStudents);
       }
       if (data.categories?.length) setCategories(data.categories);
       if (data.courses?.length) setCourses(data.courses.map(normalizeCourse));
@@ -135,7 +159,18 @@ export function DataProvider({ children }) {
       if (data.completedBatches?.length) setCompletedBatches(data.completedBatches);
       if (data.problemAttempts?.length) setProblemAttempts(data.problemAttempts);
       if (data.codingProblems?.length) setCodingProblems(data.codingProblems);
-      if (data.codingAttempts?.length) setCodingAttempts(data.codingAttempts);
+      if (data.codingAttempts?.length) {
+        setCodingAttempts((prev) => {
+          const merged = [...data.codingAttempts];
+          (prev || []).forEach((pa) => {
+            if (!merged.some((m) => m.id === pa.id)) merged.push(pa);
+          });
+          try {
+            localStorage.setItem('codelift_coding_attempts', JSON.stringify(merged));
+          } catch (_) {}
+          return merged;
+        });
+      }
     } catch (err) {
       console.warn('[DataContext] Background fetch from Supabase deferred:', err.message);
     }
@@ -1006,6 +1041,11 @@ export function DataProvider({ children }) {
       updatedProgress[topicId] = 'completed';
     }
 
+    try {
+      localStorage.setItem(`codelift_student_progress_${student.id}`, JSON.stringify(updatedProgress));
+      localStorage.setItem(`codelift_student_quizzes_${student.id}`, JSON.stringify(updatedAttempts));
+    } catch (_) {}
+
     updateStudent(student.id, {
       quizAttempts: updatedAttempts,
       progress: updatedProgress
@@ -1047,6 +1087,10 @@ export function DataProvider({ children }) {
       ...(student?.progress || {}),
       [topicId]: 'completed'
     };
+
+    try {
+      localStorage.setItem(`codelift_student_progress_${student.id}`, JSON.stringify(updatedProgress));
+    } catch (_) {}
 
     updateStudent(student.id, {
       progress: updatedProgress
@@ -1281,7 +1325,13 @@ export function DataProvider({ children }) {
       },
       attemptedAt: new Date().toISOString()
     };
-    setCodingAttempts((prev) => [newAttempt, ...prev]);
+    setCodingAttempts((prev) => {
+      const next = [newAttempt, ...(prev || []).filter(a => a.id !== newAttempt.id)];
+      try {
+        localStorage.setItem('codelift_coding_attempts', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
     supabaseDataService.addCodingAttempt(newAttempt).catch(() => {});
     return newAttempt;
   };

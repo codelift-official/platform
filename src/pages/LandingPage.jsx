@@ -506,14 +506,14 @@ export default function LandingPage() {
   useEffect(() => {
     try {
       localStorage.setItem('codelift_syllabus_cart', JSON.stringify(cart));
-    } catch (e) {}
+    } catch (e) { }
   }, [cart]);
 
   // Save theme to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('codelift_landing_theme', isDarkTheme ? 'dark' : 'light');
-    } catch (e) {}
+    } catch (e) { }
   }, [isDarkTheme]);
 
   // Carousel timer setup
@@ -644,7 +644,7 @@ export default function LandingPage() {
 
     // Show confirmation
     alert(
-      ` Application Confirmed! (Ref #${enrollmentId})\n\nStudent: ${custName}\nSelected Tracks: ${totalCartCount}\nTotal Tuition: ₹${grandTotalFee.toLocaleString()}\nCohort: ${custBatch}\n\nOur admissions team will contact you shortly!`
+      ` Application Confirmed! (Ref #${enrollmentId})\n\nStudent: ${custName}\nSelected Tracks: ${totalCartCount}\nTotal Fees: ₹${grandTotalFee.toLocaleString()}\nCohort: ${custBatch}\n\nOur admissions team will contact you shortly!`
     );
 
     // WhatsApp Message
@@ -661,7 +661,7 @@ export default function LandingPage() {
       const item = CURRICULUM_DATA.find((c) => c.id === parseInt(id));
       if (item) msg += `- ${item.name} (x${cart[id]}) - Rs. ${item.price}\n`;
     });
-    msg += `\nTotal Tuition: Rs. ${grandTotalFee.toLocaleString()}\n\n`;
+    msg += `\nTotal Fees: Rs. ${grandTotalFee.toLocaleString()}\n\n`;
     msg += `Please provide the onboarding schedule and verification steps.\n\nThank you.`;
 
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -689,7 +689,7 @@ export default function LandingPage() {
       {/* -------------------- HEADER -------------------- */}
       <header className="landing-header">
         <Link to="/" className="logo">
-           Code<span>Lift</span>
+          Code<span>Lift</span>
           <small style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.7)', marginLeft: '6px' }}>
             Full Stack Python • SQL • AI
           </small>
@@ -723,12 +723,12 @@ export default function LandingPage() {
             className="landing-cart-btn"
             onClick={() => setIsCartOpen(true)}
           >
-             Syllabus Bag <span className="cart-count">{totalCartCount}</span>
+            Syllabus Bag <span className="cart-count">{totalCartCount}</span>
           </button>
 
           {/* Login Button that navigates to /login */}
           <Link to="/login" className="landing-login-nav-btn" title="Open Admin Portal">
-             Login
+            Login
           </Link>
         </div>
       </header>
@@ -863,7 +863,7 @@ export default function LandingPage() {
                     className="landing-detail-btn"
                     onClick={() => setSelectedModuleForDetails(item)}
                   >
-                     Details
+                    Details
                   </button>
                 </div>
               </div>
@@ -959,7 +959,7 @@ export default function LandingPage() {
                         title="Remove track"
                         onClick={() => changeQty(parseInt(id), -100)}
                       >
-                        
+
                       </button>
                     </div>
                   </div>
@@ -981,7 +981,7 @@ export default function LandingPage() {
                   setIsCheckoutOpen(true);
                 }}
               >
-                 Apply for Cohort & Send via WhatsApp
+                Apply for Cohort & Send via WhatsApp
               </button>
               <p style={{ fontSize: '12px', color: 'var(--lp-text-secondary)', marginTop: '10px', textAlign: 'center' }}>
                 * Dedicated live mentorship, doubt clearing sessions & placement support included.
@@ -1038,10 +1038,10 @@ export default function LandingPage() {
 
           <div className="btn-group">
             <button className="btn-confirm" onClick={handleConfirmOrder}>
-               Submit & WhatsApp Us
+              Submit & WhatsApp Us
             </button>
             <button className="btn-cancel" onClick={() => setIsCheckoutOpen(false)}>
-               Cancel
+              Cancel
             </button>
           </div>
         </div>
@@ -1059,7 +1059,7 @@ export default function LandingPage() {
                 {selectedModuleForDetails.duration}
               </span>
               <span className="landing-tag">
-                Tuition: ₹{selectedModuleForDetails.price.toLocaleString()}
+                Fees: ₹{selectedModuleForDetails.price.toLocaleString()}
               </span>
             </div>
 
@@ -1068,7 +1068,7 @@ export default function LandingPage() {
             </p>
 
             <h5 style={{ fontWeight: 700, fontSize: '16px', color: 'var(--lp-text-primary)', marginBottom: '10px' }}>
-               Detailed Syllabus Curriculum Topics:
+              Detailed Syllabus Curriculum Topics:
             </h5>
 
             <ul style={{ paddingLeft: '20px', color: 'var(--lp-text-secondary)', fontSize: '14px', lineHeight: 1.8 }}>
@@ -1088,7 +1088,7 @@ export default function LandingPage() {
                   setSelectedModuleForDetails(null);
                 }}
               >
-                 Add to Syllabus
+                Add to Syllabus
               </button>
               <button
                 className="btn-cancel"

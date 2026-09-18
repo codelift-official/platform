@@ -6,13 +6,32 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
-  const [auth, setAuth] = useState(null);
+  const [auth, setAuth] = useState(() => {
+    try {
+      const saved = localStorage.getItem('codelift_auth');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
+
+  // Sync auth state to localStorage
+  const saveAuth = (authData) => {
+    setAuth(authData);
+    try {
+      if (authData) {
+        localStorage.setItem('codelift_auth', JSON.stringify(authData));
+      } else {
+        localStorage.removeItem('codelift_auth');
+      }
+    } catch (_) {}
+  };
 
   // Hydrate auth profile for a given user session
   async function hydrateProfile(user) {
     if (!user) {
-      setAuth(null);
+      saveAuth(null);
       return;
     }
 
@@ -25,7 +44,7 @@ export function AuthProvider({ children }) {
         .single();
 
       if (adminUser && adminUser.role === 'admin') {
-        setAuth({
+        saveAuth({
           role: 'admin',
           userId: user.id,
           id: user.id,
@@ -45,7 +64,7 @@ export function AuthProvider({ children }) {
         .single();
 
       if (student) {
-        setAuth({
+        saveAuth({
           role: 'student',
           userId: student.id,
           studentId: student.id,
@@ -61,7 +80,7 @@ export function AuthProvider({ children }) {
       }
 
       // Default authenticated fallback
-      setAuth({
+      saveAuth({
         role: user.user_metadata?.role || 'student',
         userId: user.id,
         id: user.id,
@@ -71,7 +90,7 @@ export function AuthProvider({ children }) {
       });
     } catch (err) {
       console.warn('[AuthContext] Profile hydration note:', err.message);
-      setAuth({
+      saveAuth({
         role: user.user_metadata?.role || 'student',
         userId: user.id,
         id: user.id,
@@ -108,12 +127,12 @@ export function AuthProvider({ children }) {
 
     let subscription;
     if (isSupabaseConfigured) {
-      const { data } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
         setSession(newSession);
         if (newSession?.user) {
           await hydrateProfile(newSession.user);
-        } else {
-          setAuth(null);
+        } else if (event === 'SIGNED_OUT') {
+          saveAuth(null);
         }
       });
       subscription = data?.subscription;
@@ -144,7 +163,7 @@ export function AuthProvider({ children }) {
           email: 'admin@codelift.dev',
           phone: '+91 9876543210'
         };
-        setAuth(adminAuth);
+        saveAuth(adminAuth);
         return adminAuth;
       }
       if (
@@ -160,7 +179,7 @@ export function AuthProvider({ children }) {
           email: 'codelift.official@gmail.com',
           phone: '+91 9876543210'
         };
-        setAuth(adminAuth);
+        saveAuth(adminAuth);
         return adminAuth;
       }
       throw new Error('Invalid administrator credentials.');
@@ -208,7 +227,7 @@ export function AuthProvider({ children }) {
       email: data.user.email || adminUser.email,
       phone: adminUser.phone || ''
     };
-    setAuth(adminAuth);
+    saveAuth(adminAuth);
     return adminAuth;
   };
 
@@ -243,7 +262,7 @@ export function AuthProvider({ children }) {
           batchId: matched.batchId || '',
           progress: matched.progress || {}
         };
-        setAuth(next);
+        saveAuth(next);
         return next;
       }
 
@@ -262,7 +281,7 @@ export function AuthProvider({ children }) {
         batchId: 'batch-fswd-morning',
         progress: { t1: true, t2: true, t3: true, t4: true }
       };
-      setAuth(next);
+      saveAuth(next);
       return next;
     }
 
@@ -334,7 +353,7 @@ export function AuthProvider({ children }) {
           batchId: student?.batch_id || student?.batchId || '',
           progress: student?.progress || {}
         };
-        setAuth(next);
+        saveAuth(next);
         return next;
       }
 
@@ -363,7 +382,7 @@ export function AuthProvider({ children }) {
             batchId: student.batch_id || student.batchId || '',
             progress: student.progress || {}
           };
-          setAuth(next);
+          saveAuth(next);
           return next;
         }
 
@@ -388,7 +407,7 @@ export function AuthProvider({ children }) {
       batchId: studentOrCreds.batchId || '',
       progress: studentOrCreds.progress || {}
     };
-    setAuth(next);
+    saveAuth(next);
     return next;
   };
 
@@ -400,13 +419,17 @@ export function AuthProvider({ children }) {
   const updateAuthUser = (updates) => {
     setAuth((prev) => {
       if (!prev) return prev;
-      return {
+      const updated = {
         ...prev,
         name: updates.name ?? prev.name,
         studentName: updates.name ?? prev.studentName,
         email: updates.email ?? prev.email,
         phone: updates.phone ?? prev.phone
       };
+      try {
+        localStorage.setItem('codelift_auth', JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
     });
   };
 
@@ -416,7 +439,7 @@ export function AuthProvider({ children }) {
         await supabase.auth.signOut();
       }
     } catch (_) {}
-    setAuth(null);
+    saveAuth(null);
     setSession(null);
   };
 

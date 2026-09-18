@@ -20,7 +20,8 @@ import {
   FaTrophy,
   FaHistory,
   FaSpinner,
-  FaInfoCircle
+  FaInfoCircle,
+  FaCode
 } from 'react-icons/fa';
 
 export default function PythonIDE() {
@@ -80,6 +81,7 @@ export default function PythonIDE() {
   // UI Tabs & State
   const [leftTab, setLeftTab] = useState('description'); // 'description' | 'tests' | 'hints' | 'history'
   const [consoleTab, setConsoleTab] = useState('tests'); // 'tests' | 'terminal'
+  const [mobileTab, setMobileTab] = useState('editor'); // 'problem' | 'editor' | 'results'
   const [revealedHints, setRevealedHints] = useState({});
   const [isEngineLoading, setIsEngineLoading] = useState(false);
   const [engineStatusText, setEngineStatusText] = useState('');
@@ -91,6 +93,20 @@ export default function PythonIDE() {
   const [testResults, setTestResults] = useState(null);
 
   const editorRef = useRef(null);
+
+  // Quick symbol insertion on mobile editor
+  const insertSymbol = (sym, cursorOffset = sym.length) => {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newCode = code.substring(0, start) + sym + code.substring(end);
+    setCode(newCode);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
+    }, 10);
+  };
 
   // Tab key indent handler in textarea
   const handleKeyDown = (e) => {
@@ -129,6 +145,7 @@ export default function PythonIDE() {
 
     setIsRunning(true);
     setConsoleTab('terminal');
+    setMobileTab('results');
     setTerminalOutput('Executing Python code...\n');
 
     try {
@@ -137,7 +154,9 @@ export default function PythonIDE() {
       await getPyodide((msg) => setEngineStatusText(msg));
       setIsEngineLoading(false);
 
-      const res = await executePython(code);
+      // Provide sample input from the first visible test case if input() is used
+      const sampleInput = problem.testCases?.[0]?.input || '';
+      const res = await executePython(code, { stdin: sampleInput });
       if (res.success) {
         setTerminalOutput(res.stdout || '[Program executed successfully with no print output]');
         toast.success(`Ran in ${res.executionTime}ms`);
@@ -163,6 +182,7 @@ export default function PythonIDE() {
 
     setIsJudging(true);
     setConsoleTab('tests');
+    setMobileTab('results');
     setTestResults(null);
 
     try {
@@ -177,7 +197,8 @@ export default function PythonIDE() {
       const judgeOutcome = await judgeProblem({
         studentCode: code,
         visibleTestCases: visibleTests,
-        hiddenTestCases: hiddenTests
+        hiddenTestCases: hiddenTests,
+        starterCode: problem.starterCode || ''
       });
 
       setTestResults(judgeOutcome);
@@ -283,11 +304,11 @@ export default function PythonIDE() {
                 onClick={handleResetCode}
                 title="Reset to starter code"
               >
-                <FaUndo /> Reset
+                <FaUndo /> <span className="d-none d-sm-inline">Reset</span>
               </button>
 
               <button
-                className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5 rounded-pill px-3"
+                className="btn btn-sm btn-outline-primary d-none d-lg-inline-flex align-items-center gap-1.5 rounded-pill px-3"
                 onClick={handleRunCode}
                 disabled={isRunning || isJudging}
               >
@@ -295,7 +316,7 @@ export default function PythonIDE() {
               </button>
 
               <button
-                className="btn btn-sm btn-success d-inline-flex align-items-center gap-1.5 rounded-pill px-3.5 shadow-sm"
+                className="btn btn-sm btn-success d-none d-lg-inline-flex align-items-center gap-1.5 rounded-pill px-3.5 shadow-sm"
                 onClick={handleSubmitAndJudge}
                 disabled={isRunning || isJudging}
               >
@@ -314,10 +335,43 @@ export default function PythonIDE() {
         </div>
       </div>
 
+      {/* ── Mobile View Mode Switcher (Visible on < 992px) ── */}
+      <div className="arena-mobile-mode-switcher d-flex d-lg-none p-1 rounded-pill mb-3 shadow-sm">
+        <button
+          type="button"
+          className={`arena-mobile-mode-btn flex-grow-1 ${mobileTab === 'problem' ? 'active' : ''}`}
+          onClick={() => setMobileTab('problem')}
+        >
+          <FaInfoCircle className="me-1.5" /> Problem
+        </button>
+        <button
+          type="button"
+          className={`arena-mobile-mode-btn flex-grow-1 ${mobileTab === 'editor' ? 'active' : ''}`}
+          onClick={() => setMobileTab('editor')}
+        >
+          <FaCode className="me-1.5" /> Editor
+        </button>
+        <button
+          type="button"
+          className={`arena-mobile-mode-btn flex-grow-1 ${mobileTab === 'results' ? 'active' : ''}`}
+          onClick={() => setMobileTab('results')}
+        >
+          <FaTerminal className="me-1.5" /> Results
+          {testResults && (
+            <span
+              className={`badge rounded-pill ms-1.5 ${testResults.allPassed ? 'bg-success' : 'bg-danger'}`}
+              style={{ fontSize: '0.68rem' }}
+            >
+              {testResults.visiblePassedCount}/{testResults.visibleTotalCount}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* ── Main Split View ── */}
-      <div className="row g-3">
+      <div className="row g-3 pb-5 mb-4">
         {/* LEFT COLUMN: Problem Details, Hints, Visible Cases, Submissions */}
-        <div className="col-12 col-lg-5 d-flex flex-column">
+        <div className={`col-12 col-lg-5 flex-column ${mobileTab === 'problem' ? 'd-flex' : 'd-none d-lg-flex'}`}>
           <div 
             className="card border-0 rounded-4 shadow-sm h-100 d-flex flex-column"
             style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', minHeight: 600 }}
@@ -396,9 +450,10 @@ export default function PythonIDE() {
                       <span>Judging Guidelines:</span>
                     </div>
                     <ul className="small text-secondary mb-0 ps-3" style={{ lineHeight: 1.6 }}>
-                      <li>Output must be printed to standard output using <code>print(...)</code>.</li>
+                      <li>Outputs are evaluated from standard output (<code>print(...)</code>) or return values.</li>
+                      <li>Inputs are fed automatically via standard input (<code>input()</code>) or variable declarations.</li>
                       <li>Visible tests evaluate basic examples shown in the test cases tab.</li>
-                      <li>Hidden tests evaluate edge cases (empty lists, negative values, duplicates).</li>
+                      <li>Hidden tests evaluate edge cases (empty inputs, zero, negatives, boundary limits).</li>
                       <li>Full score is unlocked when 100% of visible and hidden tests pass.</li>
                     </ul>
                   </div>
@@ -543,7 +598,7 @@ export default function PythonIDE() {
         </div>
 
         {/* RIGHT COLUMN: Code Editor & Console/Judging Results */}
-        <div className="col-12 col-lg-7 d-flex flex-column">
+        <div className={`col-12 col-lg-7 flex-column ${mobileTab !== 'problem' ? 'd-flex' : 'd-none d-lg-flex'}`}>
           <div 
             className="card border-0 rounded-4 shadow-sm flex-grow-1 d-flex flex-column overflow-hidden"
             style={{
@@ -553,7 +608,7 @@ export default function PythonIDE() {
           >
             {/* Editor Top Toolbar */}
             <div 
-              className="px-3 py-2 d-flex justify-content-between align-items-center" 
+              className={`px-3 py-2 justify-content-between align-items-center ${mobileTab === 'results' ? 'd-none d-lg-flex' : 'd-flex'}`}
               style={{
                 background: isDark ? '#0f172a' : 'var(--card-bg-alt, #f8fafc)',
                 borderBottom: isDark ? '1px solid #1e293b' : '1px solid var(--border-color, #e2e8f0)'
@@ -563,7 +618,7 @@ export default function PythonIDE() {
                 <span className="badge bg-success bg-opacity-20 text-success" style={{ fontSize: '0.75rem' }}>
                   Python 3 (Pyodide Wasm)
                 </span>
-                <span className="small text-muted" style={{ fontSize: '0.75rem' }}>
+                <span className="small text-muted d-none d-sm-inline" style={{ fontSize: '0.75rem' }}>
                   {lineCount} lines · Tab indents 4 spaces
                 </span>
               </div>
@@ -581,14 +636,49 @@ export default function PythonIDE() {
                   title="Toggle editor theme mode"
                 >
                   {isDark ? <FiSun size={11} className="text-warning" /> : <FiMoon size={11} className="text-primary" />}
-                  <span>{isDark ? 'Dark Theme' : 'Light Theme'}</span>
+                  <span>{isDark ? 'Dark' : 'Light'}</span>
                 </button>
                 <span className={`badge ${isDark ? 'bg-dark text-muted' : 'bg-light text-secondary border'}`} style={{ fontSize: '0.72rem' }}>UTF-8</span>
               </div>
             </div>
 
+            {/* Mobile Python Quick Syntax Toolbar */}
+            {mobileTab === 'editor' && (
+              <div className="arena-mobile-quickbar d-flex d-lg-none border-bottom px-2 py-1.5" style={{ background: isDark ? '#0f172a' : '#f1f5f9', borderColor: 'var(--border-color)' }}>
+                {[
+                  { label: 'Tab', insert: '    ', offset: 4 },
+                  { label: ':', insert: ':', offset: 1 },
+                  { label: '( )', insert: '()', offset: 1 },
+                  { label: '[ ]', insert: '[]', offset: 1 },
+                  { label: '{ }', insert: '{}', offset: 1 },
+                  { label: '" "', insert: '""', offset: 1 },
+                  { label: "' '", insert: "''", offset: 1 },
+                  { label: '=', insert: ' = ', offset: 3 },
+                  { label: '+', insert: ' + ', offset: 3 },
+                  { label: '-', insert: ' - ', offset: 3 },
+                  { label: '*', insert: ' * ', offset: 3 },
+                  { label: '#', insert: '# ', offset: 2 },
+                  { label: '_', insert: '_', offset: 1 },
+                  { label: 'def', insert: 'def ', offset: 4 },
+                  { label: 'for', insert: 'for ', offset: 4 },
+                  { label: 'in', insert: 'in ', offset: 3 },
+                  { label: 'if', insert: 'if ', offset: 3 },
+                  { label: 'print', insert: 'print()', offset: 6 },
+                ].map((btn, bIdx) => (
+                  <button
+                    key={bIdx}
+                    type="button"
+                    className="arena-mobile-quick-key btn btn-sm py-1 px-2.5"
+                    onClick={() => insertSymbol(btn.insert, btn.offset)}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Code Editor Area */}
-            <div className="position-relative flex-grow-1" style={{ minHeight: 320 }}>
+            <div className={`position-relative flex-grow-1 ${mobileTab === 'results' ? 'd-none d-lg-block' : 'd-block'}`} style={{ minHeight: 320 }}>
               <textarea
                 ref={editorRef}
                 value={code}
@@ -613,7 +703,7 @@ export default function PythonIDE() {
             </div>
 
             {/* Bottom Panel: Test Results / Terminal */}
-            <div style={{
+            <div className={`overflow-hidden ${mobileTab === 'editor' ? 'd-none d-lg-block' : 'd-block'}`} style={{
               background: isDark ? '#0f172a' : 'var(--card-bg-alt, #f8fafc)',
               borderTop: isDark ? '1px solid #1e293b' : '1px solid var(--border-color, #e2e8f0)'
             }}>
@@ -744,7 +834,7 @@ export default function PythonIDE() {
                               </span>
                             ) : (
                               <span className="badge bg-danger bg-opacity-25 text-danger">
-                                {testResults.hiddenPassedCount}/{testResults.hiddenTotalCount} Passed ✗
+                                {testResults.hiddenPassedCount}/{testResults.hiddenTotalCount} Passed
                               </span>
                             )}
                           </div>
@@ -757,6 +847,30 @@ export default function PythonIDE() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Sticky Mobile Bottom Action Bar (Visible on < 992px) ── */}
+      <div className="arena-sticky-bottom-bar d-flex d-lg-none align-items-center gap-2">
+        <button
+          type="button"
+          className="btn btn-outline-primary rounded-pill fw-bold py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2"
+          onClick={handleRunCode}
+          disabled={isRunning || isJudging}
+          style={{ minHeight: 44, fontSize: '0.88rem' }}
+        >
+          {isRunning ? <FaSpinner className="fa-spin" /> : <FaPlay size={12} />}
+          <span>Run</span>
+        </button>
+        <button
+          type="button"
+          className="btn btn-success rounded-pill fw-bold py-2 flex-grow-1 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+          onClick={handleSubmitAndJudge}
+          disabled={isRunning || isJudging}
+          style={{ minHeight: 44, fontSize: '0.88rem' }}
+        >
+          {isJudging ? <FaSpinner className="fa-spin" /> : <FaCheckCircle size={14} />}
+          <span>Submit & Judge</span>
+        </button>
       </div>
     </div>
   );

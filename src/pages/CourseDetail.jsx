@@ -156,7 +156,7 @@ export default function CourseDetail() {
                     letterSpacing: '0.06em'
                   }}
                 >
-                  {feeInfo.feeFormatted ? `Tuition: ${feeInfo.feeFormatted}` : (feeInfo.isFree ? 'Free Program' : `Tuition: ₹${feeInfo.feeAmount}`)}
+                  {feeInfo.feeFormatted ? `Fees: ${feeInfo.feeFormatted}` : (feeInfo.isFree ? 'Free Program' : `Fees: ₹${feeInfo.feeAmount}`)}
                 </span>
                 {course.courseType && (
                   <span
@@ -191,6 +191,14 @@ export default function CourseDetail() {
                 <div className="d-flex align-items-center gap-1">
                   <FaLayerGroup style={{ color: 'var(--bs-primary, #15803d)' }} />
                   <span><strong style={{ color: 'var(--text-primary)' }}>{course.modules?.length || 0}</strong> sections</span>
+                </div>
+                <div className="d-flex align-items-center gap-1">
+                  <FaBookOpen style={{ color: 'var(--bs-primary, #15803d)' }} />
+                  <span><strong style={{ color: 'var(--text-primary)' }}>{totalTopics}</strong> lectures</span>
+                </div>
+                <div className="d-flex align-items-center gap-1">
+                  <FaClock style={{ color: '#f472b6' }} />
+                  <span><strong style={{ color: 'var(--text-primary)' }}>{durationStr}</strong> total</span>
                 </div>
                 <div className="d-flex align-items-center gap-1">
                   <FaCertificate style={{ color: 'var(--bs-primary, #15803d)' }} />
@@ -324,7 +332,7 @@ export default function CourseDetail() {
               <div>
                 <div className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>Secure Enrollment</div>
                 <div className="text-muted" style={{ fontSize: '0.78rem', lineHeight: 1.5 }}>
-                  Free Demo Available.
+                  All payments are manually verified by our admin team. Zero risk.
                 </div>
               </div>
             </div>

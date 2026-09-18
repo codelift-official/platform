@@ -428,6 +428,7 @@ export async function fetchAllData() {
       reset_requested: Boolean(s.reset_requested), // password reset flag
       completedBatchIds: s.completed_batch_ids || [],
       progress: s.progress || {},
+      quizAttempts: s.quiz_attempts || s.quizAttempts || {},
       baseFee: Number(s.base_fee || 0),
       concessionAmount: Number(s.concession_amount || 0),
       concessionReason: s.concession_reason || '',
@@ -700,6 +701,7 @@ export async function addStudent(studentData) {
     is_active: studentData.isActive !== false,
     completed_batch_ids: studentData.completedBatchIds || [],
     progress: studentData.progress || {},
+    quiz_attempts: studentData.quizAttempts || studentData.quiz_attempts || {},
     base_fee: Number(studentData.baseFee || 0),
     concession_amount: Number(studentData.concessionAmount || 0),
     concession_reason: studentData.concessionReason || '',
@@ -729,6 +731,8 @@ export async function updateStudent(studentId, updates) {
   if (updates.isActive !== undefined) payload.is_active = Boolean(updates.isActive);
   if (updates.completedBatchIds !== undefined) payload.completed_batch_ids = updates.completedBatchIds;
   if (updates.progress !== undefined) payload.progress = updates.progress;
+  if (updates.quizAttempts !== undefined) payload.quiz_attempts = updates.quizAttempts;
+  if (updates.quiz_attempts !== undefined) payload.quiz_attempts = updates.quiz_attempts;
   if (updates.reset_requested !== undefined) payload.reset_requested = Boolean(updates.reset_requested);
   if (updates.baseFee !== undefined) payload.base_fee = Number(updates.baseFee);
   if (updates.concessionAmount !== undefined) payload.concession_amount = Number(updates.concessionAmount);

@@ -21,8 +21,15 @@ export default function CodingArena() {
   const { codingProblems = [], codingAttempts = [] } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [difficultyFilter, setDifficultyFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Dynamically extract categories from problems
+  const availableCategories = useMemo(() => {
+    const cats = Array.from(new Set(codingProblems.map(p => p.category).filter(Boolean)));
+    return ['ALL', ...cats];
+  }, [codingProblems]);
 
   // Filter attempts for current student
   const studentId = auth?.studentId || auth?.user?.id || 'demo-student';
@@ -74,6 +81,11 @@ export default function CodingArena() {
           if (!matchTitle && !matchDesc && !matchCat) return false;
         }
 
+        // Category
+        if (categoryFilter !== 'ALL' && p.category?.toLowerCase() !== categoryFilter.toLowerCase()) {
+          return false;
+        }
+
         // Difficulty
         if (difficultyFilter !== 'ALL' && p.difficulty?.toUpperCase() !== difficultyFilter) {
           return false;
@@ -87,7 +99,7 @@ export default function CodingArena() {
 
         return true;
       });
-  }, [codingProblems, searchQuery, difficultyFilter, statusFilter, problemStatusMap]);
+  }, [codingProblems, searchQuery, categoryFilter, difficultyFilter, statusFilter, problemStatusMap]);
 
   const getDifficultyBadge = (diff) => {
     const d = (diff || 'Easy').toLowerCase();
@@ -115,7 +127,7 @@ export default function CodingArena() {
                 Python Lists & Logic Journey
               </h2>
               <p className="arena-hero-desc mb-4" style={{ maxWidth: 540 }}>
-                20 structured coding challenges designed by your tutor. Write authentic Python code, pass visible and hidden test cases, and clear your coding rounds with confidence!
+                20 structured coding challenges designed by your tutor across Lists, Conditionals, Loops, Patterns, Numbers, and Strings. Write authentic Python code, pass visible and hidden test cases, and clear your coding rounds with confidence!
               </p>
 
               {/* Progress track */}
@@ -196,7 +208,7 @@ export default function CodingArena() {
       <div className="card border-0 rounded-4 mb-4 shadow-sm" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)' }}>
         <div className="card-body p-3">
           <div className="row g-2 align-items-center">
-            <div className="col-md-5">
+            <div className="col-12 col-md-4">
               <div className="input-group">
                 <span className="input-group-text bg-transparent border-end-0" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
                   <FaSearch />
@@ -219,6 +231,24 @@ export default function CodingArena() {
             <div className="col-6 col-md-3">
               <select
                 className="form-select"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                {availableCategories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {cat === 'ALL' ? 'All Categories' : cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-6 col-md-2">
+              <select
+                className="form-select"
                 value={difficultyFilter}
                 onChange={(e) => setDifficultyFilter(e.target.value)}
                 style={{
@@ -233,7 +263,7 @@ export default function CodingArena() {
                 <option value="HARD">Hard</option>
               </select>
             </div>
-            <div className="col-6 col-md-4">
+            <div className="col-12 col-md-3">
               <select
                 className="form-select"
                 value={statusFilter}

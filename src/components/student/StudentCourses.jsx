@@ -7,8 +7,9 @@ import {
   FaBook, FaGraduationCap, FaCheckCircle, FaAward, FaArrowLeft,
   FaArrowRight, FaPlay, FaListUl, FaCalendarAlt, FaCheck,
   FaRegFileAlt, FaClipboardList, FaBars, FaSearch, FaRegCircle,
-  FaChevronRight, FaTimes, FaBookOpen, FaClipboard
+  FaChevronRight, FaTimes, FaBookOpen, FaClipboard, FaLock
 } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import CurriculumNavigator from './CurriculumNavigator';
 import TopicQuiz from '../common/TopicQuiz';
 import CourseTechThumbnail from '../common/CourseTechThumbnail';
@@ -58,6 +59,23 @@ function CodeBlock({ code, lang }) {
   );
 }
 
+function renderInline(text) {
+  if (!text || typeof text !== 'string') return text;
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g);
+  return parts.map((p, i) => {
+    if (p.startsWith('**') && p.endsWith('**') && p.length >= 4) {
+      return <strong key={i}>{p.slice(2, -2)}</strong>;
+    }
+    if (p.startsWith('`') && p.endsWith('`') && p.length >= 2) {
+      return <code key={i} className="md-inline-code">{p.slice(1, -1)}</code>;
+    }
+    if (p.startsWith('*') && p.endsWith('*') && p.length >= 2 && !p.startsWith('**')) {
+      return <em key={i}>{p.slice(1, -1)}</em>;
+    }
+    return p;
+  });
+}
+
 function LectureMarkdown({ content }) {
   if (!content) return null;
 
@@ -84,6 +102,17 @@ function LectureMarkdown({ content }) {
       continue;
     }
 
+    // ── Blockquote ───────────────────────────────────────
+    if (line.startsWith('> ')) {
+      elements.push(
+        <blockquote key={i} className="md-blockquote">
+          {renderInline(line.slice(2))}
+        </blockquote>
+      );
+      i++;
+      continue;
+    }
+
     // ── Markdown Tables ──────────────────────────────────
     if (line.includes('|') && lines[i + 1] && lines[i + 1].includes('|') && lines[i + 1].includes('-')) {
       const tableRows = [];
@@ -98,11 +127,11 @@ function LectureMarkdown({ content }) {
         <div key={`table-${i}`} className="cv-md-table-wrap">
           <table className="cv-md-table">
             <thead>
-              <tr>{headerCols.map((col, ci) => <th key={ci}>{col.trim()}</th>)}</tr>
+              <tr>{headerCols.map((col, ci) => <th key={ci}>{renderInline(col.trim())}</th>)}</tr>
             </thead>
             <tbody>
               {dataRows.map((row, ri) => (
-                <tr key={ri}>{row.map((cell, ci) => <td key={ci}>{cell.trim()}</td>)}</tr>
+                <tr key={ri}>{row.map((cell, ci) => <td key={ci}>{renderInline(cell.trim())}</td>)}</tr>
               ))}
             </tbody>
           </table>
@@ -113,15 +142,15 @@ function LectureMarkdown({ content }) {
 
     // ── Headings ─────────────────────────────────────────
     if (line.startsWith('# ')) {
-      elements.push(<h1 className="cv-md-body" key={i} style={{ fontSize: '1.45rem', fontWeight: 800, marginTop: 28, marginBottom: 12, color: 'var(--text-primary)' }}>{line.slice(2)}</h1>);
+      elements.push(<h1 className="cv-md-body" key={i} style={{ fontSize: '1.45rem', fontWeight: 800, marginTop: 28, marginBottom: 12, color: 'var(--text-primary)' }}>{renderInline(line.slice(2))}</h1>);
       i++; continue;
     }
     if (line.startsWith('## ')) {
-      elements.push(<h2 className="cv-md-body" key={i} style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 24, marginBottom: 10, color: 'var(--text-primary)' }}>{line.slice(3)}</h2>);
+      elements.push(<h2 className="cv-md-body" key={i} style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 24, marginBottom: 10, color: 'var(--text-primary)' }}>{renderInline(line.slice(3))}</h2>);
       i++; continue;
     }
     if (line.startsWith('### ')) {
-      elements.push(<h3 className="cv-md-body" key={i} style={{ fontSize: '1.05rem', fontWeight: 700, marginTop: 20, marginBottom: 8, color: 'var(--text-primary)' }}>{line.slice(4)}</h3>);
+      elements.push(<h3 className="cv-md-body" key={i} style={{ fontSize: '1.05rem', fontWeight: 700, marginTop: 20, marginBottom: 8, color: 'var(--text-primary)' }}>{renderInline(line.slice(4))}</h3>);
       i++; continue;
     }
 
@@ -135,7 +164,7 @@ function LectureMarkdown({ content }) {
       elements.push(
         <ul key={`ul-${i}`} style={{ paddingLeft: 20, marginBottom: 14 }}>
           {items.map((item, idx) => (
-            <li key={idx} className="cv-md-body" style={{ marginBottom: 5, lineHeight: 1.65, color: 'var(--text-primary)' }}>{item}</li>
+            <li key={idx} className="cv-md-body" style={{ marginBottom: 5, lineHeight: 1.65, color: 'var(--text-primary)' }}>{renderInline(item)}</li>
           ))}
         </ul>
       );
@@ -151,7 +180,7 @@ function LectureMarkdown({ content }) {
       elements.push(
         <ol key={`ol-${i}`} style={{ paddingLeft: 20, marginBottom: 14 }}>
           {items.map((item, idx) => (
-            <li key={idx} className="cv-md-body" style={{ marginBottom: 5, lineHeight: 1.65, color: 'var(--text-primary)' }}>{item}</li>
+            <li key={idx} className="cv-md-body" style={{ marginBottom: 5, lineHeight: 1.65, color: 'var(--text-primary)' }}>{renderInline(item)}</li>
           ))}
         </ol>
       );
@@ -168,7 +197,7 @@ function LectureMarkdown({ content }) {
     if (line.trim().length > 0) {
       elements.push(
         <p key={i} className="cv-md-body" style={{ marginBottom: 14, lineHeight: 1.72, color: 'var(--text-primary)' }}>
-          {line}
+          {renderInline(line)}
         </p>
       );
     }
@@ -204,8 +233,8 @@ export default function StudentCourses() {
       // 2. Direct student enrollment (free or verified paid)
       const isEnrolled = enrollments.some(
         e => (e.studentId === student?.id || e.studentId === auth?.studentId) &&
-             (e.courseId === c.id || e.courseId === c.slug) &&
-             ['ACTIVE', 'FREE', 'PAID'].includes(e.status)
+          (e.courseId === c.id || e.courseId === c.slug) &&
+          ['ACTIVE', 'FREE', 'PAID'].includes(e.status)
       );
       if (isEnrolled) return true;
 
@@ -218,8 +247,8 @@ export default function StudentCourses() {
 
   const selectedCourseId = searchParams.get('id');
   const activeCourse = allAvailableCourses.find(c => c.id === selectedCourseId || c.slug === selectedCourseId) ||
-                       courses.find(c => (c.id === selectedCourseId || c.slug === selectedCourseId) && c.isPublished !== false) ||
-                       allAvailableCourses[0];
+    courses.find(c => (c.id === selectedCourseId || c.slug === selectedCourseId) && c.isPublished !== false) ||
+    allAvailableCourses[0];
 
   // ── Navigator State ──────────────────────────────────────
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
@@ -270,10 +299,54 @@ export default function StudentCourses() {
 
   const activeStats = activeCourse ? getCourseStats(activeCourse) : { totalTopics: 0, completedTopics: 0, progressPct: 0, totalModules: 0 };
 
+  // Flattened linear list of all topics in course
+  const topicList = useMemo(() => {
+    const list = [];
+    modules.forEach((mod, mIdx) => {
+      (mod.topics || []).forEach((top, tIdx) => {
+        list.push({
+          id: top.id,
+          topic: top,
+          mIdx,
+          tIdx,
+          hasQuiz: (Array.isArray(top.quizQuestions) && top.quizQuestions.length > 0) ||
+            (tIdx === (mod.topics?.length - 1) && Array.isArray(mod.quizQuestions) && mod.quizQuestions.length > 0)
+        });
+      });
+    });
+    return list;
+  }, [modules]);
+
+  const checkTopicCompleted = useCallback((topicId, hasQuiz) => {
+    if (!topicId) return false;
+    const isQuizPassed = Boolean(student?.quizAttempts?.[topicId]?.passed);
+    const isProgressMarked = student?.progress?.[topicId] === 'completed' || student?.progress?.[topicId] === true;
+    return hasQuiz ? isQuizPassed : (isProgressMarked || isQuizPassed);
+  }, [student]);
+
+  const unlockedTopicIds = useMemo(() => {
+    const unlocked = new Set();
+    for (let i = 0; i < topicList.length; i++) {
+      const item = topicList[i];
+      if (i === 0) {
+        unlocked.add(item.id);
+      } else {
+        const prev = topicList[i - 1];
+        if (unlocked.has(prev.id) && checkTopicCompleted(prev.id, prev.hasQuiz)) {
+          unlocked.add(item.id);
+        } else {
+          break;
+        }
+      }
+    }
+    return unlocked;
+  }, [topicList, checkTopicCompleted]);
+
+  const currentHasQuiz = (Array.isArray(currentTopic?.quizQuestions) && currentTopic.quizQuestions.length > 0) ||
+    (currentTopicIndex === (topics.length - 1) && Array.isArray(currentModule?.quizQuestions) && currentModule.quizQuestions.length > 0);
+
   const isCurrentTopicCompleted = currentTopic
-    ? student?.progress?.[currentTopic.id] === 'completed' ||
-    student?.progress?.[currentTopic.id] === true ||
-    student?.quizAttempts?.[currentTopic.id]?.passed
+    ? checkTopicCompleted(currentTopic.id, currentHasQuiz)
     : false;
 
   const handleSelectCourse = (courseId) => {
@@ -292,17 +365,16 @@ export default function StudentCourses() {
   };
 
   const handleSelectLecture = (mIdx, tIdx) => {
+    const targetTopic = modules[mIdx]?.topics?.[tIdx];
+    if (targetTopic && !unlockedTopicIds.has(targetTopic.id)) {
+      toast.error('Topic locked. Please complete previous topics and assessments first.');
+      return;
+    }
     setCurrentModuleIndex(mIdx);
     setCurrentTopicIndex(tIdx);
     setExpandedSections(prev => new Set([...prev, mIdx]));
     setMobileDrawerOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleToggleComplete = () => {
-    if (student && activeCourse && currentTopic) {
-      markTopicComplete(student.id, currentTopic.id, activeCourse.id);
-    }
   };
 
   const isFirstLecture = currentModuleIndex === 0 && currentTopicIndex === 0;
@@ -312,7 +384,22 @@ export default function StudentCourses() {
 
   const handleNextLecture = () => {
     if (isLastLecture) return;
-    if (student && activeCourse && currentTopic) markTopicComplete(student.id, currentTopic.id, activeCourse.id);
+
+    if (!isCurrentTopicCompleted) {
+      if (currentHasQuiz) {
+        toast.error('Please complete the topic assessment before proceeding.');
+        const quizEl = document.getElementById('topic-assessment-section');
+        if (quizEl) {
+          quizEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+      } else {
+        if (student && activeCourse && currentTopic) {
+          markTopicComplete(student.id, currentTopic.id, activeCourse.id);
+        }
+      }
+    }
+
     if (currentTopicIndex < topics.length - 1) {
       setCurrentTopicIndex(prev => prev + 1);
     } else {
@@ -492,8 +579,8 @@ export default function StudentCourses() {
                               ...attemptData
                             });
                           }
-                          if (attemptData.passed && currentTopic?.id && markTopicComplete) {
-                            markTopicComplete(currentTopic.id);
+                          if (attemptData.passed && currentTopic?.id && markTopicComplete && student?.id && activeCourse?.id) {
+                            markTopicComplete(student.id, currentTopic.id, activeCourse.id);
                           }
                         }}
                       />
@@ -513,14 +600,35 @@ export default function StudentCourses() {
                   </button>
 
                   <div className="d-flex align-items-center gap-2">
-                    <button
-                      type="button"
-                      className={`btn d-flex align-items-center gap-2 px-3 py-2 rounded-3 ${isCurrentTopicCompleted ? 'btn-success' : 'btn-outline-success'}`}
-                      onClick={handleToggleComplete}
-                    >
-                      <FaCheckCircle size={13} />
-                      <span>{isCurrentTopicCompleted ? 'Completed ✓' : 'Mark Complete'}</span>
-                    </button>
+                    {isCurrentTopicCompleted ? (
+                      <span
+                        className="badge d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-3"
+                        style={{
+                          background: 'rgba(var(--bs-success-rgb, 22, 163, 74), 0.12)',
+                          color: 'var(--bs-success, #16a34a)',
+                          border: '1px solid rgba(var(--bs-success-rgb, 22, 163, 74), 0.3)',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        <FaCheckCircle size={13} />
+                        <span>Completed</span>
+                      </span>
+                    ) : currentHasQuiz ? (
+                      <span
+                        className="badge d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-3"
+                        style={{
+                          background: 'rgba(234, 179, 8, 0.12)',
+                          color: '#ca8a04',
+                          border: '1px solid rgba(234, 179, 8, 0.3)',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        <FaLock size={12} />
+                        <span>Assessment Incomplete</span>
+                      </span>
+                    ) : null}
 
                     {(currentModule?.testId || currentModule?.test || currentModule?.hasTest) && (
                       <button
@@ -546,9 +654,41 @@ export default function StudentCourses() {
             </div>
           </div>
 
-            {/* ── Right: Desktop Curriculum Sidebar ── */}
-            {!isSidebarHidden && (
-              <aside className="cv-sidebar d-none d-lg-flex flex-column" aria-label="Course curriculum">
+          {/* ── Right: Desktop Curriculum Sidebar ── */}
+          {!isSidebarHidden && (
+            <aside className="cv-sidebar d-none d-lg-flex flex-column" aria-label="Course curriculum">
+              <CurriculumNavigator
+                course={activeCourse}
+                modules={modules}
+                currentModuleIndex={currentModuleIndex}
+                currentTopicIndex={currentTopicIndex}
+                expandedSections={expandedSections}
+                onToggleSection={handleToggleSection}
+                onSelectLecture={handleSelectLecture}
+                studentProgress={student?.progress || {}}
+                quizAttempts={student?.quizAttempts || {}}
+                progressPct={activeStats.progressPct}
+                isOpen={false}
+                onClose={() => { }}
+                unlockedTopicIds={unlockedTopicIds}
+              />
+            </aside>
+          )}
+
+          {/* ── Mobile Drawer ── */}
+          {mobileDrawerOpen && (
+            <>
+              <div
+                className="cv-drawer-backdrop d-lg-none"
+                onClick={() => setMobileDrawerOpen(false)}
+                aria-hidden="true"
+              />
+              <div
+                className="cv-drawer d-lg-none"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Course curriculum navigator"
+              >
                 <CurriculumNavigator
                   course={activeCourse}
                   modules={modules}
@@ -560,170 +700,138 @@ export default function StudentCourses() {
                   studentProgress={student?.progress || {}}
                   quizAttempts={student?.quizAttempts || {}}
                   progressPct={activeStats.progressPct}
-                  isOpen={false}
-                  onClose={() => { }}
+                  isOpen={mobileDrawerOpen}
+                  onClose={() => setMobileDrawerOpen(false)}
+                  unlockedTopicIds={unlockedTopicIds}
                 />
-              </aside>
-            )}
-
-            {/* ── Mobile Drawer ── */}
-            {mobileDrawerOpen && (
-              <>
-                <div
-                  className="cv-drawer-backdrop d-lg-none"
-                  onClick={() => setMobileDrawerOpen(false)}
-                  aria-hidden="true"
-                />
-                <div
-                  className="cv-drawer d-lg-none"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-label="Course curriculum navigator"
-                >
-                  <CurriculumNavigator
-                    course={activeCourse}
-                    modules={modules}
-                    currentModuleIndex={currentModuleIndex}
-                    currentTopicIndex={currentTopicIndex}
-                    expandedSections={expandedSections}
-                    onToggleSection={handleToggleSection}
-                    onSelectLecture={handleSelectLecture}
-                    studentProgress={student?.progress || {}}
-                    quizAttempts={student?.quizAttempts || {}}
-                    progressPct={activeStats.progressPct}
-                    isOpen={mobileDrawerOpen}
-                    onClose={() => setMobileDrawerOpen(false)}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* ── Mobile Sticky Bottom Dock ── */}
-          <div className="cv-bottom-dock d-lg-none" role="navigation" aria-label="Lecture navigation">
-            <button
-              type="button"
-              className="cv-dock-nav-btn"
-              onClick={handlePrevLecture}
-              disabled={isFirstLecture}
-              aria-label="Previous lecture"
-            >
-              <FaArrowLeft size={12} />
-              <span>Prev</span>
-            </button>
-
-            <button
-              type="button"
-              className={`cv-dock-complete-btn ${isCurrentTopicCompleted ? 'done' : 'active'}`}
-              onClick={handleToggleComplete}
-              aria-pressed={isCurrentTopicCompleted}
-            >
-              <FaCheckCircle size={14} />
-              <span>{isCurrentTopicCompleted ? 'Completed ✓' : 'Mark Complete'}</span>
-            </button>
-
-            <button
-              type="button"
-              className="cv-dock-nav-btn"
-              onClick={handleNextLecture}
-              disabled={isLastLecture}
-              aria-label="Next lecture"
-            >
-              <span>Next</span>
-              <FaArrowRight size={12} />
-            </button>
-          </div>
-        </div>
-        );
-  }
-
-        // ══════════════════════════════════════════════════════════
-        // VIEW 1 – MY COURSES HUB
-        // ══════════════════════════════════════════════════════════
-        return (
-        <div className="student-courses-hub pb-5">
-          {/* Header */}
-          <div className="mb-4 d-flex align-items-center gap-2">
-            <FaBook style={{ color: 'var(--bs-primary)', fontSize: '1.1rem' }} />
-            <h4 className="fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>My Courses</h4>
-          </div>
-
-          {allAvailableCourses.length === 0 ? (
-            <div className="cv-empty">
-              <FaBook size={48} className="cv-empty-icon" />
-              <div className="cv-empty-title">No Courses Yet</div>
-              <p className="cv-empty-text">Your cohort hasn't been assigned courses yet. Check back once your batch commences.</p>
-            </div>
-          ) : (
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4">
-              {allAvailableCourses.map(course => {
-                const stats = getCourseStats(course);
-                const isCompleted = stats.progressPct === 100;
-                const hasStarted = stats.completedTopics > 0;
-
-                return (
-                  <div key={course.id} className="col d-flex">
-                    <div className="cv-course-card w-100">
-                      {/* Technology Icon Thumbnail */}
-                      <CourseTechThumbnail
-                        course={course}
-                        height={160}
-                        className="rounded-top-3"
-                      />
-
-                      {/* Body */}
-                      <div className="cv-course-body">
-                        {/* Badge row */}
-                        <div className="cv-course-badge-row">
-                          {isCompleted ? (
-                            <span className="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style={{ fontSize: '0.72rem' }}>
-                              <FaCheck size={9} /> Completed
-                            </span>
-                          ) : hasStarted ? (
-                            <span className="badge bg-primary-subtle text-primary border border-primary-subtle d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style={{ fontSize: '0.72rem' }}>
-                              <FaPlay size={8} /> In Progress
-                            </span>
-                          ) : (
-                            <span className="badge bg-secondary-subtle text-muted border border-secondary-subtle d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style={{ fontSize: '0.72rem' }}>
-                              Not Started
-                            </span>
-                          )}
-                        </div>
-
-                        <h5 className="cv-course-title">{course.title}</h5>
-                        <p className="cv-course-desc">{course.description}</p>
-
-                        {/* Progress */}
-                        <div className="cv-course-progress-row">
-                          <div className="cv-course-progress-top">
-                            <span className="cv-course-progress-label">Progress</span>
-                            <span className="cv-course-progress-pct">{stats.progressPct}%</span>
-                          </div>
-                          <div className="cv-course-progress-bar">
-                            <div className="cv-course-progress-fill" style={{ width: `${stats.progressPct}%` }} />
-                          </div>
-                          <div className="cv-course-progress-sub">
-                            <span>{stats.completedTopics} of {stats.totalTopics} lectures</span>
-                            <span>{stats.totalModules} sections</span>
-                          </div>
-                        </div>
-
-                        {/* CTA */}
-                        <button
-                          type="button"
-                          className="cv-course-action-btn"
-                          onClick={() => handleSelectCourse(course.id)}
-                        >
-                          <FaPlay size={11} />
-                          <span>{hasStarted ? 'Continue Learning' : 'Start Course'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              </div>
+            </>
           )}
         </div>
-        );
+
+        {/* ── Mobile Sticky Bottom Dock ── */}
+        <div className="cv-bottom-dock d-lg-none" role="navigation" aria-label="Lecture navigation">
+          <button
+            type="button"
+            className="cv-dock-nav-btn"
+            onClick={handlePrevLecture}
+            disabled={isFirstLecture}
+            aria-label="Previous lecture"
+          >
+            <FaArrowLeft size={12} />
+            <span>Prev</span>
+          </button>
+
+          <div
+            className={`cv-dock-complete-btn ${isCurrentTopicCompleted ? 'done' : ''}`}
+            style={{ cursor: 'default' }}
+          >
+            <FaCheckCircle size={14} />
+            <span>{isCurrentTopicCompleted ? 'Completed' : 'In Progress'}</span>
+          </div>
+
+          <button
+            type="button"
+            className="cv-dock-nav-btn"
+            onClick={handleNextLecture}
+            disabled={isLastLecture}
+            aria-label="Next lecture"
+          >
+            <span>Next</span>
+            <FaArrowRight size={12} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // VIEW 1 – MY COURSES HUB
+  // ══════════════════════════════════════════════════════════
+  return (
+    <div className="student-courses-hub pb-5">
+      {/* Header */}
+      <div className="mb-4 d-flex align-items-center gap-2">
+        <FaBook style={{ color: 'var(--bs-primary)', fontSize: '1.1rem' }} />
+        <h4 className="fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>My Courses</h4>
+      </div>
+
+      {allAvailableCourses.length === 0 ? (
+        <div className="cv-empty">
+          <FaBook size={48} className="cv-empty-icon" />
+          <div className="cv-empty-title">No Courses Yet</div>
+          <p className="cv-empty-text">Your cohort hasn't been assigned courses yet. Check back once your batch commences.</p>
+        </div>
+      ) : (
+        <div className="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4">
+          {allAvailableCourses.map(course => {
+            const stats = getCourseStats(course);
+            const isCompleted = stats.progressPct === 100;
+            const hasStarted = stats.completedTopics > 0;
+
+            return (
+              <div key={course.id} className="col d-flex">
+                <div className="cv-course-card w-100">
+                  {/* Technology Icon Thumbnail */}
+                  <CourseTechThumbnail
+                    course={course}
+                    height={160}
+                    className="rounded-top-3"
+                  />
+
+                  {/* Body */}
+                  <div className="cv-course-body">
+                    {/* Badge row */}
+                    <div className="cv-course-badge-row">
+                      {isCompleted ? (
+                        <span className="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style={{ fontSize: '0.72rem' }}>
+                          <FaCheck size={9} /> Completed
+                        </span>
+                      ) : hasStarted ? (
+                        <span className="badge bg-primary-subtle text-primary border border-primary-subtle d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style={{ fontSize: '0.72rem' }}>
+                          <FaPlay size={8} /> In Progress
+                        </span>
+                      ) : (
+                        <span className="badge bg-secondary-subtle text-muted border border-secondary-subtle d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style={{ fontSize: '0.72rem' }}>
+                          Not Started
+                        </span>
+                      )}
+                    </div>
+
+                    <h5 className="cv-course-title">{course.title}</h5>
+                    <p className="cv-course-desc">{course.description}</p>
+
+                    {/* Progress */}
+                    <div className="cv-course-progress-row">
+                      <div className="cv-course-progress-top">
+                        <span className="cv-course-progress-label">Progress</span>
+                        <span className="cv-course-progress-pct">{stats.progressPct}%</span>
+                      </div>
+                      <div className="cv-course-progress-bar">
+                        <div className="cv-course-progress-fill" style={{ width: `${stats.progressPct}%` }} />
+                      </div>
+                      <div className="cv-course-progress-sub">
+                        <span>{stats.completedTopics} of {stats.totalTopics} lectures</span>
+                        <span>{stats.totalModules} sections</span>
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <button
+                      type="button"
+                      className="cv-course-action-btn"
+                      onClick={() => handleSelectCourse(course.id)}
+                    >
+                      <FaPlay size={11} />
+                      <span>{hasStarted ? 'Continue Learning' : 'Start Course'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

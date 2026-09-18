@@ -166,7 +166,7 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="d-flex align-items-center gap-2 mt-2 mt-lg-0">
-            {auth ? (
+            {(!isHome && auth) ? (
               <div className="dropdown">
                 <button
                   className="btn btn-sm btn-primary rounded-pill px-3 py-2 d-flex align-items-center gap-2 fw-bold"
@@ -255,7 +255,7 @@ export default function Navbar() {
                   </div>
                 )}
                 <Link
-                  to="/login"
+                  to={isHome && auth ? getDashboardPath() : '/login'}
                   className="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold text-center"
                   onClick={() => setNavExpanded(false)}
                 >

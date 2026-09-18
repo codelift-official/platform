@@ -127,7 +127,7 @@ export default function CourseCatalog() {
             <div className="cl-marketplace-quick-chips">
               <span className="cl-quick-chip-label">Popular:</span>
               {[
-                { label: 'Cohort Programs', action: () => { setSelectedCourseType('cohort'); setSearchQuery(''); } },
+                { label: 'Flagship Cohorts', action: () => { setSelectedCourseType('cohort'); setSearchQuery(''); } },
                 { label: 'Modular Electives', action: () => { setSelectedCourseType('elective'); setSearchQuery(''); } },
                 { label: 'Python', action: () => setSearchQuery('Python') },
                 { label: 'React', action: () => setSearchQuery('React') },
@@ -149,7 +149,7 @@ export default function CourseCatalog() {
       </section>
 
       {/* Main Filter Toolbar & Course Grid */}
-      <main className="container max-w-7xl py-5">
+      <main className="container max-w-7xl py-3">
         <div className="cl-marketplace-toolbar mb-4">
           <div className="row g-3 align-items-center justify-content-between">
             {/* Segmented Pill Tabs for Cohorts vs Electives */}
@@ -185,9 +185,10 @@ export default function CourseCatalog() {
                 className="form-select form-select-sm cl-filter-select"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
+                style={{ width: 'auto', minWidth: '130px' }}
               >
                 <option value="all">All Categories</option>
-                {categories.map((cat) => (
+                {categories && categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
@@ -196,28 +197,30 @@ export default function CourseCatalog() {
                 className="form-select form-select-sm cl-filter-select"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
+                style={{ width: 'auto', minWidth: '110px' }}
               >
                 <option value="all">All Pricing</option>
-                <option value="free">Free Courses</option>
-                <option value="paid">Paid Programs</option>
+                <option value="free">Free</option>
+                <option value="paid">Tuition</option>
               </select>
 
               <select
                 className="form-select form-select-sm cl-filter-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
+                style={{ width: 'auto', minWidth: '130px' }}
               >
-                <option value="popular">Sort: Most Popular</option>
-                <option value="rating">Sort: Highest Rated</option>
+                <option value="popular">Most Popular</option>
+                <option value="rating">Highest Rated</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="newest">Sort: Newest</option>
+                <option value="newest">Newest</option>
               </select>
 
               {(searchQuery || selectedCategory !== 'all' || selectedType !== 'all' || selectedCourseType !== 'all') && (
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-1"
+                  className="btn btn-sm btn-outline-secondary rounded-pill px-3 d-flex align-items-center gap-1"
                   onClick={() => {
                     setSearchQuery('');
                     setSelectedCategory('all');
@@ -233,20 +236,12 @@ export default function CourseCatalog() {
           </div>
         </div>
 
-        {/* Results Counter & Search Indicator */}
-        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-          <div className="text-secondary small fw-semibold">
-            Showing <strong style={{ color: 'var(--text-primary)' }}>{sortedCourses.length}</strong> {sortedCourses.length === 1 ? 'course' : 'courses'} available
-            {searchQuery && <span> for query "<strong style={{ color: 'var(--bs-primary)' }}>{searchQuery}</strong>"</span>}
-          </div>
-        </div>
-
         {/* Course Cards Grid */}
         {sortedCourses.length === 0 ? (
           <div className="text-center py-5 rounded-4 shadow-sm border" style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
             <FaBookOpen className="text-muted fs-1 mb-3 opacity-50" />
             <h5 className="fw-bold" style={{ color: 'var(--text-primary)' }}>No matching courses found</h5>
-            <p className="text-muted small mb-3">Try adjusting your keyword, resetting filters, or browsing our full list of courses.</p>
+            <p className="text-muted small mb-1">Try adjusting your keyword, resetting filters, or browsing our full list of courses.</p>
             <button
               type="button"
               className="btn btn-sm btn-success rounded-pill px-4 fw-bold"
@@ -316,12 +311,12 @@ export default function CourseCatalog() {
                           </div>
                         </div>
 
-                        <h5 className="card-title fw-bold mb-2" style={{ fontSize: '1.1rem' }}>
+                        <h5 className="card-title fw-bold mb-1" style={{ fontSize: '1.1rem' }}>
                           <Link to={`/courses/${c.slug || c.id}`} className="text-decoration-none" style={{ color: 'var(--text-primary)' }}>
                             {c.title}
                           </Link>
                         </h5>
-                        <p className="card-text text-secondary small line-clamp-2 mb-3" style={{ minHeight: '38px' }}>
+                        <p className="card-text text-secondary small line-clamp-2" style={{ minHeight: '38px' }}>
                           {c.description}
                         </p>
                       </div>

@@ -1300,5 +1300,89 @@
   }
 }
 
+/* ─── Mobile Coding Arena & Python IDE Enhancements ──────────────── */
+.arena-mobile-mode-switcher {
+  background: var(--card-bg, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.arena-mobile-mode-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.arena-mobile-mode-btn.active {
+  background: var(--bs-primary, #10b981);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.arena-mobile-quickbar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px 6px 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.arena-mobile-quickbar::-webkit-scrollbar {
+  display: none;
+}
+
+.arena-mobile-quick-key {
+  background: var(--card-bg-alt, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+  color: var(--text-primary, #f1f5f9);
+  font-family: var(--font-mono, 'Fira Code', 'Courier New', monospace);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  min-width: 36px;
+  min-height: 36px;
+  text-align: center;
+  user-select: none;
+  touch-action: manipulation;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.arena-mobile-quick-key:active {
+  background: var(--bs-primary, #10b981);
+  color: #ffffff;
+  transform: scale(0.95);
+}
+
+.arena-sticky-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1040;
+  background: var(--card-bg, #0f172a);
+  border-top: 1px solid var(--border-color, #334155);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+
 
 

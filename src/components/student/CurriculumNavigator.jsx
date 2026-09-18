@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { ProgressBar } from 'react-bootstrap';
 import {
   FaCheckCircle, FaPlay, FaRegCircle, FaChevronRight,
-  FaTimes, FaSearch
+  FaTimes, FaSearch, FaLock
 } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 export default function CurriculumNavigator({
   course,
@@ -17,7 +18,8 @@ export default function CurriculumNavigator({
   quizAttempts = {},
   progressPct = 0,
   isOpen = false,
-  onClose
+  onClose,
+  unlockedTopicIds
 }) {
   const activeLectureRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +36,46 @@ export default function CurriculumNavigator({
     if (!isOpen) setSearchQuery('');
   }, [isOpen]);
 
+  // Flattened topic list to compute sequential unlocking
+  const topicList = useMemo(() => {
+    const list = [];
+    modules.forEach((mod, mIdx) => {
+      (mod.topics || []).forEach((top, tIdx) => {
+        list.push({
+          id: top.id,
+          topic: top,
+          mIdx,
+          tIdx,
+          hasQuiz: (Array.isArray(top.quizQuestions) && top.quizQuestions.length > 0) ||
+            (tIdx === (mod.topics?.length - 1) && Array.isArray(mod.quizQuestions) && mod.quizQuestions.length > 0)
+        });
+      });
+    });
+    return list;
+  }, [modules]);
+
+  const effectiveUnlocked = useMemo(() => {
+    if (unlockedTopicIds instanceof Set) return unlockedTopicIds;
+    const unlocked = new Set();
+    for (let i = 0; i < topicList.length; i++) {
+      const item = topicList[i];
+      if (i === 0) {
+        unlocked.add(item.id);
+      } else {
+        const prev = topicList[i - 1];
+        const isPassed = Boolean(quizAttempts[prev.id]?.passed);
+        const isProgressMarked = studentProgress[prev.id] === 'completed' || studentProgress[prev.id] === true;
+        const isPrevDone = prev.hasQuiz ? isPassed : (isProgressMarked || isPassed);
+        if (unlocked.has(prev.id) && isPrevDone) {
+          unlocked.add(item.id);
+        } else {
+          break;
+        }
+      }
+    }
+    return unlocked;
+  }, [unlockedTopicIds, topicList, studentProgress, quizAttempts]);
+
   const getLectureStatus = (topic, mIdx, tIdx) => {
     const isCompleted =
       studentProgress[topic.id] === 'completed' ||
@@ -41,6 +83,7 @@ export default function CurriculumNavigator({
       quizAttempts[topic.id]?.passed;
     if (isCompleted) return 'completed';
     if (mIdx === currentModuleIndex && tIdx === currentTopicIndex) return 'in-progress';
+    if (!effectiveUnlocked.has(topic.id)) return 'locked';
     return 'not-started';
   };
 
@@ -161,6 +204,8 @@ export default function CurriculumNavigator({
             const isCurrentModule = originalMIdx === currentModuleIndex;
             const stats = getSectionStats(module);
 
+            const isModuleLocked = (module.topics || []).length > 0 && !(module.topics || []).some(t => effectiveUnlocked.has(t.id));
+
             return (
               <div
                 key={module.id || `section-${mIdx}`}
@@ -185,8 +230,9 @@ export default function CurriculumNavigator({
 
                   <div className="cv-section-body">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
-                      <span className="cv-section-title">
-                        §{originalMIdx + 1} {module.title}
+                      <span className="cv-section-title d-inline-flex align-items-center gap-1.5">
+                        {isModuleLocked && <FaLock size={9} className="text-muted opacity-75 flex-shrink-0" />}
+                        {originalMIdx + 1} {module.title}
                       </span>
                       {stats.isAllCompleted && (
                         <span className="cv-section-done-badge" title="Section completed">
@@ -210,15 +256,24 @@ export default function CurriculumNavigator({
 
                       const isCurrent = originalMIdx === currentModuleIndex && originalTIdx === currentTopicIndex;
                       const status = getLectureStatus(topic, originalMIdx, originalTIdx);
+                      const isLocked = status === 'locked';
 
                       return (
                         <button
                           key={topic.id || `lec-${mIdx}-${tIdx}`}
                           ref={isCurrent ? activeLectureRef : null}
                           type="button"
-                          className={`cv-lecture-row ${isCurrent ? 'active' : ''}`}
-                          onClick={() => onSelectLecture && onSelectLecture(originalMIdx, originalTIdx)}
+                          className={`cv-lecture-row ${isCurrent ? 'active' : ''} ${isLocked ? 'opacity-50' : ''}`}
+                          onClick={() => {
+                            if (isLocked) {
+                              toast.error('Topic locked. Complete previous topics and assessments first.');
+                              return;
+                            }
+                            onSelectLecture && onSelectLecture(originalMIdx, originalTIdx);
+                          }}
                           aria-current={isCurrent ? 'true' : undefined}
+                          disabled={isLocked}
+                          style={{ cursor: isLocked ? 'not-allowed' : 'pointer' }}
                         >
                           {/* Status Icon */}
                           <span className="cv-lec-icon">
@@ -226,6 +281,8 @@ export default function CurriculumNavigator({
                               <FaCheckCircle size={12} style={{ color: '#16a34a' }} />
                             ) : status === 'in-progress' ? (
                               <FaPlay size={9} style={{ color: 'var(--bs-primary, #15803d)' }} />
+                            ) : status === 'locked' ? (
+                              <FaLock size={10} style={{ color: 'var(--text-secondary)' }} />
                             ) : (
                               <FaRegCircle size={11} style={{ color: 'var(--text-secondary)' }} />
                             )}
@@ -254,7 +311,7 @@ export default function CurriculumNavigator({
                                   fontWeight: 700
                                 }}
                               >
-                                {isPassed ? `✓ ${quizAttempts[topic.id]?.score}/${quizAttempts[topic.id]?.totalMarks}` : `Quiz (${qCount})`}
+                                {isPassed ? `✓ ${quizAttempts[topic.id]?.score}/${quizAttempts[topic.id]?.totalMarks}` : `Quiz`}
                               </span>
                             );
                           })()}

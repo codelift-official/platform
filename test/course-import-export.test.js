@@ -21,14 +21,10 @@ function evaluateQuizAttempt({ questions, userAnswers }) {
 
   const totalMarks = questions.length;
   const pct = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
-  const passed = pct >= 75;
+  const passed = score === totalMarks;
 
-  let rating = 'F';
+  let rating = 'Retake Required';
   if (pct === 100) rating = 'A+ (Outstanding)';
-  else if (pct >= 85) rating = 'A (Excellent)';
-  else if (pct >= 75) rating = 'B+ (Passed)';
-  else if (pct >= 50) rating = 'C (Needs Review)';
-  else rating = 'F (Fail - Retake Required)';
 
   return {
     score,
@@ -189,8 +185,8 @@ export async function runCourseImportExportTests() {
     assert.equal(result.rating, 'A+ (Outstanding)');
   });
 
-  // Test 4: Quiz Assessment Grading - 75% Score (Pass Threshold)
-  test('Quiz assessment evaluation: 75% score receives B+ (Passed) and passed = true', () => {
+  // Test 4: Quiz Assessment Grading - 75% Score (Fails 100% Requirement)
+  test('Quiz assessment evaluation: 75% score fails 100% mastery threshold and requires retake', () => {
     const questions = sampleCoursePayload.modules[0].topics[0].quizQuestions;
     const userAnswers = { 0: 1, 1: 1, 2: 2, 3: 1 }; // 3 correct, 1 wrong (75%)
 
@@ -198,8 +194,8 @@ export async function runCourseImportExportTests() {
     assert.equal(result.score, 3);
     assert.equal(result.totalMarks, 4);
     assert.equal(result.percentage, 75);
-    assert.equal(result.passed, true);
-    assert.equal(result.rating, 'B+ (Passed)');
+    assert.equal(result.passed, false, 'Score below 100% must fail');
+    assert.equal(result.rating, 'Retake Required');
   });
 
   // Test 5: Quiz Assessment Grading - <75% Score (Fail)
@@ -211,8 +207,8 @@ export async function runCourseImportExportTests() {
     assert.equal(result.score, 2);
     assert.equal(result.totalMarks, 4);
     assert.equal(result.percentage, 50);
-    assert.equal(result.passed, false, 'Score below 75% must fail');
-    assert.equal(result.rating, 'C (Needs Review)');
+    assert.equal(result.passed, false, 'Score below 100% must fail');
+    assert.equal(result.rating, 'Retake Required');
   });
 
   // Test 6: Course JSON Export Integrity

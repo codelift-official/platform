@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "id": "arena-q1",
     "title": "Q1: Sum of All Elements in a List",
@@ -1216,6 +1216,1305 @@
         "input": "last word longest",
         "expected": "elephant",
         "inject": "sentence = 'a bb ccc elephant'\nwords = sentence.split()\nlongest = ''"
+      }
+    ]
+  },
+  {
+    "id": "arena-q21",
+    "title": "Q21: Largest of Three Numbers",
+    "description": "Read three integers (a, b, c). Use if-elif-else to determine and print which number is the largest.\n\nOutput format: '<value> is the largest number'\n\nExample:\nInput: 10, 25, 15\nOutput: 25 is the largest number\n\nIf all three are equal, print 'All three are equal'.\nIf exactly two are equal and larger than the third, print the shared value.\n\nEdge cases to consider: all equal, two equal, negative numbers, zero, one number larger than the other two combined.",
+    "difficulty": "Easy",
+    "category": "Conditionals",
+    "orderIndex": 21,
+    "xp": 50,
+    "hints": [
+      "Check the condition a >= b and a >= c first. The >= handles ties automatically.",
+      "Order matters in elif – check largest first, then middle, then last.",
+      "Before any comparison, check if a == b == c and handle it separately.",
+      "Use f-string for clean output: print(f'{a} is the largest number')."
+    ],
+    "starterCode": "a = int(input())\nb = int(input())\nc = int(input())\n# Check if all three are equal first\n# Then use if-elif-else to find the largest\n# Print in the format: <value> is the largest number\n",
+    "testCases": [
+      {
+        "input": "10\n25\n15",
+        "expected": "25 is the largest number"
+      },
+      {
+        "input": "100\n50\n75",
+        "expected": "100 is the largest number"
+      },
+      {
+        "input": "7\n7\n7",
+        "expected": "All three are equal"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "all equal",
+        "expected": "All three are equal",
+        "inject": "a = 5\nb = 5\nc = 5"
+      },
+      {
+        "input": "two equal max",
+        "expected": "20 is the largest number",
+        "inject": "a = 20\nb = 20\nc = 5"
+      },
+      {
+        "input": "negatives",
+        "expected": "-1 is the largest number",
+        "inject": "a = -5\nb = -1\nc = -10"
+      },
+      {
+        "input": "with zero",
+        "expected": "0 is the largest number",
+        "inject": "a = -1\nb = 0\nc = -5"
+      },
+      {
+        "input": "c largest",
+        "expected": "99 is the largest number",
+        "inject": "a = 10\nb = 50\nc = 99"
+      }
+    ]
+  },
+  {
+    "id": "arena-q22",
+    "title": "Q22: Discount Based on Purchase Amount",
+    "description": "Read a purchase amount and a premium flag. Calculate the final discounted price.\n\nRules:\n- Amount < 100: no discount\n- 100 <= Amount < 500: 10% discount\n- Amount >= 500: 20% discount\n- If premium = True (or 'Yes'), add an extra 5% discount on top\n\nExample:\nInput: Amount = 600, Premium = Yes\nStep 1: 20% discount -> 600 - 120 = 480\nStep 2: extra 5% -> 480 - 24 = 456\nOutput: Discounted Price = 456.0\n\nEdge cases to consider: exactly 100, exactly 500, zero amount, negative amount, premium with small amount.",
+    "difficulty": "Medium",
+    "category": "Conditionals",
+    "orderIndex": 22,
+    "xp": 70,
+    "hints": [
+      "Determine the base discount percentage using if-elif-else first.",
+      "Apply the base discount, then check the premium flag and apply the extra 5%.",
+      "Use floating point division: price = amount * (1 - discount) for clean math.",
+      "Validate that the amount is non-negative before applying any discount."
+    ],
+    "starterCode": "amount = float(input())\npremium = input().lower() == 'yes'\ndiscount = 0.0\n# Step 1: determine base discount based on amount\n# Step 2: apply base discount\n# Step 3: if premium, apply extra 5%\n# Print: Discounted Price = <value>\n",
+    "testCases": [
+      {
+        "input": "600\nyes",
+        "expected": "Discounted Price = 456.0"
+      },
+      {
+        "input": "600\nno",
+        "expected": "Discounted Price = 480.0"
+      },
+      {
+        "input": "50\nno",
+        "expected": "Discounted Price = 50.0"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "exactly 100 no",
+        "expected": "Discounted Price = 90.0",
+        "inject": "amount = 100.0\npremium = False"
+      },
+      {
+        "input": "exactly 500 no",
+        "expected": "Discounted Price = 400.0",
+        "inject": "amount = 500.0\npremium = False"
+      },
+      {
+        "input": "premium 250",
+        "expected": "Discounted Price = 212.5",
+        "inject": "amount = 250.0\npremium = True"
+      },
+      {
+        "input": "zero",
+        "expected": "Discounted Price = 0.0",
+        "inject": "amount = 0.0\npremium = True"
+      },
+      {
+        "input": "small premium",
+        "expected": "Discounted Price = 95.0",
+        "inject": "amount = 100.0\npremium = True"
+      }
+    ]
+  },
+  {
+    "id": "arena-q23",
+    "title": "Q23: Leap Year Checker",
+    "description": "Read a year (integer) and determine if it is a leap year.\n\nRules:\n- Year < 1 or Year > 9999: print 'Invalid year'\n- Divisible by 400 -> Leap Year\n- Divisible by 100 (but not 400) -> Not Leap Year\n- Divisible by 4 (but not 100) -> Leap Year\n- Otherwise -> Not Leap Year\n\nExamples:\nInput: 2000 -> Leap Year\nInput: 1900 -> Not Leap Year\nInput: 2024 -> Leap Year\nInput: 1500 -> Invalid year (out of range in this task)\n\nEdge cases to consider: 0, negative years, year 1, year 400, year 100.",
+    "difficulty": "Medium",
+    "category": "Conditionals",
+    "orderIndex": 23,
+    "xp": 70,
+    "hints": [
+      "Order of checks matters: check 400 first, then 100, then 4.",
+      "Use the modulo operator: year % 400 == 0.",
+      "Combine conditions with and / or where possible, e.g. (year % 4 == 0 and year % 100 != 0).",
+      "Validate the year range first before applying leap-year rules."
+    ],
+    "starterCode": "year = int(input())\n# Step 1: validate 1 <= year <= 9999\n# Step 2: apply leap year rules\n# Print: 'Leap Year' or 'Not Leap Year' or 'Invalid year'\n",
+    "testCases": [
+      {
+        "input": "2000",
+        "expected": "Leap Year"
+      },
+      {
+        "input": "1900",
+        "expected": "Not Leap Year"
+      },
+      {
+        "input": "1500",
+        "expected": "Invalid year"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2024",
+        "expected": "Leap Year",
+        "inject": "year = 2024"
+      },
+      {
+        "input": "2023",
+        "expected": "Not Leap Year",
+        "inject": "year = 2023"
+      },
+      {
+        "input": "400",
+        "expected": "Leap Year",
+        "inject": "year = 400"
+      },
+      {
+        "input": "100",
+        "expected": "Not Leap Year",
+        "inject": "year = 100"
+      },
+      {
+        "input": "zero",
+        "expected": "Invalid year",
+        "inject": "year = 0"
+      },
+      {
+        "input": "negative",
+        "expected": "Invalid year",
+        "inject": "year = -20"
+      },
+      {
+        "input": "one",
+        "expected": "Not Leap Year",
+        "inject": "year = 1"
+      }
+    ]
+  },
+  {
+    "id": "arena-q24",
+    "title": "Q24: Ticket Price Based on Age and Day",
+    "description": "A cinema charges a base full price of 100. Calculate the ticket price.\n\nRules:\n- Age < 12 -> half price (50)\n- Age >= 65 -> 30% off (70)\n- Otherwise -> full price (100)\n- If the day is 'Wednesday', apply an extra 10% off after the age discount.\n\nExample:\nInput: Age = 70, Day = Wednesday\nStep 1: senior 30% off -> 70\nStep 2: Wednesday 10% off -> 63.0\nOutput: Ticket price = 63.0\n\nEdge cases: age exactly 12, age exactly 65, day case-insensitive, other days, negative age.",
+    "difficulty": "Medium",
+    "category": "Conditionals",
+    "orderIndex": 24,
+    "xp": 70,
+    "hints": [
+      "Set base = 100.0 and apply age discount first.",
+      "Use elif for the three age brackets so only one applies.",
+      "Normalize the day with .lower() so 'Wednesday' and 'wednesday' both work.",
+      "Apply the 10% day discount after the age-based price is computed."
+    ],
+    "starterCode": "age = int(input())\nday = input().strip().lower()\nbase = 100.0\nprice = base\n# Apply age discount\n# Apply Wednesday 10% discount\n# Print: Ticket price = <value>\n",
+    "testCases": [
+      {
+        "input": "70\nWednesday",
+        "expected": "Ticket price = 63.0"
+      },
+      {
+        "input": "70\nMonday",
+        "expected": "Ticket price = 70.0"
+      },
+      {
+        "input": "10\nFriday",
+        "expected": "Ticket price = 50.0"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "12 monday",
+        "expected": "Ticket price = 100.0",
+        "inject": "age = 12\nday = 'monday'\nbase = 100.0\nprice = base"
+      },
+      {
+        "input": "65 wednesday",
+        "expected": "Ticket price = 63.0",
+        "inject": "age = 65\nday = 'wednesday'\nbase = 100.0\nprice = base"
+      },
+      {
+        "input": "30 wednesday",
+        "expected": "Ticket price = 90.0",
+        "inject": "age = 30\nday = 'wednesday'\nbase = 100.0\nprice = base"
+      },
+      {
+        "input": "10 wednesday",
+        "expected": "Ticket price = 45.0",
+        "inject": "age = 10\nday = 'Wednesday'\nbase = 100.0\nprice = base"
+      },
+      {
+        "input": "80 monday",
+        "expected": "Ticket price = 70.0",
+        "inject": "age = 80\nday = 'monday'\nbase = 100.0\nprice = base"
+      }
+    ]
+  },
+  {
+    "id": "arena-q25",
+    "title": "Q25: Grade Assignment with Bonus Point",
+    "description": "Read a score (0 to 100) and a bonus flag. Add 5 to the score if bonus is True, capped at 100. Then assign a grade.\n\nGrade rules (after bonus):\n- Score >= 90 -> A\n- Score >= 75 -> B\n- Score >= 60 -> C\n- Otherwise -> F\n\nExample:\nInput: Score = 87, Bonus = True\nNew score = 92 -> Grade A\n\nEdge cases: score exactly 90, 75, 60, score above 100 (clamp), score below 0 (treat as invalid), bonus already at 100 (no change).",
+    "difficulty": "Easy",
+    "category": "Conditionals",
+    "orderIndex": 25,
+    "xp": 50,
+    "hints": [
+      "Apply bonus first, then clamp to 100 using min(100, score + 5).",
+      "Use >= for grade thresholds so exactly 90 is an A.",
+      "Validate the score is between 0 and 100 before applying the bonus.",
+      "Print the new score and then the grade, or print both on the same line."
+    ],
+    "starterCode": "score = int(input())\nbonus = input().lower() == 'true'\n# Validate 0 <= score <= 100\n# Apply bonus (cap at 100)\n# Assign grade with if-elif-else\n# Print the grade\n",
+    "testCases": [
+      {
+        "input": "87\ntrue",
+        "expected": "Grade A"
+      },
+      {
+        "input": "87\nfalse",
+        "expected": "Grade B"
+      },
+      {
+        "input": "55\ntrue",
+        "expected": "Grade C"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "exactly 90 no",
+        "expected": "Grade A",
+        "inject": "score = 90\nbonus = False"
+      },
+      {
+        "input": "exactly 75 no",
+        "expected": "Grade B",
+        "inject": "score = 75\nbonus = False"
+      },
+      {
+        "input": "exactly 60 no",
+        "expected": "Grade C",
+        "inject": "score = 60\nbonus = False"
+      },
+      {
+        "input": "99 with bonus",
+        "expected": "Grade A",
+        "inject": "score = 99\nbonus = True"
+      },
+      {
+        "input": "100 no bonus",
+        "expected": "Grade A",
+        "inject": "score = 100\nbonus = False"
+      },
+      {
+        "input": "20 with bonus",
+        "expected": "Grade F",
+        "inject": "score = 20\nbonus = True"
+      }
+    ]
+  },
+  {
+    "id": "arena-q26",
+    "title": "Q26: Shipping Cost Calculator",
+    "description": "Read a weight (kg) and a membership tier. Compute the shipping cost.\n\nBase shipping by weight:\n- Weight <= 2 -> 5\n- Weight <= 5 -> 8\n- Weight <= 10 -> 12\n- Weight > 10 -> 15\n\nMembership:\n- gold -> shipping is free (0)\n- silver -> shipping is half\n- none -> full base cost\n\nExample:\nInput: Weight = 6, Member = silver\nBase = 12 -> Half = 6.0\nOutput: Shipping cost = 6.0\n\nEdge cases: weight exactly 2, 5, 10; zero weight; case-insensitive member; unknown member treated as none.",
+    "difficulty": "Medium",
+    "category": "Conditionals",
+    "orderIndex": 26,
+    "xp": 70,
+    "hints": [
+      "Determine the base cost with an if-elif-else chain using <= thresholds.",
+      "Use <= 2, <= 5, <= 10 in that order so no range overlaps.",
+      "Normalize the member value with .lower() and strip().",
+      "Apply membership discount after base cost is known."
+    ],
+    "starterCode": "weight = float(input())\nmember = input().strip().lower()\n# Determine base cost\n# Apply membership rule\n# Print: Shipping cost = <value>\n",
+    "testCases": [
+      {
+        "input": "6\nsilver",
+        "expected": "Shipping cost = 6.0"
+      },
+      {
+        "input": "6\ngold",
+        "expected": "Shipping cost = 0.0"
+      },
+      {
+        "input": "6\nnone",
+        "expected": "Shipping cost = 12.0"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "2 none",
+        "expected": "Shipping cost = 5.0",
+        "inject": "weight = 2.0\nmember = 'none'"
+      },
+      {
+        "input": "5 none",
+        "expected": "Shipping cost = 8.0",
+        "inject": "weight = 5.0\nmember = 'none'"
+      },
+      {
+        "input": "10 silver",
+        "expected": "Shipping cost = 6.0",
+        "inject": "weight = 10.0\nmember = 'silver'"
+      },
+      {
+        "input": "15 gold",
+        "expected": "Shipping cost = 0.0",
+        "inject": "weight = 15.0\nmember = 'gold'"
+      },
+      {
+        "input": "0.5 none",
+        "expected": "Shipping cost = 5.0",
+        "inject": "weight = 0.5\nmember = 'none'"
+      },
+      {
+        "input": "unknown",
+        "expected": "Shipping cost = 5.0",
+        "inject": "weight = 1.0\nmember = 'platinum'"
+      }
+    ]
+  },
+  {
+    "id": "arena-q27",
+    "title": "Q27: Loan Eligibility",
+    "description": "Read annual income, credit score, and co-signer flag. Determine approval.\n\nApproval rules (any one applies):\n- Income >= 30000 AND credit_score >= 700\n- Income >= 50000 (any credit score)\n\nWith a co-signer (co_signer = True):\n- Income requirement drops to 25000 (still need score >= 700 unless income >= 50000)\n\nOutput: 'Approved' or 'Denied'\n\nExample:\nInput: Income = 28000, CreditScore = 720, CoSigner = True\nCo-signer lowers threshold to 25000, income 28000 >= 25000, score 720 >= 700 -> Approved\n\nEdge cases: income exactly 25000, exactly 30000, exactly 50000; score exactly 700; co-signer with low score; negative values.",
+    "difficulty": "Medium",
+    "category": "Conditionals",
+    "orderIndex": 27,
+    "xp": 70,
+    "hints": [
+      "Determine the effective income threshold based on co-signer.",
+      "Rule 1: income >= threshold AND score >= 700.",
+      "Rule 2: income >= 50000 (overrides credit score entirely).",
+      "Approve if rule 1 OR rule 2 is satisfied."
+    ],
+    "starterCode": "income = int(input())\ncredit_score = int(input())\nco_signer = input().lower() == 'true'\n# Rule 1: income threshold (30000 normal, 25000 with co-signer) AND score >= 700\n# Rule 2: income >= 50000 regardless of score\n# Print 'Approved' or 'Denied'\n",
+    "testCases": [
+      {
+        "input": "28000\n720\ntrue",
+        "expected": "Approved"
+      },
+      {
+        "input": "28000\n720\nfalse",
+        "expected": "Denied"
+      },
+      {
+        "input": "55000\n600\nfalse",
+        "expected": "Approved"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "25000 co-signer 700",
+        "expected": "Approved",
+        "inject": "income = 25000\ncredit_score = 700\nco_signer = True"
+      },
+      {
+        "input": "30000 no 700",
+        "expected": "Approved",
+        "inject": "income = 30000\ncredit_score = 700\nco_signer = False"
+      },
+      {
+        "input": "29999 no 700",
+        "expected": "Denied",
+        "inject": "income = 29999\ncredit_score = 700\nco_signer = False"
+      },
+      {
+        "input": "50000 no 500",
+        "expected": "Approved",
+        "inject": "income = 50000\ncredit_score = 500\nco_signer = False"
+      },
+      {
+        "input": "20000 co-signer 750",
+        "expected": "Denied",
+        "inject": "income = 20000\ncredit_score = 750\nco_signer = True"
+      },
+      {
+        "input": "40000 co-signer 650",
+        "expected": "Denied",
+        "inject": "income = 40000\ncredit_score = 650\nco_signer = True"
+      }
+    ]
+  },
+  {
+    "id": "arena-q28",
+    "title": "Q28: Electricity Bill Slabs",
+    "description": "Compute an electricity bill using slab rates, surcharge, and senior citizen discount.\n\nSlabs (per unit):\n- First 100 units -> 0.50\n- Next 200 units (101-300) -> 0.75\n- Above 300 units -> 1.20\n\nSurcharge: if subtotal > 300, add 10%.\nSenior discount: if age >= 60, subtract 15% from the post-surcharge total.\n\nExample:\nInput: Units = 350, Age = 65\n- 100 x 0.50 = 50\n- 200 x 0.75 = 150\n- 50 x 1.20 = 60\nSubtotal = 260\nNo surcharge (260 <= 300)\nSenior 15% off -> 260 - 39 = 221\nOutput: Final bill = 221.0\n\nEdge cases: exactly 100, exactly 300, exactly 301, zero units, negative units, age exactly 60.",
+    "difficulty": "Hard",
+    "category": "Conditionals",
+    "orderIndex": 28,
+    "xp": 100,
+    "hints": [
+      "Split units into three buckets using min() and max().",
+      "Bucket 1 = min(units, 100); Bucket 2 = min(max(units - 100, 0), 200); Bucket 3 = max(units - 300, 0).",
+      "Compute subtotal, then apply surcharge only if subtotal > 300.",
+      "Apply senior discount last, on the post-surcharge total."
+    ],
+    "starterCode": "units = int(input())\nage = int(input())\n# Validate units >= 0\n# Compute slab1 = min(units, 100)\n# slab2 = min(max(units - 100, 0), 200)\n# slab3 = max(units - 300, 0)\n# subtotal = slab1 * 0.5 + slab2 * 0.75 + slab3 * 1.20\n# if subtotal > 300: subtotal *= 1.10\n# if age >= 60: subtotal *= 0.85\n# Print: Final bill = <value>\n",
+    "testCases": [
+      {
+        "input": "350\n65",
+        "expected": "Final bill = 221.0"
+      },
+      {
+        "input": "50\n30",
+        "expected": "Final bill = 25.0"
+      },
+      {
+        "input": "500\n40",
+        "expected": "Final bill = 396.0"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "exactly 100",
+        "expected": "Final bill = 50.0",
+        "inject": "units = 100\nage = 30"
+      },
+      {
+        "input": "exactly 300",
+        "expected": "Final bill = 200.0",
+        "inject": "units = 300\nage = 30"
+      },
+      {
+        "input": "exactly 301",
+        "expected": "Final bill = 201.2",
+        "inject": "units = 301\nage = 30"
+      },
+      {
+        "input": "zero units",
+        "expected": "Final bill = 0.0",
+        "inject": "units = 0\nage = 30"
+      },
+      {
+        "input": "senior small",
+        "expected": "Final bill = 42.5",
+        "inject": "units = 100\nage = 65"
+      },
+      {
+        "input": "senior large",
+        "expected": "Final bill = 336.6",
+        "inject": "units = 500\nage = 70"
+      }
+    ]
+  },
+  {
+    "id": "arena-q29",
+    "title": "Q29: Positive, Negative, or Zero",
+    "description": "Read a single integer and print whether it is positive, negative, or zero.\n\nExpected output: 'Positive', 'Negative', or 'Zero'.\n\nEdge cases: zero, very large positive, very large negative, integer at boundaries.",
+    "difficulty": "Easy",
+    "category": "Conditionals",
+    "orderIndex": 29,
+    "xp": 40,
+    "hints": [
+      "Check zero first with == 0.",
+      "Then use > 0 and < 0 for the other two cases.",
+      "Use if-elif-else so only one branch runs."
+    ],
+    "starterCode": "n = int(input())\n# Check zero first, then positive, then negative\n# Print 'Positive' / 'Negative' / 'Zero'\n",
+    "testCases": [
+      {
+        "input": "10",
+        "expected": "Positive"
+      },
+      {
+        "input": "-5",
+        "expected": "Negative"
+      },
+      {
+        "input": "0",
+        "expected": "Zero"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "large positive",
+        "expected": "Positive",
+        "inject": "n = 10**9"
+      },
+      {
+        "input": "large negative",
+        "expected": "Negative",
+        "inject": "n = -10**9"
+      },
+      {
+        "input": "one",
+        "expected": "Positive",
+        "inject": "n = 1"
+      },
+      {
+        "input": "minus one",
+        "expected": "Negative",
+        "inject": "n = -1"
+      }
+    ]
+  },
+  {
+    "id": "arena-q30",
+    "title": "Q30: Vowel or Consonant",
+    "description": "Read a single letter (a-z or A-Z). Print 'Vowel' if it is a vowel, 'Consonant' if it is a consonant, 'Invalid' otherwise.\n\nVowels: a, e, i, o, u (case-insensitive).\n\nEdge cases: uppercase vowels, digits, punctuation, empty string, multi-character input.",
+    "difficulty": "Easy",
+    "category": "Conditionals",
+    "orderIndex": 30,
+    "xp": 50,
+    "hints": [
+      "Normalize to lowercase with .lower() to handle both cases.",
+      "Check length first – must be exactly one character.",
+      "Check isalpha() to reject digits and punctuation.",
+      "Use 'in' on the string 'aeiou' to test for vowels."
+    ],
+    "starterCode": "ch = input().strip()\n# Validate: length is 1 and it is alphabetic\n# Convert to lowercase and check if in 'aeiou'\n# Print 'Vowel' / 'Consonant' / 'Invalid'\n",
+    "testCases": [
+      {
+        "input": "a",
+        "expected": "Vowel"
+      },
+      {
+        "input": "B",
+        "expected": "Consonant"
+      },
+      {
+        "input": "1",
+        "expected": "Invalid"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "uppercase vowel",
+        "expected": "Vowel",
+        "inject": "ch = 'E'"
+      },
+      {
+        "input": "vowel u",
+        "expected": "Vowel",
+        "inject": "ch = 'u'"
+      },
+      {
+        "input": "consonant z",
+        "expected": "Consonant",
+        "inject": "ch = 'z'"
+      },
+      {
+        "input": "digit 0",
+        "expected": "Invalid",
+        "inject": "ch = '0'"
+      },
+      {
+        "input": "symbol @",
+        "expected": "Invalid",
+        "inject": "ch = '@'"
+      },
+      {
+        "input": "two chars",
+        "expected": "Invalid",
+        "inject": "ch = 'ab'"
+      }
+    ]
+  },
+  {
+    "id": "arena-q31",
+    "title": "Q31: Triangle Validity and Type",
+    "description": "Read three side lengths. Determine if they form a valid triangle. If valid, also classify it.\n\nRules:\n- Valid if the sum of any two sides is strictly greater than the third.\n- Sides must all be positive.\n\nClassification (for valid triangles):\n- 'Equilateral' if all three sides equal\n- 'Isosceles' if exactly two sides equal\n- 'Scalene' if all three different\n\nOutput format:\n- Invalid: 'Not a valid triangle'\n- Valid: '<type> triangle'\n\nEdge cases: zero side, negative side, degenerate (sum equals third), floating point sides.",
+    "difficulty": "Medium",
+    "category": "Conditionals",
+    "orderIndex": 31,
+    "xp": 80,
+    "hints": [
+      "Check positivity first, then triangle inequality.",
+      "Triangle inequality: a + b > c AND a + c > b AND b + c > a (strict).",
+      "For classification, check equilateral first, then isosceles, then default to scalene.",
+      "Use float for inputs to support non-integer lengths."
+    ],
+    "starterCode": "a = float(input())\nb = float(input())\nc = float(input())\n# Validate all > 0\n# Check triangle inequality\n# Classify: equilateral > isosceles > scalene\n# Print accordingly\n",
+    "testCases": [
+      {
+        "input": "3\n3\n3",
+        "expected": "Equilateral triangle"
+      },
+      {
+        "input": "3\n3\n5",
+        "expected": "Isosceles triangle"
+      },
+      {
+        "input": "3\n4\n5",
+        "expected": "Scalene triangle"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "invalid zero",
+        "expected": "Not a valid triangle",
+        "inject": "a = 0\nb = 3\nc = 4"
+      },
+      {
+        "input": "degenerate",
+        "expected": "Not a valid triangle",
+        "inject": "a = 1\nb = 2\nc = 3"
+      },
+      {
+        "input": "negative",
+        "expected": "Not a valid triangle",
+        "inject": "a = -1\nb = 2\nc = 2"
+      },
+      {
+        "input": "equilateral float",
+        "expected": "Equilateral triangle",
+        "inject": "a = 2.5\nb = 2.5\nc = 2.5"
+      },
+      {
+        "input": "scalene",
+        "expected": "Scalene triangle",
+        "inject": "a = 7\nb = 8\nc = 9"
+      }
+    ]
+  },
+  {
+    "id": "arena-q32",
+    "title": "Q32: FizzBuzz",
+    "description": "Read an integer n. Print numbers from 1 to n inclusive.\n\nRules:\n- Multiple of both 3 and 5 -> 'FizzBuzz'\n- Multiple of 3 -> 'Fizz'\n- Multiple of 5 -> 'Buzz'\n- Otherwise -> the number\n\nExample (n = 15):\n1, 2, Fizz, 4, Buzz, Fizz, 7, 8, Fizz, Buzz, 11, Fizz, 13, 14, FizzBuzz\n\nEdge cases: n = 1, n = 0, negative n (print nothing), large n.",
+    "difficulty": "Medium",
+    "category": "Conditionals",
+    "orderIndex": 32,
+    "xp": 70,
+    "hints": [
+      "Check the 3 AND 5 case first – order matters!",
+      "Use modulo: n % 3 == 0 and n % 5 == 0.",
+      "Alternatively check n % 15 == 0 for FizzBuzz.",
+      "Loop from 1 to n inclusive using range(1, n + 1)."
+    ],
+    "starterCode": "n = int(input())\n# Loop from 1 to n inclusive\n# Check FizzBuzz first, then Fizz, then Buzz, then print number\n",
+    "testCases": [
+      {
+        "input": "5",
+        "expected": "1\n2\nFizz\n4\nBuzz"
+      },
+      {
+        "input": "15",
+        "expected": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz"
+      },
+      {
+        "input": "1",
+        "expected": "1"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "3",
+        "expected": "1\n2\nFizz",
+        "inject": "n = 3"
+      },
+      {
+        "input": "zero",
+        "expected": "",
+        "inject": "n = 0"
+      },
+      {
+        "input": "negative",
+        "expected": "",
+        "inject": "n = -5"
+      },
+      {
+        "input": "30 endpoint",
+        "expected": "FizzBuzz",
+        "inject": "n = 30\n# only check last value"
+      },
+      {
+        "input": "9",
+        "expected": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz",
+        "inject": "n = 9"
+      }
+    ]
+  },
+  {
+    "id": "arena-q33",
+    "title": "Q33: Multiplication Table",
+    "description": "Read an integer n. Print the multiplication table of n from 1 to 10, one line per product.\n\nFormat: '<n> x <i> = <n*i>'\n\nExample (n = 3):\n3 x 1 = 3\n3 x 2 = 6\n...\n3 x 10 = 30\n\nEdge cases: n = 0 (all zeros), negative n (negative products), large n.",
+    "difficulty": "Easy",
+    "category": "Loops",
+    "orderIndex": 33,
+    "xp": 50,
+    "hints": [
+      "Use a for loop from 1 to 11 (exclusive of 11).",
+      "Use f-strings: f'{n} x {i} = {n * i}'.",
+      "Print inside the loop, not after."
+    ],
+    "starterCode": "n = int(input())\n# Loop i from 1 to 10\n# Print in format: n x i = n*i\n",
+    "testCases": [
+      {
+        "input": "3",
+        "expected": "3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30"
+      },
+      {
+        "input": "1",
+        "expected": "1 x 1 = 1\n1 x 2 = 2\n1 x 3 = 3\n1 x 4 = 4\n1 x 5 = 5\n1 x 6 = 6\n1 x 7 = 7\n1 x 8 = 8\n1 x 9 = 9\n1 x 10 = 10"
+      },
+      {
+        "input": "0",
+        "expected": "0 x 1 = 0\n0 x 2 = 0\n0 x 3 = 0\n0 x 4 = 0\n0 x 5 = 0\n0 x 6 = 0\n0 x 7 = 0\n0 x 8 = 0\n0 x 9 = 0\n0 x 10 = 0"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "negative",
+        "expected": "-1 x 1 = -1",
+        "inject": "n = -1\n# check first line"
+      },
+      {
+        "input": "5",
+        "expected": "5 x 5 = 25",
+        "inject": "n = 5\n# check line 5"
+      },
+      {
+        "input": "10",
+        "expected": "10 x 10 = 100",
+        "inject": "n = 10\n# check last line"
+      }
+    ]
+  },
+  {
+    "id": "arena-q34",
+    "title": "Q34: Factorial Using Loop",
+    "description": "Read a non-negative integer n. Compute and print n! (factorial) using a loop.\n\nn! = 1 * 2 * 3 * ... * n\nBy definition, 0! = 1.\n\nExample:\nInput: 5 -> Output: 120\n\nEdge cases: n = 0 (result 1), n = 1, large n (Python handles big ints natively), negative n (invalid).",
+    "difficulty": "Easy",
+    "category": "Loops",
+    "orderIndex": 34,
+    "xp": 50,
+    "hints": [
+      "Initialize result = 1, not 0. Multiplying by 0 always gives 0.",
+      "Loop i from 1 to n inclusive.",
+      "Multiply result *= i each iteration.",
+      "Handle n < 0 as invalid before the loop."
+    ],
+    "starterCode": "n = int(input())\n# Validate n >= 0\n# Initialize result = 1\n# Loop from 1 to n: result *= i\n# Print result\n",
+    "testCases": [
+      {
+        "input": "5",
+        "expected": "120"
+      },
+      {
+        "input": "0",
+        "expected": "1"
+      },
+      {
+        "input": "1",
+        "expected": "1"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "10",
+        "expected": "3628800",
+        "inject": "n = 10"
+      },
+      {
+        "input": "20",
+        "expected": "2432902008176640000",
+        "inject": "n = 20"
+      },
+      {
+        "input": "3",
+        "expected": "6",
+        "inject": "n = 3"
+      },
+      {
+        "input": "negative",
+        "expected": "Invalid",
+        "inject": "n = -3"
+      }
+    ]
+  },
+  {
+    "id": "arena-q35",
+    "title": "Q35: Fibonacci Series Up to N Terms",
+    "description": "Read n (number of terms). Print the first n Fibonacci numbers, space-separated on one line.\n\nSequence: 0, 1, 1, 2, 3, 5, 8, 13, ...\n\nExample:\nInput: 7 -> Output: 0 1 1 2 3 5 8\n\nEdge cases: n = 0 (print nothing), n = 1 (print 0), n = 2 (print 0 1), large n.",
+    "difficulty": "Medium",
+    "category": "Loops",
+    "orderIndex": 35,
+    "xp": 70,
+    "hints": [
+      "Start with a = 0, b = 1.",
+      "For each iteration, print a, then update: a, b = b, a + b.",
+      "Use a list to collect terms then ' '.join(map(str, result)) for output.",
+      "Handle n <= 0 by printing nothing (or an empty line)."
+    ],
+    "starterCode": "n = int(input())\n# Initialize a = 0, b = 1\n# Collect n terms\n# Print space-separated\n",
+    "testCases": [
+      {
+        "input": "7",
+        "expected": "0 1 1 2 3 5 8"
+      },
+      {
+        "input": "1",
+        "expected": "0"
+      },
+      {
+        "input": "2",
+        "expected": "0 1"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "zero terms",
+        "expected": "",
+        "inject": "n = 0"
+      },
+      {
+        "input": "3 terms",
+        "expected": "0 1 1",
+        "inject": "n = 3"
+      },
+      {
+        "input": "10 terms",
+        "expected": "0 1 1 2 3 5 8 13 21 34",
+        "inject": "n = 10"
+      },
+      {
+        "input": "5 terms",
+        "expected": "0 1 1 2 3",
+        "inject": "n = 5"
+      }
+    ]
+  },
+  {
+    "id": "arena-q36",
+    "title": "Q36: Prime Number Check",
+    "description": "Read a positive integer n. Print 'Prime' if n is a prime number, otherwise 'Not Prime'.\n\nA prime number has exactly two divisors: 1 and itself.\n\nExamples:\n- 2 -> Prime\n- 1 -> Not Prime (only one divisor)\n- 4 -> Not Prime\n- 17 -> Prime\n\nEdge cases: n = 0, n = 1, n = 2 (smallest prime), n = 3, perfect squares, very large n.",
+    "difficulty": "Medium",
+    "category": "Loops",
+    "orderIndex": 36,
+    "xp": 80,
+    "hints": [
+      "Handle n < 2 as Not Prime immediately.",
+      "Loop i from 2 to int(n ** 0.5) + 1 – no need to check past the square root.",
+      "If n % i == 0 at any point, it is not prime.",
+      "Use a for-else: the else runs only if the loop completed without break."
+    ],
+    "starterCode": "n = int(input())\n# Handle n < 2: Not Prime\n# Loop i from 2 to sqrt(n)\n# If n % i == 0: Not Prime, break\n# Otherwise: Prime\n",
+    "testCases": [
+      {
+        "input": "17",
+        "expected": "Prime"
+      },
+      {
+        "input": "4",
+        "expected": "Not Prime"
+      },
+      {
+        "input": "2",
+        "expected": "Prime"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "one",
+        "expected": "Not Prime",
+        "inject": "n = 1"
+      },
+      {
+        "input": "zero",
+        "expected": "Not Prime",
+        "inject": "n = 0"
+      },
+      {
+        "input": "negative",
+        "expected": "Not Prime",
+        "inject": "n = -5"
+      },
+      {
+        "input": "large prime",
+        "expected": "Prime",
+        "inject": "n = 7919"
+      },
+      {
+        "input": "large composite",
+        "expected": "Not Prime",
+        "inject": "n = 10000"
+      },
+      {
+        "input": "perfect square",
+        "expected": "Not Prime",
+        "inject": "n = 121"
+      }
+    ]
+  },
+  {
+    "id": "arena-q37",
+    "title": "Q37: Reverse a Number",
+    "description": "Read an integer n (may be positive or negative). Print its digits reversed as an integer.\n\nExamples:\n- 1234 -> 4321\n- -567 -> -765\n- 100 -> 1 (leading zeros dropped)\n- 0 -> 0\n\nEdge cases: single digit, trailing zeros, negative, zero.",
+    "difficulty": "Easy",
+    "category": "Loops",
+    "orderIndex": 37,
+    "xp": 50,
+    "hints": [
+      "Handle sign separately: sign = -1 if n < 0 else 1.",
+      "Work with abs(n) inside the loop.",
+      "Extract last digit with n % 10, remove it with n // 10.",
+      "Build reversed number: rev = rev * 10 + digit."
+    ],
+    "starterCode": "n = int(input())\n# Save the sign\n# Work with abs(n)\n# Loop while n > 0: extract last digit, append to rev\n# Apply sign, print\n",
+    "testCases": [
+      {
+        "input": "1234",
+        "expected": "4321"
+      },
+      {
+        "input": "-567",
+        "expected": "-765"
+      },
+      {
+        "input": "100",
+        "expected": "1"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "zero",
+        "expected": "0",
+        "inject": "n = 0"
+      },
+      {
+        "input": "single digit",
+        "expected": "7",
+        "inject": "n = 7"
+      },
+      {
+        "input": "negative single",
+        "expected": "-3",
+        "inject": "n = -3"
+      },
+      {
+        "input": "palindrome",
+        "expected": "121",
+        "inject": "n = 121"
+      },
+      {
+        "input": "trailing zeros",
+        "expected": "1",
+        "inject": "n = 1000"
+      }
+    ]
+  },
+  {
+    "id": "arena-q38",
+    "title": "Q38: Pyramid Star Pattern",
+    "description": "Read n. Print a centered pyramid of stars with n rows.\n\nRow i (1-indexed) has:\n- (n - i) spaces\n- (2 * i - 1) stars\n\nExample (n = 4):\n\n   *\n  ***\n *****\n*******\n\nEdge cases: n = 0 (print nothing), n = 1, large n.",
+    "difficulty": "Medium",
+    "category": "Patterns",
+    "orderIndex": 38,
+    "xp": 70,
+    "hints": [
+      "Row i: ' ' * (n - i) + '*' * (2 * i - 1).",
+      "Use a single loop from 1 to n.",
+      "Python string multiplication handles the padding.",
+      "Careful with trailing spaces – do not add any after stars."
+    ],
+    "starterCode": "n = int(input())\n# Loop i from 1 to n\n# Print ' ' * (n - i) + '*' * (2 * i - 1)\n",
+    "testCases": [
+      {
+        "input": "1",
+        "expected": "*"
+      },
+      {
+        "input": "3",
+        "expected": "  *\n ***\n*****"
+      },
+      {
+        "input": "4",
+        "expected": "   *\n  ***\n *****\n*******"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "zero",
+        "expected": "",
+        "inject": "n = 0"
+      },
+      {
+        "input": "two",
+        "expected": " *\n***",
+        "inject": "n = 2"
+      },
+      {
+        "input": "five",
+        "expected": "    *\n   ***\n  *****\n *******\n*********",
+        "inject": "n = 5"
+      }
+    ]
+  },
+  {
+    "id": "arena-q39",
+    "title": "Q39: Floyd's Triangle",
+    "description": "Read n. Print the first n rows of Floyd's Triangle – a right-angled triangle of consecutive numbers.\n\nExample (n = 4):\n1\n2 3\n4 5 6\n7 8 9 10\n\nEdge cases: n = 1, n = 0, large n.",
+    "difficulty": "Medium",
+    "category": "Patterns",
+    "orderIndex": 39,
+    "xp": 70,
+    "hints": [
+      "Keep a running counter starting at 1.",
+      "Row i has i numbers.",
+      "Use nested loops: outer for rows, inner for numbers in that row.",
+      "Use print() with end=' ' and print() with no argument to break the line."
+    ],
+    "starterCode": "n = int(input())\nnum = 1\n# Outer loop i from 1 to n\n#   Inner loop j from 1 to i\n#     Print num, increment\n#   Move to new line\n",
+    "testCases": [
+      {
+        "input": "1",
+        "expected": "1"
+      },
+      {
+        "input": "3",
+        "expected": "1\n2 3\n4 5 6"
+      },
+      {
+        "input": "4",
+        "expected": "1\n2 3\n4 5 6\n7 8 9 10"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "zero",
+        "expected": "",
+        "inject": "n = 0"
+      },
+      {
+        "input": "two",
+        "expected": "1\n2 3",
+        "inject": "n = 2"
+      },
+      {
+        "input": "five",
+        "expected": "1\n2 3\n4 5 6\n7 8 9 10\n11 12 13 14 15",
+        "inject": "n = 5"
+      }
+    ]
+  },
+  {
+    "id": "arena-q40",
+    "title": "Q40: GCD of Two Numbers (Euclidean Algorithm)",
+    "description": "Read two positive integers a and b. Print their greatest common divisor using the Euclidean algorithm.\n\nEuclidean algorithm:\n- While b != 0: a, b = b, a % b\n- GCD is a\n\nExamples:\n- GCD(12, 18) = 6\n- GCD(100, 75) = 25\n- GCD(17, 5) = 1\n\nEdge cases: equal numbers, one divides the other, coprime (GCD = 1), zero (GCD is the other number).",
+    "difficulty": "Medium",
+    "category": "Numbers",
+    "orderIndex": 40,
+    "xp": 80,
+    "hints": [
+      "Loop while b != 0: a, b = b, a % b.",
+      "After the loop, a holds the GCD.",
+      "Handle a == 0 and b == 0 separately (both zero is undefined).",
+      "The Euclidean algorithm is O(log min(a, b))."
+    ],
+    "starterCode": "a = int(input())\nb = int(input())\n# Euclidean algorithm\n# while b != 0: a, b = b, a % b\n# Print a\n",
+    "testCases": [
+      {
+        "input": "12\n18",
+        "expected": "6"
+      },
+      {
+        "input": "100\n75",
+        "expected": "25"
+      },
+      {
+        "input": "17\n5",
+        "expected": "1"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "equal",
+        "expected": "9",
+        "inject": "a = 9\nb = 9"
+      },
+      {
+        "input": "one zero",
+        "expected": "5",
+        "inject": "a = 5\nb = 0"
+      },
+      {
+        "input": "other zero",
+        "expected": "7",
+        "inject": "a = 0\nb = 7"
+      },
+      {
+        "input": "divisor",
+        "expected": "10",
+        "inject": "a = 10\nb = 100"
+      },
+      {
+        "input": "large",
+        "expected": "12",
+        "inject": "a = 1071\nb = 462"
+      }
+    ]
+  },
+  {
+    "id": "arena-q41",
+    "title": "Q41: Palindrome Check",
+    "description": "Read a string. Determine if it is a palindrome. A palindrome reads the same forwards and backwards.\n\nRules:\n- Ignore case: 'Madam' is a palindrome.\n- Ignore non-alphanumeric characters? For this problem, consider only the exact characters (no stripping).\n\nExamples:\n- 'madam' -> Palindrome\n- 'hello' -> Not Palindrome\n- 'Malayalam' -> Palindrome (case-insensitive)\n\nEdge cases: empty string (palindrome), single character (palindrome), spaces inside ('race car' – decide policy).",
+    "difficulty": "Easy",
+    "category": "Strings",
+    "orderIndex": 41,
+    "xp": 50,
+    "hints": [
+      "Normalize with .lower().",
+      "Compare the string with its reverse: s == s[::-1].",
+      "For the manual approach, use two pointers from both ends.",
+      "Empty string and single characters are always palindromes."
+    ],
+    "starterCode": "s = input()\n# Normalize with .lower()\n# Compare s == s[::-1]\n# Print 'Palindrome' or 'Not Palindrome'\n",
+    "testCases": [
+      {
+        "input": "madam",
+        "expected": "Palindrome"
+      },
+      {
+        "input": "hello",
+        "expected": "Not Palindrome"
+      },
+      {
+        "input": "Malayalam",
+        "expected": "Palindrome"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "empty",
+        "expected": "Palindrome",
+        "inject": "s = ''"
+      },
+      {
+        "input": "single",
+        "expected": "Palindrome",
+        "inject": "s = 'a'"
+      },
+      {
+        "input": "even length",
+        "expected": "Palindrome",
+        "inject": "s = 'abba'"
+      },
+      {
+        "input": "with space",
+        "expected": "Not Palindrome",
+        "inject": "s = 'race car'"
+      },
+      {
+        "input": "different case",
+        "expected": "Palindrome",
+        "inject": "s = 'Racecar'"
+      }
+    ]
+  },
+  {
+    "id": "arena-q42",
+    "title": "Q42: Count Vowels, Consonants, Digits, and Spaces",
+    "description": "Read a sentence. Count and print the number of vowels, consonants, digits, and spaces.\n\nRules:\n- Vowels: a, e, i, o, u (case-insensitive).\n- Consonants: any other alphabetic character.\n- Digits: 0-9.\n- Spaces: ' ' only.\n- Other characters (punctuation, symbols) are ignored.\n\nOutput format (one per line):\nVowels: <n>\nConsonants: <n>\nDigits: <n>\nSpaces: <n>\n\nExample:\nInput: 'Hello World 123'\nVowels: 3\nConsonants: 7\nDigits: 3\nSpaces: 2\n\nEdge cases: empty string, only digits, only spaces, mixed punctuation.",
+    "difficulty": "Medium",
+    "category": "Strings",
+    "orderIndex": 42,
+    "xp": 70,
+    "hints": [
+      "Iterate over each character and classify with if-elif.",
+      "Use .isalpha(), .isdigit(), and == ' ' for classification.",
+      "For letters, check vowel membership after .lower().",
+      "Print counts in the required order."
+    ],
+    "starterCode": "s = input()\nvowels = consonants = digits = spaces = 0\n# Loop each char in s, classify and increment\n# Print in order: Vowels, Consonants, Digits, Spaces\n",
+    "testCases": [
+      {
+        "input": "Hello World 123",
+        "expected": "Vowels: 3\nConsonants: 7\nDigits: 3\nSpaces: 2"
+      },
+      {
+        "input": "aeiou",
+        "expected": "Vowels: 5\nConsonants: 0\nDigits: 0\nSpaces: 0"
+      },
+      {
+        "input": "12345",
+        "expected": "Vowels: 0\nConsonants: 0\nDigits: 5\nSpaces: 0"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "empty",
+        "expected": "Vowels: 0\nConsonants: 0\nDigits: 0\nSpaces: 0",
+        "inject": "s = ''"
+      },
+      {
+        "input": "all spaces",
+        "expected": "Vowels: 0\nConsonants: 0\nDigits: 0\nSpaces: 3",
+        "inject": "s = '   '"
+      },
+      {
+        "input": "punctuation",
+        "expected": "Vowels: 1\nConsonants: 2\nDigits: 1\nSpaces: 0",
+        "inject": "s = 'a,b1'"
+      },
+      {
+        "input": "mixed case",
+        "expected": "Vowels: 2\nConsonants: 3\nDigits: 0\nSpaces: 1",
+        "inject": "s = 'AbC dE'"
+      }
+    ]
+  },
+  {
+    "id": "arena-q43",
+    "title": "Q43: Anagram Check",
+    "description": "Read two strings. Determine if they are anagrams of each other (same letters, same counts, order does not matter).\n\nRules:\n- Case-insensitive.\n- Spaces are ignored.\n\nExamples:\n- 'listen', 'silent' -> Anagram\n- 'hello', 'world' -> Not Anagram\n- 'Dormitory', 'Dirty Room' -> Anagram (spaces ignored, case ignored)\n\nEdge cases: empty strings (anagram of each other), different lengths after normalization, unicode, same string.",
+    "difficulty": "Medium",
+    "category": "Strings",
+    "orderIndex": 43,
+    "xp": 80,
+    "hints": [
+      "Normalize both strings: lower() then remove spaces.",
+      "Quick reject: if len differs after normalization, not an anagram.",
+      "Sort both strings and compare: sorted(s1) == sorted(s2).",
+      "Alternative: use collections.Counter and compare."
+    ],
+    "starterCode": "s1 = input()\ns2 = input()\n# Normalize both: lower + remove spaces\n# Compare sorted versions\n# Print 'Anagram' or 'Not Anagram'\n",
+    "testCases": [
+      {
+        "input": "listen\nsilent",
+        "expected": "Anagram"
+      },
+      {
+        "input": "hello\nworld",
+        "expected": "Not Anagram"
+      },
+      {
+        "input": "Dormitory\nDirty Room",
+        "expected": "Anagram"
+      }
+    ],
+    "hiddenTestCases": [
+      {
+        "input": "empty both",
+        "expected": "Anagram",
+        "inject": "s1 = ''\ns2 = ''"
+      },
+      {
+        "input": "one empty",
+        "expected": "Not Anagram",
+        "inject": "s1 = 'a'\ns2 = ''"
+      },
+      {
+        "input": "same string",
+        "expected": "Anagram",
+        "inject": "s1 = 'abc'\ns2 = 'abc'"
+      },
+      {
+        "input": "different length",
+        "expected": "Not Anagram",
+        "inject": "s1 = 'abc'\ns2 = 'abcd'"
+      },
+      {
+        "input": "case diff",
+        "expected": "Anagram",
+        "inject": "s1 = 'Listen'\ns2 = 'Silent'"
       }
     ]
   }
