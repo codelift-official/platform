@@ -52,6 +52,7 @@ export default function StudentDashboard() {
     testAttempts,
     certificates,
     courses,
+    enrollments = [],
     codingProblems = [],
     codingAttempts = [],
     getBatchHistory
@@ -76,11 +77,21 @@ export default function StudentDashboard() {
 
   const batchCourses = Array.isArray(courses)
     ? courses.filter(c => {
-      if (studentBatchIds.length === 0) return false;
-      if (Array.isArray(batch?.courseIds)) {
-        return batch.courseIds.includes(c.id);
+      if (c.isPublished === false) return false;
+      let isBatchAssigned = false;
+      if (studentBatchIds.length > 0) {
+        if (Array.isArray(batch?.courseIds) && batch.courseIds.includes(c.id)) isBatchAssigned = true;
+        if (studentBatchIds.includes(c.batchId) || studentBatchIds.some(bId => c.batchIds?.includes(bId))) isBatchAssigned = true;
       }
-      return studentBatchIds.includes(c.batchId) || studentBatchIds.some(bId => c.batchIds?.includes(bId));
+      if (isBatchAssigned) return true;
+
+      // Check student enrollment for elective courses
+      const isEnrolled = (enrollments || []).some(
+        e => (e.studentId === student?.id || e.studentId === auth?.studentId || e.student_id === student?.id || e.student_id === auth?.studentId) &&
+          (e.courseId === c.id || e.courseId === c.slug || e.course_id === c.id || e.course_id === c.slug) &&
+          ['APPROVED', 'ACTIVE', 'PAID'].includes(e.status)
+      );
+      return isEnrolled;
     })
     : [];
   const activeCourses = batchCourses;

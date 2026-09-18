@@ -225,21 +225,23 @@ export default function StudentCourses() {
       if (c.isPublished === false) return false;
 
       // 1. Matched via student's batch
+      let isBatchAssigned = false;
       if (student?.batchId) {
-        if (Array.isArray(batch?.courseIds) && batch.courseIds.includes(c.id)) return true;
-        if (c.batchId === student.batchId || (Array.isArray(c.batchIds) && c.batchIds.includes(student.batchId))) return true;
+        if (Array.isArray(batch?.courseIds) && batch.courseIds.includes(c.id)) isBatchAssigned = true;
+        if (c.batchId === student.batchId || (Array.isArray(c.batchIds) && c.batchIds.includes(student.batchId))) isBatchAssigned = true;
       }
+      if (isBatchAssigned) return true;
 
-      // 2. Direct student enrollment (free or verified paid)
+      // 2. Direct student enrollment (APPROVED, ACTIVE, PAID)
       const isEnrolled = enrollments.some(
-        e => (e.studentId === student?.id || e.studentId === auth?.studentId) &&
-          (e.courseId === c.id || e.courseId === c.slug) &&
-          ['ACTIVE', 'FREE', 'PAID'].includes(e.status)
+        e => (e.studentId === student?.id || e.studentId === auth?.studentId || e.student_id === student?.id || e.student_id === auth?.studentId) &&
+          (e.courseId === c.id || e.courseId === c.slug || e.course_id === c.id || e.course_id === c.slug) &&
+          ['APPROVED', 'ACTIVE', 'PAID', 'FREE'].includes(e.status)
       );
       if (isEnrolled) return true;
 
-      // 3. Published elective or free courses (all students have access to self-paced elective curricula)
-      if (c.courseType === 'elective' || c.isFree || !c.price || c.price === 0) return true;
+      // 3. Elective or free courses — only show if student is enrolled (Bug 4 fix: prevent un-allotted electives from appearing)
+      if ((c.courseType === 'elective' || c.isFree || !c.price || c.price === 0) && isEnrolled) return true;
 
       return false;
     });
@@ -247,7 +249,6 @@ export default function StudentCourses() {
 
   const selectedCourseId = searchParams.get('id');
   const activeCourse = allAvailableCourses.find(c => c.id === selectedCourseId || c.slug === selectedCourseId) ||
-    courses.find(c => (c.id === selectedCourseId || c.slug === selectedCourseId) && c.isPublished !== false) ||
     allAvailableCourses[0];
 
   // ── Navigator State ──────────────────────────────────────
