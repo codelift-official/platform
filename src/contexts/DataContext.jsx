@@ -127,21 +127,11 @@ export function DataProvider({ children }) {
 
       if (data.users?.length) setUsers(data.users);
       if (Array.isArray(data.students)) {
-        const hydratedStudents = data.students.map((s) => {
-          let localProg = {};
-          let localQuiz = {};
-          try {
-            const cp = localStorage.getItem(`codelift_student_progress_${s.id}`);
-            if (cp) localProg = JSON.parse(cp);
-            const cq = localStorage.getItem(`codelift_student_quizzes_${s.id}`);
-            if (cq) localQuiz = JSON.parse(cq);
-          } catch (_) {}
-          return {
-            ...s,
-            progress: { ...(s.progress || {}), ...localProg },
-            quizAttempts: { ...(s.quizAttempts || {}), ...localQuiz }
-          };
-        });
+        const hydratedStudents = data.students.map((s) => ({
+          ...s,
+          progress: s.progress || {},
+          quizAttempts: s.quizAttempts || {}
+        }));
         setStudents(hydratedStudents);
       }
       if (data.categories?.length) setCategories(data.categories);
@@ -264,6 +254,17 @@ export function DataProvider({ children }) {
   };
 
   const updateStudent = async (studentId, updates) => {
+    if (updates.batchId !== undefined || updates.batch_id !== undefined) {
+      try {
+        localStorage.removeItem(`codelift_student_progress_${studentId}`);
+        localStorage.removeItem(`codelift_student_quizzes_${studentId}`);
+        Object.keys(localStorage).forEach((k) => {
+          if (k.startsWith('codelift_last_topic_')) {
+            localStorage.removeItem(k);
+          }
+        });
+      } catch (_) {}
+    }
     setStudents((prev) => prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...updates } : s)));
     try {
       await supabaseDataService.updateStudent(studentId, updates);

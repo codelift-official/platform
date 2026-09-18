@@ -439,6 +439,17 @@ export function AuthProvider({ children }) {
         await supabase.auth.signOut();
       }
     } catch (_) {}
+    try {
+      Object.keys(localStorage).forEach((key) => {
+        if (
+          key.startsWith('codelift_student_progress_') ||
+          key.startsWith('codelift_student_quizzes_') ||
+          key.startsWith('codelift_last_topic_')
+        ) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (_) {}
     saveAuth(null);
     setSession(null);
   };

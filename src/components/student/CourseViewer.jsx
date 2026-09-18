@@ -6,10 +6,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FaBookOpen, FaCheckCircle, FaCircle, FaGraduationCap } from 'react-icons/fa';
 
 export default function CourseViewer() {
-  const { courses } = useData();
-  const { currentStudent } = useAuth();
+  const { courses = [], students = [] } = useData();
+  const { currentStudent, auth } = useAuth();
 
-  const progress = currentStudent?.progress || {};
+  const student = Array.isArray(students)
+    ? students.find(s =>
+        (auth?.studentId && (s.id === auth.studentId || s.legacyId === auth.studentId)) ||
+        (auth?.id && (s.id === auth.id || s.legacyId === auth.id)) ||
+        (auth?.userId && (s.id === auth.userId || s.legacyId === auth.userId)) ||
+        (auth?.email && s.email?.toLowerCase() === auth.email?.toLowerCase())
+      )
+    : null;
+
+  const progress = student?.progress || currentStudent?.progress || {};
 
   // Compute overall course progress
   let totalTopics = 0;

@@ -217,7 +217,14 @@ export default function StudentCourses() {
   const { auth } = useAuth();
   const { students = [], courses = [], batches = [], enrollments = [], markTopicComplete, saveQuizAttempt } = useData();
 
-  const student = students.find(s => s.id === auth?.studentId);
+  const student = Array.isArray(students)
+    ? students.find(s =>
+        (auth?.studentId && (s.id === auth.studentId || s.legacyId === auth.studentId)) ||
+        (auth?.id && (s.id === auth.id || s.legacyId === auth.id)) ||
+        (auth?.userId && (s.id === auth.userId || s.legacyId === auth.userId)) ||
+        (auth?.email && s.email?.toLowerCase() === auth.email?.toLowerCase())
+      )
+    : null;
   const batch = batches.find(b => b.id === student?.batchId);
 
   const allAvailableCourses = useMemo(() => {
