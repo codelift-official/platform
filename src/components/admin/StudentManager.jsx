@@ -109,34 +109,38 @@ export default function StudentManager() {
 
   const [justAddedStudent, setJustAddedStudent] = useState(null);
 
-  const onAddSubmit = (data) => {
-    addStudent(data);
-    setJustAddedStudent(data);
-    resetAdd();
-    setShowAddModal(false);
+  const onAddSubmit = async (data) => {
+    try {
+      await addStudent(data);
+      setJustAddedStudent(data);
+      resetAdd();
+      setShowAddModal(false);
 
-    toast((t) => (
-      <div className="d-flex align-items-center justify-content-between gap-3">
-        <span>Student <strong>{data.name}</strong> added!</span>
-        <Button
-          variant="success"
-          size="sm"
-          className="d-inline-flex align-items-center gap-1 py-1 px-2.5 text-nowrap"
-          onClick={() => {
-            openAdminWhatsApp(
-              buildAdminNotification('student_added', {
-                name: data.name,
-                email: data.email,
-              })
-            );
-            toast.dismiss(t.id);
-          }}
-        >
-          <FaWhatsapp size={14} />
-          <span>Notify Admin</span>
-        </Button>
-      </div>
-    ), { duration: 8000 });
+      toast((t) => (
+        <div className="d-flex align-items-center justify-content-between gap-3">
+          <span>Student <strong>{data.name}</strong> added!</span>
+          <Button
+            variant="success"
+            size="sm"
+            className="d-inline-flex align-items-center gap-1 py-1 px-2.5 text-nowrap"
+            onClick={() => {
+              openAdminWhatsApp(
+                buildAdminNotification('student_added', {
+                  name: data.name,
+                  email: data.email,
+                })
+              );
+              toast.dismiss(t.id);
+            }}
+          >
+            <FaWhatsapp size={14} />
+            <span>Notify Admin</span>
+          </Button>
+        </div>
+      ), { duration: 8000 });
+    } catch (err) {
+      toast.error(err.message || 'Failed to add student. Please try again.');
+    }
   };
 
   const onStartEdit = (student) => {
@@ -147,15 +151,19 @@ export default function StudentManager() {
     setEditValue('batchId', student.batchId);
   };
 
-  const onEditSubmit = (data) => {
+  const onEditSubmit = async (data) => {
     if (editingStudent) {
-      updateStudent(editingStudent.id, {
-        name: data.name,
-        phone: data.phone,
-        batchId: data.batchId
-      });
-      toast.success(`Updated profile for ${data.name}!`);
-      setEditingStudent(null);
+      try {
+        await updateStudent(editingStudent.id, {
+          name: data.name,
+          phone: data.phone,
+          batchId: data.batchId
+        });
+        toast.success(`Updated profile for ${data.name}!`);
+        setEditingStudent(null);
+      } catch (err) {
+        toast.error(err.message || 'Failed to update student.');
+      }
     }
   };
 

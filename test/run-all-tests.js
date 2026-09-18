@@ -20,6 +20,7 @@ import { runHomepageMobileAndThemeTests } from './homepage-mobile-and-theme.test
 import { run56ModuleCourseImportVisibilityTests } from './course-import-56m-visibility.test.js';
 import { runMandatoryCourseProgressionTests } from './mandatory-course-progression.test.js';
 import { runArenaCurriculumTests } from './code-arena-curriculum.test.js';
+import { runStudentCreationAndQuizAttemptsTests } from './student-creation-and-quiz-attempts.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -155,6 +156,15 @@ async function runAll() {
     suiteResults.push({ name: 'Code Arena 43-Problem Curriculum & Execution Integrity', passed: r14.passedCount, total: r14.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Code Arena 43-Problem Curriculum & Execution Integrity', error: err.message, ok: false });
+  }
+
+  try {
+    const r15 = runStudentCreationAndQuizAttemptsTests();
+    totalPassed += r15.passedCount;
+    totalTests += r15.totalCount;
+    suiteResults.push({ name: 'Student Creation & Quiz Attempts Schema Resilience', passed: r15.passedCount, total: r15.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Student Creation & Quiz Attempts Schema Resilience', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

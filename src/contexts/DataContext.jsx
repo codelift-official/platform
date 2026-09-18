@@ -86,6 +86,7 @@ export function DataProvider({ children }) {
   // Collections State initialized with local seeds for instant render
   const [users, setUsers] = useState(usersSeed);
   const [students, setStudents] = useState(() => (isSupabaseConfigured ? [] : (studentsSeed || [])));
+  const [isHydrated, setIsHydrated] = useState(!isSupabaseConfigured);
   // NOTE: passwordResetRequests is derived on-the-fly from students (reset_requested flag on Supabase).
   // No useState needed here — see the derived const below in this component.
 
@@ -173,6 +174,8 @@ export function DataProvider({ children }) {
       }
     } catch (err) {
       console.warn('[DataContext] Background fetch from Supabase deferred:', err.message);
+    } finally {
+      setIsHydrated(true);
     }
   }, []);
 
@@ -255,6 +258,7 @@ export function DataProvider({ children }) {
       return finalized;
     } catch (e) {
       console.error('[DataContext] addStudent failed on Supabase:', e);
+      setStudents((prev) => prev.filter((s) => s.id !== assignedId));
       throw e;
     }
   };
@@ -1679,6 +1683,9 @@ export function DataProvider({ children }) {
         passwordResetRequests,
         notifications: [],
         platformSettings,
+        isHydrated,
+        isLoading: !isHydrated,
+        loading: !isHydrated,
 
         // Handlers
         addUser,

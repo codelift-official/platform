@@ -684,6 +684,8 @@ export async function fetchAllData() {
 // ==============================================================================
 // STUDENT MUTATIONS
 // ==============================================================================
+let isQuizAttemptsColumnSupported = true;
+
 export async function addStudent(studentData) {
   const assignedId = isValidUUID(studentData.id) ? studentData.id : genUUID();
   const insertPayload = {
@@ -701,18 +703,35 @@ export async function addStudent(studentData) {
     is_active: studentData.isActive !== false,
     completed_batch_ids: studentData.completedBatchIds || [],
     progress: studentData.progress || {},
-    quiz_attempts: studentData.quizAttempts || studentData.quiz_attempts || {},
     base_fee: Number(studentData.baseFee || 0),
     concession_amount: Number(studentData.concessionAmount || 0),
     concession_reason: studentData.concessionReason || '',
     reset_requested: Boolean(studentData.reset_requested)
   };
 
-  const { data, error } = await supabase
+  const quizAttempts = studentData.quizAttempts || studentData.quiz_attempts;
+  if (isQuizAttemptsColumnSupported && quizAttempts && Object.keys(quizAttempts).length > 0) {
+    insertPayload.quiz_attempts = quizAttempts;
+  }
+
+  let { data, error } = await supabase
     .from('students')
     .insert(insertPayload)
     .select()
     .single();
+
+  if (error && (error.code === 'PGRST204' || (error.message && error.message.includes('quiz_attempts')))) {
+    console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying insert without quiz_attempts');
+    isQuizAttemptsColumnSupported = false;
+    delete insertPayload.quiz_attempts;
+    const retry = await supabase
+      .from('students')
+      .insert(insertPayload)
+      .select()
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) handleSupabaseError(error, 'Failed to add student');
   return data;
@@ -731,8 +750,10 @@ export async function updateStudent(studentId, updates) {
   if (updates.isActive !== undefined) payload.is_active = Boolean(updates.isActive);
   if (updates.completedBatchIds !== undefined) payload.completed_batch_ids = updates.completedBatchIds;
   if (updates.progress !== undefined) payload.progress = updates.progress;
-  if (updates.quizAttempts !== undefined) payload.quiz_attempts = updates.quizAttempts;
-  if (updates.quiz_attempts !== undefined) payload.quiz_attempts = updates.quiz_attempts;
+  if (isQuizAttemptsColumnSupported) {
+    if (updates.quizAttempts !== undefined) payload.quiz_attempts = updates.quizAttempts;
+    if (updates.quiz_attempts !== undefined) payload.quiz_attempts = updates.quiz_attempts;
+  }
   if (updates.reset_requested !== undefined) payload.reset_requested = Boolean(updates.reset_requested);
   if (updates.baseFee !== undefined) payload.base_fee = Number(updates.baseFee);
   if (updates.concessionAmount !== undefined) payload.concession_amount = Number(updates.concessionAmount);
@@ -741,13 +762,27 @@ export async function updateStudent(studentId, updates) {
   if (Object.keys(payload).length === 0) return null;
 
   const isUUID = isValidUUID(studentId);
-  const query = supabase.from('students').update(payload);
+  const runUpdate = (p) => {
+    const query = supabase.from('students').update(p);
+    return isUUID
+      ? query.eq('id', studentId)
+      : query.or(`id.eq.${studentId},legacy_id.eq.${studentId}`);
+  };
 
-  const { data, error } = await (isUUID
-    ? query.eq('id', studentId)
-    : query.or(`id.eq.${studentId},legacy_id.eq.${studentId}`))
-    .select()
-    .single();
+  let { data, error } = await runUpdate(payload).select().single();
+
+  if (error && (error.code === 'PGRST204' || (error.message && error.message.includes('quiz_attempts')))) {
+    console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying update without quiz_attempts');
+    isQuizAttemptsColumnSupported = false;
+    delete payload.quiz_attempts;
+    if (Object.keys(payload).length > 0) {
+      const retry = await runUpdate(payload).select().single();
+      data = retry.data;
+      error = retry.error;
+    } else {
+      return null;
+    }
+  }
 
   if (error) handleSupabaseError(error, 'Failed to update student');
   return data;

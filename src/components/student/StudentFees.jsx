@@ -1,21 +1,85 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
+import { isSupabaseConfigured } from '../../services/supabaseClient';
 import { FaMoneyBillWave, FaCheckCircle, FaClock } from 'react-icons/fa';
 import { FiCreditCard } from 'react-icons/fi';
 
 export default function StudentFees() {
-  const { auth } = useAuth();
-  const { students, fees, batches } = useData();
+  const { auth, currentStudent } = useAuth();
+  const { students = [], fees = [], batches = [], isHydrated } = useData();
 
-  const student = students.find(s => s.id === (auth?.studentId || auth?.userId)) || students[0];
+  const targetStudentId = auth?.studentId || auth?.userId || currentStudent?.id;
+  const targetEmail = (auth?.email || currentStudent?.email)?.toLowerCase();
+
+  const student = students.find((s) =>
+    (targetStudentId && (s.id === targetStudentId || s.legacyId === targetStudentId)) ||
+    (targetEmail && s.email && s.email.toLowerCase() === targetEmail)
+  ) || (isHydrated ? (students[0] || currentStudent) : null);
+
+  const isDataLoading = isSupabaseConfigured ? (!isHydrated || (students.length === 0 && !student)) : false;
+
+  if (isDataLoading) {
+    return (
+      <div>
+        {/* Header */}
+        <div className="mb-3">
+          <h4 className="fw-bold mb-1" style={{ color: 'var(--text-primary)' }}>My Fees</h4>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+            Fee summary and payment records
+          </p>
+        </div>
+
+        {/* Loader Display */}
+        <div
+          className="card border-0 rounded-4 my-4"
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-card, 0 2px 10px rgba(0,0,0,0.05))'
+          }}
+        >
+          <div className="card-body py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '320px' }}>
+            <div className="position-relative mb-3">
+              <div
+                className="spinner-border"
+                role="status"
+                style={{
+                  width: '3.2rem',
+                  height: '3.2rem',
+                  borderWidth: '3.5px',
+                  color: 'var(--bs-primary)',
+                  borderColor: 'var(--bs-primary) transparent transparent transparent'
+                }}
+              />
+              <div
+                className="position-absolute top-50 start-50 translate-middle d-flex align-items-center justify-content-center"
+                style={{ color: 'var(--bs-primary)' }}
+              >
+                <FaMoneyBillWave size={18} />
+              </div>
+            </div>
+            <h5 className="fw-bold mb-1" style={{ color: 'var(--text-primary)' }}>Loading Fee Details...</h5>
+            <p className="small mb-0" style={{ color: 'var(--text-secondary)' }}>
+              Retrieving verified fee ledger and real-time payment records
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const batch = batches.find(b => b.id === student?.batchId);
   const myFees = fees
-    .filter(f => f.studentId === student?.id)
+    .filter(f => f.studentId === student?.id || (student?.legacyId && f.studentId === student.legacyId))
     .sort((a, b) => new Date(b.paidAt || 0) - new Date(a.paidAt || 0));
 
   const totalPaid = myFees.filter(f => f.status === 'PAID').reduce((s, f) => s + (Number(f.amount) || 0), 0);
-  const totalFee = Number(student?.totalFee) || batch?.feeAmount || 45000;
+  const totalFee = (student?.totalFee !== undefined && student?.totalFee !== null)
+    ? Number(student.totalFee)
+    : (batch?.feeAmount !== undefined && batch?.feeAmount !== null)
+      ? Number(batch.feeAmount)
+      : (student ? 0 : 45000);
   const pendingBalance = Math.max(0, totalFee - totalPaid);
 
   const formatAmount = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;

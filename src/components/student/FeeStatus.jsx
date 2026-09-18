@@ -2,18 +2,61 @@ import React from 'react';
 import { Table, Button, Badge, Card } from 'react-bootstrap';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { isSupabaseConfigured } from '../../services/supabaseClient';
 import { FaMoneyBillWave, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 
 export default function FeeStatus() {
-  const { fees = [], batches = [], students = [], recordFee } = useData();
+  const { fees = [], batches = [], students = [], recordFee, isHydrated } = useData();
   const { currentStudent, auth } = useAuth();
 
-  const studentId = currentStudent?.id || auth?.studentId || auth?.userId || 'stu-1';
-  const student = students.find((s) => s.id === studentId) || currentStudent;
-  const studentFees = fees.filter((f) => f.studentId === student?.id);
+  const studentId = currentStudent?.id || auth?.studentId || auth?.userId;
+  const studentEmail = (auth?.email || currentStudent?.email)?.toLowerCase();
+
+  const student = students.find((s) =>
+    (studentId && (s.id === studentId || s.legacyId === studentId)) ||
+    (studentEmail && s.email && s.email.toLowerCase() === studentEmail)
+  ) || (isHydrated ? (currentStudent || students[0]) : null);
+
+  const isDataLoading = isSupabaseConfigured ? (!isHydrated || (students.length === 0 && !student)) : false;
+
+  if (isDataLoading) {
+    return (
+      <Card className="border-0 shadow-sm rounded-3" style={{ backgroundColor: 'var(--card-bg)' }}>
+        <Card.Body className="py-5 text-center d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '220px' }}>
+          <div className="position-relative mb-3">
+            <div
+              className="spinner-border"
+              role="status"
+              style={{
+                width: '2.6rem',
+                height: '2.6rem',
+                borderWidth: '3px',
+                color: 'var(--bs-primary)',
+                borderColor: 'var(--bs-primary) transparent transparent transparent'
+              }}
+            />
+            <div
+              className="position-absolute top-50 start-50 translate-middle d-flex align-items-center justify-content-center"
+              style={{ color: 'var(--bs-primary)' }}
+            >
+              <FaMoneyBillWave size={14} />
+            </div>
+          </div>
+          <div className="fw-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Loading Fee Records...</div>
+          <div className="small text-muted">Retrieving verified student ledger & tuition status</div>
+        </Card.Body>
+      </Card>
+    );
+  }
+
+  const studentFees = fees.filter((f) => f.studentId === student?.id || (student?.legacyId && f.studentId === student.legacyId));
   const studentBatch = batches.find((b) => b.id === student?.batchId) || batches[0];
 
-  const totalFee = Number(student?.totalFee) || studentBatch?.feeAmount || 45000;
+  const totalFee = (student?.totalFee !== undefined && student?.totalFee !== null)
+    ? Number(student.totalFee)
+    : (studentBatch?.feeAmount !== undefined && studentBatch?.feeAmount !== null)
+      ? Number(studentBatch.feeAmount)
+      : (student ? 0 : 45000);
   const paidTotal = studentFees
     .filter((f) => f.status === 'PAID')
     .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);

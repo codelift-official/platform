@@ -216,28 +216,32 @@ export default function BatchManager() {
   };
 
   // ─── HUB ACTIONS: STUDENTS ──────────────────────────────────────────────────
-  const handleEnrollNewStudent = (e) => {
+  const handleEnrollNewStudent = async (e) => {
     e.preventDefault();
     if (!newStudentData.name.trim() || !newStudentData.email.trim()) {
       toast.error('Please provide student name and email.');
       return;
     }
 
-    addStudent({
-      name: newStudentData.name.trim(),
-      email: newStudentData.email.trim().toLowerCase(),
-      phone: newStudentData.phone?.trim() || '',
-      batchId: currentBatch.id,
-      feeAmount: currentBatch.feeAmount || 0,
-      paidFee: 0,
-      feeStatus: 'Pending',
-      enrolledDate: new Date().toISOString().split('T')[0],
-      progress: {}
-    });
+    try {
+      await addStudent({
+        name: newStudentData.name.trim(),
+        email: newStudentData.email.trim().toLowerCase(),
+        phone: newStudentData.phone?.trim() || '',
+        batchId: currentBatch.id,
+        feeAmount: currentBatch.feeAmount || 0,
+        paidFee: 0,
+        feeStatus: 'Pending',
+        enrolledDate: new Date().toISOString().split('T')[0],
+        progress: {}
+      });
 
-    toast.success(`Student "${newStudentData.name}" enrolled into ${currentBatch.name}.`);
-    setNewStudentData({ name: '', email: '', phone: '' });
-    setShowEnrollNewStudentForm(false);
+      toast.success(`Student "${newStudentData.name}" enrolled into ${currentBatch.name}.`);
+      setNewStudentData({ name: '', email: '', phone: '' });
+      setShowEnrollNewStudentForm(false);
+    } catch (err) {
+      toast.error(err.message || 'Failed to enroll student.');
+    }
   };
 
   const handleAssignExistingStudent = () => {
