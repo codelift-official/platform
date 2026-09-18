@@ -232,8 +232,15 @@ export function AuthProvider({ children }) {
   };
 
   const loginStudent = async (studentOrCreds) => {
-    // Helper to get fallback students in offline mode
+    // Helper to get fallback students in offline or cached mode
     const getFallbackStudents = () => {
+      try {
+        const local = localStorage.getItem('codelift_students');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (_) {}
       return Array.isArray(studentsSeed) ? studentsSeed : [];
     };
 
@@ -246,10 +253,32 @@ export function AuthProvider({ children }) {
         if (matched.isActive === false || matched.status === 'SUSPENDED') {
           throw new Error('This student account is suspended or inactive. Please contact administration.');
         }
-        const allowedPassword = matched.password || 'codelift123';
-        if (studentOrCreds?.password && studentOrCreds.password !== allowedPassword && studentOrCreds.password !== 'password') {
-          throw new Error('Invalid student credentials. Please check your email and password.');
+
+        const customPwd =
+          (matched.id && localStorage.getItem(`codelift_student_pwd_${matched.id}`)) ||
+          localStorage.getItem(`codelift_student_pwd_${email}`) ||
+          matched.password ||
+          null;
+
+        const hasCustomPwd = customPwd && customPwd !== 'codelift123' && customPwd !== 'password';
+
+        if (hasCustomPwd) {
+          if (studentOrCreds?.password !== customPwd) {
+            throw new Error('Invalid student credentials. Please check your email and password.');
+          }
+        } else {
+          const allowed = ['codelift123', 'password'];
+          if (customPwd) allowed.push(customPwd);
+          if (studentOrCreds?.password && !allowed.includes(studentOrCreds.password)) {
+            throw new Error('Invalid student credentials. Default student password is "codelift123".');
+          }
         }
+
+        try {
+          if (matched.id) localStorage.setItem(`codelift_student_pwd_${matched.id}`, studentOrCreds.password);
+          localStorage.setItem(`codelift_student_pwd_${email}`, studentOrCreds.password);
+        } catch (_) {}
+
         const next = {
           role: 'student',
           userId: matched.id,
@@ -260,7 +289,8 @@ export function AuthProvider({ children }) {
           email: matched.email,
           phone: matched.phone || '',
           batchId: matched.batchId || '',
-          progress: matched.progress || {}
+          progress: matched.progress || {},
+          password: studentOrCreds?.password || customPwd || 'codelift123'
         };
         saveAuth(next);
         return next;
@@ -279,7 +309,8 @@ export function AuthProvider({ children }) {
         email: email || 'rahul.sharma@example.com',
         phone: '+91 9876543210',
         batchId: 'batch-fswd-morning',
-        progress: { t1: true, t2: true, t3: true, t4: true }
+        progress: { t1: true, t2: true, t3: true, t4: true },
+        password: studentOrCreds?.password || 'codelift123'
       };
       saveAuth(next);
       return next;
@@ -331,7 +362,7 @@ export function AuthProvider({ children }) {
       }
 
       if (!student) {
-        const cached = getCachedStudents();
+        const cached = getFallbackStudents();
         student = cached.find((s) => (s.email || '').toLowerCase() === email.toLowerCase());
       }
 
@@ -342,6 +373,17 @@ export function AuthProvider({ children }) {
           throw new Error('This student account is suspended or inactive. Please contact administration.');
         }
 
+        // Keep local password cache in sync
+        try {
+          localStorage.setItem(`codelift_student_pwd_${email.toLowerCase()}`, studentOrCreds.password);
+          if (student?.id) {
+            localStorage.setItem(`codelift_student_pwd_${student.id}`, studentOrCreds.password);
+          }
+          if (authUser.id) {
+            localStorage.setItem(`codelift_student_pwd_${authUser.id}`, studentOrCreds.password);
+          }
+        } catch (_) {}
+
         const next = {
           role: 'student',
           userId: authUser.id,
@@ -351,42 +393,66 @@ export function AuthProvider({ children }) {
           email: authUser.email,
           phone: student?.phone || '',
           batchId: student?.batch_id || student?.batchId || '',
-          progress: student?.progress || {}
+          progress: student?.progress || {},
+          password: studentOrCreds.password
         };
         saveAuth(next);
         return next;
       }
 
-      // If Supabase Auth failed, check if student was enrolled or reset by Admin
+      // If Supabase Auth failed (e.g. enrolled via admin, seed student, or local auth), check student record
       if (student) {
         if (student.is_active === false || student.isActive === false || student.status === 'SUSPENDED') {
           throw new Error('This student account is suspended or inactive. Please contact administration.');
         }
 
-        // Expected password is either custom password, default 'codelift123', or fallback 'password'
-        const expectedPwd = student.password || 'codelift123';
-        if (
-          studentOrCreds.password === expectedPwd ||
-          studentOrCreds.password === 'codelift123' ||
-          studentOrCreds.password === 'password'
-        ) {
-          const next = {
-            role: 'student',
-            userId: student.id,
-            studentId: student.id,
-            id: student.id,
-            studentName: student.name || 'Student',
-            name: student.name || 'Student',
-            email: student.email || email,
-            phone: student.phone || '',
-            batchId: student.batch_id || student.batchId || '',
-            progress: student.progress || {}
-          };
-          saveAuth(next);
-          return next;
+        const emailKey = (student.email || email).toLowerCase();
+        const customPassword =
+          (student.id && localStorage.getItem(`codelift_student_pwd_${student.id}`)) ||
+          localStorage.getItem(`codelift_student_pwd_${emailKey}`) ||
+          student.password ||
+          null;
+
+        const hasCustomPassword =
+          customPassword &&
+          customPassword !== 'codelift123' &&
+          customPassword !== 'password';
+
+        if (hasCustomPassword) {
+          // If a custom password has been set, ONLY the custom password is valid!
+          if (studentOrCreds.password !== customPassword) {
+            throw new Error('Invalid email or password. Please check your credentials or click Forgot Password.');
+          }
+        } else {
+          // No custom password set yet: allow platform default passwords or existing customPassword
+          const allowed = ['codelift123', 'password'];
+          if (customPassword) allowed.push(customPassword);
+          if (!allowed.includes(studentOrCreds.password)) {
+            throw new Error('Invalid email or password. Please check your credentials or click Forgot Password.');
+          }
         }
 
-        throw new Error('Invalid email or password. Please check your credentials or click Forgot Password.');
+        // Cache valid password for seamless subsequent verification
+        try {
+          if (student.id) localStorage.setItem(`codelift_student_pwd_${student.id}`, studentOrCreds.password);
+          localStorage.setItem(`codelift_student_pwd_${emailKey}`, studentOrCreds.password);
+        } catch (_) {}
+
+        const next = {
+          role: 'student',
+          userId: student.id,
+          studentId: student.id,
+          id: student.id,
+          studentName: student.name || 'Student',
+          name: student.name || 'Student',
+          email: student.email || email,
+          phone: student.phone || '',
+          batchId: student.batch_id || student.batchId || '',
+          progress: student.progress || {},
+          password: studentOrCreds.password
+        };
+        saveAuth(next);
+        return next;
       }
 
       throw new Error('Student account not found with this email. Please check your email or contact administration.');

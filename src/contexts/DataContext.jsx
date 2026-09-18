@@ -254,6 +254,18 @@ export function DataProvider({ children }) {
         concessionReason: created.concession_reason !== undefined ? created.concession_reason : (newStudent.concessionReason || '')
       } : newStudent;
 
+      if (studentData.password && studentData.password !== 'codelift123' && studentData.password !== 'password') {
+        try {
+          localStorage.setItem(`codelift_student_pwd_${assignedId}`, studentData.password);
+          if (finalized.id && finalized.id !== assignedId) {
+            localStorage.setItem(`codelift_student_pwd_${finalized.id}`, studentData.password);
+          }
+          if (studentData.email) {
+            localStorage.setItem(`codelift_student_pwd_${studentData.email.toLowerCase()}`, studentData.password);
+          }
+        } catch (_) {}
+      }
+
       setStudents((prev) => prev.map((s) => s.id === assignedId ? finalized : s));
       return finalized;
     } catch (e) {
@@ -275,6 +287,30 @@ export function DataProvider({ children }) {
         });
       } catch (_) { }
     }
+
+    if (updates.password !== undefined) {
+      try {
+        const student = students.find((s) => s.id === studentId || s.legacyId === studentId);
+        if (updates.password && updates.password !== 'codelift123' && updates.password !== 'password') {
+          localStorage.setItem(`codelift_student_pwd_${studentId}`, updates.password);
+          if (student?.email) {
+            localStorage.setItem(`codelift_student_pwd_${student.email.toLowerCase()}`, updates.password);
+          }
+          if (student?.id && student.id !== studentId) {
+            localStorage.setItem(`codelift_student_pwd_${student.id}`, updates.password);
+          }
+        } else if (updates.password === 'codelift123' || updates.password === 'password' || !updates.password) {
+          localStorage.removeItem(`codelift_student_pwd_${studentId}`);
+          if (student?.email) {
+            localStorage.removeItem(`codelift_student_pwd_${student.email.toLowerCase()}`);
+          }
+          if (student?.id && student.id !== studentId) {
+            localStorage.removeItem(`codelift_student_pwd_${student.id}`);
+          }
+        }
+      } catch (_) {}
+    }
+
     setStudents((prev) => prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...updates } : s)));
     try {
       await supabaseDataService.updateStudent(studentId, updates);
@@ -295,6 +331,17 @@ export function DataProvider({ children }) {
 
   const deleteStudent = async (studentId) => {
     activeMutationsRef.current += 1;
+    const toDelete = students.find((s) => s.id === studentId || s.legacyId === studentId);
+    try {
+      localStorage.removeItem(`codelift_student_pwd_${studentId}`);
+      if (toDelete?.email) {
+        localStorage.removeItem(`codelift_student_pwd_${toDelete.email.toLowerCase()}`);
+      }
+      if (toDelete?.id && toDelete.id !== studentId) {
+        localStorage.removeItem(`codelift_student_pwd_${toDelete.id}`);
+      }
+    } catch (_) {}
+
     setStudents((prev) => prev.filter((s) => s.id !== studentId && s.legacyId !== studentId));
     try {
       await supabaseDataService.deleteStudent(studentId);

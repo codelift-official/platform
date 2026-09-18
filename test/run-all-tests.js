@@ -22,6 +22,7 @@ import { runMandatoryCourseProgressionTests } from './mandatory-course-progressi
 import { runArenaCurriculumTests } from './code-arena-curriculum.test.js';
 import { runStudentCreationAndQuizAttemptsTests } from './student-creation-and-quiz-attempts.test.js';
 import { runPageLoaderHydrationTests } from './page-loader-hydration.test.js';
+import { runStudentPasswordAndAuthTests } from './student-password-and-auth.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -175,6 +176,15 @@ async function runAll() {
     suiteResults.push({ name: 'Universal PageLoader & Hydration Resilience', passed: r16.passedCount, total: r16.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Universal PageLoader & Hydration Resilience', error: err.message, ok: false });
+  }
+
+  try {
+    const r17 = runStudentPasswordAndAuthTests();
+    totalPassed += r17.passedCount;
+    totalTests += r17.totalCount;
+    suiteResults.push({ name: 'Student Password Synchronization & Auth Integrity', passed: r17.passedCount, total: r17.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Student Password Synchronization & Auth Integrity', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

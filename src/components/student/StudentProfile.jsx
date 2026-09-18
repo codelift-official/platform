@@ -135,19 +135,35 @@ export default function StudentProfile() {
     setIsChangingPassword(true);
     try {
       const email = student?.email || auth?.email;
+      const emailLower = (email || '').toLowerCase();
 
       // 1. Verify current password:
-      // Accepts saved student password, student.password, auth.password,
-      // platform standard default ('codelift123' / 'password'), or Supabase Auth verification.
+      // Check if student already has an active custom password
+      const knownSavedPwd =
+        (student?.id && localStorage.getItem(`codelift_student_pwd_${student.id}`)) ||
+        (emailLower && localStorage.getItem(`codelift_student_pwd_${emailLower}`)) ||
+        (auth?.studentId && localStorage.getItem(`codelift_student_pwd_${auth.studentId}`)) ||
+        (auth?.userId && localStorage.getItem(`codelift_student_pwd_${auth.userId}`)) ||
+        student?.password ||
+        auth?.password;
+
       let isVerified = false;
-      const knownSavedPwd = localStorage.getItem(`codelift_student_pwd_${student?.id}`) || student?.password || auth?.password;
-      if (
-        (knownSavedPwd && currentPassword === knownSavedPwd) ||
-        currentPassword === (student?.password || 'codelift123') ||
-        currentPassword === 'codelift123' ||
-        currentPassword === 'password'
-      ) {
-        isVerified = true;
+      const hasCustomPwd = knownSavedPwd && knownSavedPwd !== 'codelift123' && knownSavedPwd !== 'password';
+
+      if (hasCustomPwd) {
+        // If a custom password has already been set, only that specific password is valid
+        if (currentPassword === knownSavedPwd) {
+          isVerified = true;
+        }
+      } else {
+        // No custom password set yet: allow standard defaults ('codelift123', 'password') or knownSavedPwd
+        if (
+          currentPassword === 'codelift123' ||
+          currentPassword === 'password' ||
+          (knownSavedPwd && currentPassword === knownSavedPwd)
+        ) {
+          isVerified = true;
+        }
       }
 
       if (!isVerified && email) {
@@ -170,23 +186,53 @@ export default function StudentProfile() {
 
       // 2. Update password in Supabase Auth (if session / user exists)
       try {
-        await supabase.auth.updateUser({
-          password: newPassword,
-        });
+        const { data: userRes } = await supabase.auth.getUser();
+        if (userRes?.user) {
+          await supabase.auth.updateUser({ password: newPassword });
+        } else if (email) {
+          const { data: sData, error: sErr } = await supabase.auth.signInWithPassword({
+            email,
+            password: currentPassword
+          });
+          if (!sErr && sData?.user) {
+            await supabase.auth.updateUser({ password: newPassword });
+          } else {
+            // Attempt signup so Supabase Auth user record exists for subsequent logins
+            await supabase.auth.signUp({
+              email,
+              password: newPassword,
+              options: {
+                data: {
+                  name: student?.name || auth?.name || 'Student',
+                  role: 'student'
+                }
+              }
+            });
+          }
+        }
       } catch (authErr) {
-        console.warn('[StudentProfile] Note on auth.updateUser:', authErr?.message);
+        console.warn('[StudentProfile] Note on auth updateUser:', authErr?.message);
       }
 
-      // 3. Persist new password locally and in DataContext
-      if (student?.id) {
-        try {
+      // 3. Persist new password locally under ID, email, and DataContext
+      try {
+        if (student?.id) {
           localStorage.setItem(`codelift_student_pwd_${student.id}`, newPassword);
-          if (typeof updateStudent === 'function') {
-            await updateStudent(student.id, { password: newPassword });
-          }
-        } catch (studentErr) {
-          console.warn('[StudentProfile] Note on updateStudent:', studentErr?.message);
         }
+        if (emailLower) {
+          localStorage.setItem(`codelift_student_pwd_${emailLower}`, newPassword);
+        }
+        if (auth?.studentId && auth.studentId !== student?.id) {
+          localStorage.setItem(`codelift_student_pwd_${auth.studentId}`, newPassword);
+        }
+        if (auth?.userId && auth.userId !== student?.id) {
+          localStorage.setItem(`codelift_student_pwd_${auth.userId}`, newPassword);
+        }
+        if (student?.id && typeof updateStudent === 'function') {
+          await updateStudent(student.id, { password: newPassword });
+        }
+      } catch (studentErr) {
+        console.warn('[StudentProfile] Note on updateStudent:', studentErr?.message);
       }
 
       // 4. Update auth context state if stored
