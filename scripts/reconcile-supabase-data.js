@@ -184,7 +184,7 @@ async function reconcile() {
       course_id: 'course-da',
       status: 'PAID',
       payment_proof: 'https://images.unsplash.com/photo-1556742049-0a67daf40955?w=500',
-      payment_note: 'Bank Transfer Ref #ICICI5678',
+      payment_note: 'Bank Transfer Ref ',
       verified_by: 'admin',
       verified_at: '2026-02-02T11:30:00.000Z',
       amount: 1799,

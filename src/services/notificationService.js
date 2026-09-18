@@ -76,16 +76,14 @@ export function createFeeReceiptNotification({ student, fee, batch }) {
 
 We have successfully received your fee payment. Here are your transaction details:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RECEIPT DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Student Name : ${studentName}
 Batch        : ${batchName}
 Amount Paid  : ${amountStr}
 Payment Date : ${dateStr}
 Payment Mode : ${mode}
 Status       : CONFIRMED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Thank you for choosing ${INSTITUTE_INFO.name} for your tech career transformation!
 
@@ -95,7 +93,6 @@ ${INSTITUTE_INFO.name}
 Email: ${INSTITUTE_INFO.email} | WhatsApp: +${INSTITUTE_INFO.phone}`;
 
   const whatsappMessage = `*FEE PAYMENT RECEIPT - ${INSTITUTE_INFO.name}*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Dear *${studentName}*,
 We have received your payment of *${amountStr}*.
 
@@ -147,13 +144,13 @@ Administration
 ${INSTITUTE_INFO.name}`;
 
   const whatsappMessage = `*GENTLE FEE REMINDER - ${INSTITUTE_INFO.name}*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Dear *${studentName}*,
 
 This is a friendly reminder that your pending balance of *${amountStr}* for *${batchName}* is due on *${dueStr}*.
 
 Please clear the dues to ensure continuous LMS & mentor access.
-UPI ID: \`codelift@icici\`
+UPI ID: \`\`
 
 Thank you!
 _${INSTITUTE_INFO.name}_`;
@@ -195,7 +192,7 @@ Happy coding!
 Academic Team, ${INSTITUTE_INFO.name}`;
 
   const whatsappMessage = `*NEW ASSIGNMENT POSTED*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Hi *${studentName}*!
 A new assignment *"${title}"* is now live for *${batchName}*.
 
@@ -236,7 +233,7 @@ Feedback     : ${feedback}
 Check your portal for detailed code notes and suggestions.`;
 
   const whatsappMessage = `*ASSIGNMENT EVALUATED*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Hi *${studentName}*!
 Your score for *"${title}"* is *${grade}*.
 
@@ -274,9 +271,9 @@ Huge congratulations on successfully completing the ${courseName} at ${INSTITUTE
 Your verified digital credential is now live:
 Certificate ID : ${certId}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 YOUR EXCLUSIVE REFERRAL CODE: ${refCode}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Share this code with your friends or college peers.
 When they enroll at CodeLift using your code:
 - They get an instant ₹500 discount on tuition fees
@@ -289,7 +286,7 @@ Director & Academic Board
 ${INSTITUTE_INFO.name}`;
 
   const whatsappMessage = `*CONGRATULATIONS ${studentName.toUpperCase()}!*
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 You have officially graduated in *${courseName}*!
 • *Certificate ID:* ${certId}
 
