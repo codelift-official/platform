@@ -55,15 +55,15 @@ export default function InstituteNavbar() {
             src={`${import.meta.env.BASE_URL}logo.jpg`}
             alt="CodeLift"
             className="brand-logo"
-            width={36}
-            height={36}
+            width={38}
+            height={38}
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <span className="fw-bold fs-5 d-flex align-items-center">
+          <span className="brand-text fw-bold d-flex align-items-center">
             <span style={{ color: 'var(--text-primary)' }}>Code</span>
-            <span className="cl-nav-brand-accent" style={{ color: 'var(--bs-primary)' }}>Li</span>
+            <span className="brand-text-accent cl-nav-brand-accent" style={{ color: 'var(--bs-primary)' }}>Li</span>
             <span style={{ color: 'var(--text-primary)' }}>ft</span>
           </span>
         </Link>

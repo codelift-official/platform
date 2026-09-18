@@ -86,15 +86,15 @@ export default function Navbar() {
             src={`${import.meta.env.BASE_URL}logo.jpg`}
             alt="CodeLift"
             className="brand-logo"
-            width={36}
-            height={36}
+            width={38}
+            height={38}
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <span className="brand-text fw-extrabold fs-5 d-flex align-items-center" style={{ letterSpacing: '-0.5px' }}>
+          <span className="brand-text fw-extrabold d-flex align-items-center">
             <span style={{ color: 'var(--text-primary)' }}>Code</span>
-            <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+            <span className="brand-text-accent" style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
             <span style={{ color: 'var(--text-primary)' }}>ft</span>
           </span>
         </Link>

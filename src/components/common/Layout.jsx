@@ -47,20 +47,20 @@ export default function Layout({
       <Navbar className="navbar border-bottom sticky-top py-2 px-3 shadow-sm" style={{ zIndex: 1050 }}>
         <Container fluid className="px-md-3">
           <div className="d-flex align-items-center gap-2">
-            <Navbar.Brand as={Link} to={brandLink} className="d-flex align-items-center gap-2 m-0 ms-1">
+            <Navbar.Brand as={Link} to={brandLink} className="navbar-brand d-flex align-items-center gap-2 m-0 ms-1 text-decoration-none">
               <img
                 src={`${import.meta.env.BASE_URL}logo.jpg`}
                 alt="CodeLift"
                 className="brand-logo"
-                width={36}
-                height={36}
+                width={38}
+                height={38}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
               />
-              <span className="brand-text fw-bold fs-5 d-flex align-items-center">
+              <span className="brand-text fw-bold d-flex align-items-center">
                 <span style={{ color: 'var(--text-primary)' }}>Code</span>
-                <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+                <span className="brand-text-accent" style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
                 <span style={{ color: 'var(--text-primary)' }}>ft</span>
               </span>
             </Navbar.Brand>
