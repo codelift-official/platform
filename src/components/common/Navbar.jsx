@@ -86,8 +86,8 @@ export default function Navbar() {
             src={`${import.meta.env.BASE_URL}logo.jpg`}
             alt="CodeLift"
             className="brand-logo"
-            width={38}
-            height={38}
+            width={41}
+            height={41}
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
