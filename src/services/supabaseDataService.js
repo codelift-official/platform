@@ -1705,4 +1705,35 @@ export async function importAllDatabaseData(tablesPayload) {
   return summary;
 }
 
+export async function clearServerDatabase() {
+  if (!checkConfigured()) return true;
+  try {
+    // Delete table data in foreign-key safe order
+    const tables = [
+      'submissions',
+      'assignments',
+      'test_attempts',
+      'batch_assessments',
+      'assessment_questions',
+      'assessments',
+      'fee_records',
+      'batch_students',
+      'batch_courses',
+      'students',
+      'batches'
+    ];
+
+    for (const table of tables) {
+      try {
+        await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (e) {
+        console.warn(`[SupabaseDataService] Could not clear table ${table}:`, e.message);
+      }
+    }
+  } catch (err) {
+    console.warn('[SupabaseDataService] clearServerDatabase notice:', err.message);
+  }
+  return true;
+}
+
 

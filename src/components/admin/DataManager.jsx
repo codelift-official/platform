@@ -2,18 +2,56 @@ import React, { useState } from 'react';
 import { Card, Button, Row, Col, Alert, Badge, Form, Spinner } from 'react-bootstrap';
 import { useData } from '../../contexts/DataContext';
 import { PLATFORM_VERSION } from '../../config/version';
-import { exportAllDatabaseData } from '../../services/supabaseDataService';
+import { exportAllDatabaseData, clearServerDatabase } from '../../services/supabaseDataService';
 import {
   FaDatabase,
   FaFileDownload,
   FaFileUpload,
   FaRedoAlt,
+  FaTrashAlt,
   FaCheck,
   FaExclamationTriangle,
   FaHistory,
   FaShieldAlt
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+
+export function clearClientCache() {
+  const keysToKeep = [
+    // Auth tokens — managed by Supabase, do not remove
+    // Theme preference — user's chosen theme, respect it
+    'codelift_theme',
+    'codelift_auth'
+  ];
+
+  const keysToRemove = [
+    'codelift_data',
+    'codelift_admin_data_v2',
+    'codelift_students',
+    'codelift_students_cache',
+    'codelift_batches',
+    'codelift_courses',
+    'codelift_fees',
+    'codelift_tests',
+    'codelift_submissions',
+    'codelift_certificates',
+    'codelift_course_sidebar_hidden',
+    'codelift_coding_problems',
+    'codelift_coding_attempts',
+    'fees_unlocked',
+  ];
+
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('codelift_') && !keysToKeep.includes(key)) {
+      localStorage.removeItem(key);
+    }
+  }
+
+  sessionStorage.clear();
+}
 
 export default function DataManager() {
   const data = useData();
@@ -22,6 +60,36 @@ export default function DataManager() {
   const [jsonValidationErr, setJsonValidationErr] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClearDatabase = async () => {
+    if (!window.confirm('This will delete ALL data. Continue?')) return;
+    const confirmInput = window.prompt('Type CONFIRM to proceed with database and cache clearing:');
+    if (confirmInput !== 'CONFIRM') return;
+
+    setIsClearing(true);
+    const toastId = toast.loading('Clearing database and client cache...');
+    try {
+      // 1. Clear client cache FIRST (in case DB call fails)
+      clearClientCache();
+
+      // 2. Clear the server database
+      await clearServerDatabase();
+
+      // 3. Reset local state to clean seed
+      resetToDefaults();
+
+      toast.success('Database and client cache cleared', { id: toastId });
+      // 4. Force reload so the app refetches fresh state
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
+    } catch (err) {
+      toast.error('Failed to clear database: ' + err.message, { id: toastId });
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   // 1. Download Unified Backup as .json file (Supabase tables + local state)
   const handleDownloadBackup = async () => {
@@ -269,35 +337,47 @@ export default function DataManager() {
         </Col>
       </Row>
 
-      {/* Danger Zone: Factory Reset */}
+      {/* Danger Zone: Clear Database & Factory Reset */}
       <Card className="shadow-sm border-danger border rounded-3">
         <Card.Header className="bg-danger bg-opacity-10 py-3 border-bottom border-danger">
           <h6 className="fw-bold text-danger mb-0 d-flex align-items-center gap-2">
             <FaShieldAlt />
-            <span>Factory Reset & Default Seeding</span>
+            <span>Danger Zone — Database & Cache Reset</span>
           </h6>
         </Card.Header>
         <Card.Body className="p-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
           <div>
-            <div className="fw-bold text-dark">Reset to Fresh Institute Defaults</div>
+            <div className="fw-bold text-dark">Clear Database & Client Cache</div>
             <p className="text-muted small mb-0">
-              Discards local edits and re-seeds the platform with default batches, 10 sample students, full course content, and verified test quizzes.
+              Permanently clears database tables and wipes all client-side localStorage/sessionStorage cache while preserving user theme preference.
             </p>
           </div>
-          <Button
-            variant="outline-danger"
-            size="sm"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to reset all data to default seeds? Any unsaved local edits will be replaced.')) {
-                resetToDefaults();
-                toast.success('Database reset to fresh seeds.');
-              }
-            }}
-            className="d-flex align-items-center gap-2 flex-shrink-0"
-          >
-            <FaRedoAlt size={12} />
-            <span>Reset to Factory Seeds</span>
-          </Button>
+          <div className="d-flex flex-wrap gap-2 flex-shrink-0">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleClearDatabase}
+              disabled={isClearing}
+              className="d-flex align-items-center gap-2"
+            >
+              {isClearing ? <Spinner size="sm" animation="border" /> : <FaTrashAlt size={12} />}
+              <span>{isClearing ? 'Clearing...' : 'Clear Database'}</span>
+            </Button>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={() => {
+                if (window.confirm('Are you sure you want to reset all data to default seeds? Any unsaved local edits will be replaced.')) {
+                  resetToDefaults();
+                  toast.success('Database reset to fresh seeds.');
+                }
+              }}
+              className="d-flex align-items-center gap-2"
+            >
+              <FaRedoAlt size={12} />
+              <span>Reset to Factory Seeds</span>
+            </Button>
+          </div>
         </Card.Body>
       </Card>
     </div>

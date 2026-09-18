@@ -1649,9 +1649,31 @@ export function DataProvider({ children }) {
     setPlatformSettings(DEFAULT_PLATFORM_SETTINGS);
 
     try {
-      localStorage.removeItem('codelift_students_cache');
-      localStorage.removeItem('codelift_coding_problems');
-      localStorage.removeItem('codelift_coding_attempts');
+      const keysToKeep = ['codelift_theme', 'codelift_auth'];
+      const keysToRemove = [
+        'codelift_data',
+        'codelift_admin_data_v2',
+        'codelift_students',
+        'codelift_students_cache',
+        'codelift_batches',
+        'codelift_courses',
+        'codelift_fees',
+        'codelift_tests',
+        'codelift_submissions',
+        'codelift_certificates',
+        'codelift_course_sidebar_hidden',
+        'codelift_coding_problems',
+        'codelift_coding_attempts',
+        'fees_unlocked',
+      ];
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('codelift_') && !keysToKeep.includes(key)) {
+          localStorage.removeItem(key);
+        }
+      }
+      sessionStorage.clear();
     } catch (e) {}
   };
 
