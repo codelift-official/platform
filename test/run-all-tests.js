@@ -26,6 +26,7 @@ import { runStudentPasswordAndAuthTests } from './student-password-and-auth.test
 import { runCertificateAndCompletionTests } from './certificate-and-completion-fixes.test.js';
 import { runUnifiedCodeArenaTests } from './unified-code-arena.test.js';
 import { runStudentPasswordPersistenceTests } from './student-password-persistence.test.js';
+import { runCrossDevicePasswordAndCertAllotmentTests } from './cross-device-password-and-cert-allotment.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -215,6 +216,15 @@ async function runAll() {
     suiteResults.push({ name: 'Student Password Persistence & 1-Hour Token Refresh Shield', passed: r20.passedCount, total: r20.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Student Password Persistence & 1-Hour Token Refresh Shield', error: err.message, ok: false });
+  }
+
+  try {
+    const r21 = runCrossDevicePasswordAndCertAllotmentTests();
+    totalPassed += r21.passedCount;
+    totalTests += r21.totalCount;
+    suiteResults.push({ name: 'Cross-Device Password Synchronization & Batch Course Certificate Gating', passed: r21.passedCount, total: r21.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Cross-Device Password Synchronization & Batch Course Certificate Gating', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

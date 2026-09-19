@@ -198,10 +198,19 @@ export function DataProvider({ children }) {
           } catch (_) {}
 
           const savedCustomPwd = cachedPassword;
+          const serverPwd = s.password || s.progress?.__auth_pwd || null;
+          const resolvedPassword = serverPwd || savedCustomPwd || 'codelift123';
+          if (serverPwd && serverPwd !== 'codelift123' && serverPwd !== 'password') {
+            try {
+              if (s.id) localStorage.setItem(`codelift_student_pwd_${s.id}`, serverPwd);
+              if (s.legacyId) localStorage.setItem(`codelift_student_pwd_${s.legacyId}`, serverPwd);
+              if (s.email) localStorage.setItem(`codelift_student_pwd_${s.email.toLowerCase().trim()}`, serverPwd);
+            } catch (_) {}
+          }
 
           return {
             ...s,
-            password: savedCustomPwd || s.password || 'codelift123',
+            password: resolvedPassword,
             progress: { ...(s.progress || {}), ...cachedProgress },
             quizAttempts: { ...(s.quiz_attempts || s.quizAttempts || {}), ...cachedQuizzes }
           };
@@ -416,9 +425,28 @@ export function DataProvider({ children }) {
       } catch (_) {}
     }
 
-    setStudents((prev) => prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...updates } : s)));
+    const student = students.find((s) => s.id === studentId || s.legacyId === studentId);
+    const enrichedUpdates = { ...updates };
+    if (!enrichedUpdates.email && student?.email) {
+      enrichedUpdates.email = student.email;
+    }
+    if (enrichedUpdates.password !== undefined) {
+      enrichedUpdates.progress = {
+        ...(student?.progress || {}),
+        ...(enrichedUpdates.progress || {}),
+        __auth_pwd: enrichedUpdates.password
+      };
+      if (supabaseDataService.setStudentPasswordRPC) {
+        supabaseDataService.setStudentPasswordRPC(studentId, enrichedUpdates.password).catch(() => {});
+        if (student?.email) {
+          supabaseDataService.setStudentPasswordRPC(student.email, enrichedUpdates.password).catch(() => {});
+        }
+      }
+    }
+
+    setStudents((prev) => prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...enrichedUpdates } : s)));
     try {
-      await supabaseDataService.updateStudent(studentId, updates);
+      await supabaseDataService.updateStudent(studentId, enrichedUpdates);
     } catch (e) {
       console.error('[DataContext] updateStudent failed on Supabase:', e);
       throw e;

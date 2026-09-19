@@ -57,11 +57,15 @@ export function AuthProvider({ children }) {
       }
 
       // Check if student in students table
-      const { data: student } = await supabase
-        .from('students')
-        .select('*')
-        .or(`id.eq.${user.id},email.eq.${user.email}`)
-        .single();
+      let student = null;
+      try {
+        const { data: stdRecord } = await supabase
+          .from('students')
+          .select('*')
+          .or(`id.eq.${user.id},email.ilike.${user.email}`)
+          .maybeSingle();
+        student = stdRecord;
+      } catch (_) {}
 
       if (student) {
         let customPassword = null;
@@ -82,7 +86,15 @@ export function AuthProvider({ children }) {
           }
         } catch (_) {}
 
-        const resolvedPassword = customPassword || student.password || auth?.password || 'codelift123';
+        const serverPassword = student.password || student.progress?.__auth_pwd || null;
+        const resolvedPassword = customPassword || serverPassword || auth?.password || 'codelift123';
+        if (serverPassword && serverPassword !== 'codelift123' && serverPassword !== 'password') {
+          try {
+            if (student.id) localStorage.setItem(`codelift_student_pwd_${student.id}`, serverPassword);
+            if (student.legacy_id) localStorage.setItem(`codelift_student_pwd_${student.legacy_id}`, serverPassword);
+            if (student.email) localStorage.setItem(`codelift_student_pwd_${student.email.toLowerCase().trim()}`, serverPassword);
+          } catch (_) {}
+        }
 
         saveAuth({
           role: 'student',
@@ -379,12 +391,16 @@ export function AuthProvider({ children }) {
       // Check student record in Supabase or local cache
       let student = null;
       try {
-        const { data: stdRecord } = await supabase
-          .from('students')
-          .select('*')
-          .or(authUser ? `id.eq.${authUser.id},email.eq.${email.toLowerCase()}` : `email.eq.${email.toLowerCase()}`)
-          .maybeSingle();
-        student = stdRecord;
+        let query = supabase.from('students').select('*');
+        if (authUser) {
+          query = query.or(`id.eq.${authUser.id},email.ilike.${email.toLowerCase()}`);
+        } else {
+          query = query.ilike('email', email.toLowerCase());
+        }
+        const { data: stdRecords } = await query.limit(1);
+        if (Array.isArray(stdRecords) && stdRecords.length > 0) {
+          student = stdRecords[0];
+        }
       } catch (err) {
         // Supabase error, check local cache
       }
@@ -435,23 +451,26 @@ export function AuthProvider({ children }) {
         }
 
         const emailKey = (student.email || email).toLowerCase().trim();
-        let customPassword = null;
+        let localCustomPassword = null;
         try {
-          customPassword =
+          localCustomPassword =
             (student.id && localStorage.getItem(`codelift_student_pwd_${student.id}`)) ||
             (student.legacy_id && localStorage.getItem(`codelift_student_pwd_${student.legacy_id}`)) ||
             (student.legacyId && localStorage.getItem(`codelift_student_pwd_${student.legacyId}`)) ||
             localStorage.getItem(`codelift_student_pwd_${emailKey}`) ||
-            student.password ||
             null;
-          if (!customPassword) {
+          if (!localCustomPassword) {
             const regRaw = localStorage.getItem('codelift_student_passwords');
             if (regRaw) {
               const reg = JSON.parse(regRaw);
-              customPassword = (student.id && reg[student.id]) || (student.legacy_id && reg[student.legacy_id]) || (student.legacyId && reg[student.legacyId]) || (emailKey && reg[emailKey]) || null;
+              localCustomPassword = (student.id && reg[student.id]) || (student.legacy_id && reg[student.legacy_id]) || (student.legacyId && reg[student.legacyId]) || (emailKey && reg[emailKey]) || null;
             }
           }
         } catch (_) {}
+
+        // Server-side dual-layer password is the primary ground truth across all devices
+        const serverPassword = student.password || student.progress?.__auth_pwd || null;
+        const customPassword = serverPassword || localCustomPassword || student.password || null;
 
         const hasCustomPassword =
           customPassword &&
@@ -473,20 +492,40 @@ export function AuthProvider({ children }) {
           }
         }
 
-        // Cache valid password for seamless subsequent verification
+        // Cache valid password for seamless subsequent verification on this device
         try {
-          if (hasCustomPassword || (studentOrCreds.password !== 'codelift123' && studentOrCreds.password !== 'password')) {
-            if (student.id) localStorage.setItem(`codelift_student_pwd_${student.id}`, studentOrCreds.password);
-            if (student.legacy_id) localStorage.setItem(`codelift_student_pwd_${student.legacy_id}`, studentOrCreds.password);
-            if (student.legacyId) localStorage.setItem(`codelift_student_pwd_${student.legacyId}`, studentOrCreds.password);
-            localStorage.setItem(`codelift_student_pwd_${emailKey}`, studentOrCreds.password);
-            const regRaw = localStorage.getItem('codelift_student_passwords');
-            const reg = regRaw ? JSON.parse(regRaw) : {};
-            reg[student.id] = studentOrCreds.password;
-            reg[emailKey] = studentOrCreds.password;
-            localStorage.setItem('codelift_student_passwords', JSON.stringify(reg));
-          }
+          if (student.id) localStorage.setItem(`codelift_student_pwd_${student.id}`, studentOrCreds.password);
+          if (student.legacy_id) localStorage.setItem(`codelift_student_pwd_${student.legacy_id}`, studentOrCreds.password);
+          if (student.legacyId) localStorage.setItem(`codelift_student_pwd_${student.legacyId}`, studentOrCreds.password);
+          localStorage.setItem(`codelift_student_pwd_${emailKey}`, studentOrCreds.password);
+          const regRaw = localStorage.getItem('codelift_student_passwords');
+          const reg = regRaw ? JSON.parse(regRaw) : {};
+          reg[student.id] = studentOrCreds.password;
+          reg[emailKey] = studentOrCreds.password;
+          localStorage.setItem('codelift_student_passwords', JSON.stringify(reg));
         } catch (_) {}
+
+        // If not already authenticated in Supabase Auth, attempt background sign-in or session provisioning
+        if (!authUser) {
+          try {
+            const { data: sAuth } = await supabase.auth.signInWithPassword({
+              email: student.email || email,
+              password: studentOrCreds.password
+            });
+            if (!sAuth?.user) {
+              for (const cand of ['codelift123', 'password']) {
+                const { data: candAuth } = await supabase.auth.signInWithPassword({
+                  email: student.email || email,
+                  password: cand
+                });
+                if (candAuth?.user) {
+                  await supabase.auth.updateUser({ password: studentOrCreds.password });
+                  break;
+                }
+              }
+            }
+          } catch (_) {}
+        }
 
         const next = {
           role: 'student',

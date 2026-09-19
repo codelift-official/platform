@@ -28,7 +28,9 @@ export default function StudentProfile() {
   const { students, batches, courses, assignments, submissions, certificates, updateStudent } = useData();
   const navigate = useNavigate();
 
-  const student = Array.isArray(students) ? students.find(s => s?.id === auth?.studentId) : null;
+  const student = Array.isArray(students)
+    ? students.find(s => s?.id === auth?.studentId || s?.legacyId === auth?.studentId || s?.id === auth?.userId || s?.email === auth?.email)
+    : null;
   const batch = Array.isArray(batches) ? batches.find(b => b?.id === student?.batchId) : null;
 
   // Form State
@@ -236,7 +238,48 @@ export default function StudentProfile() {
         console.warn('[StudentProfile] Note on auth updateUser:', authErr?.message);
       }
 
-      // 3. Persist new password locally under ID, legacyId, email, and DataContext
+      // 3. Server-side dual-layer update via RPC & DataContext & direct Supabase write
+      const targetStudentId = student?.id || auth?.studentId || auth?.userId || auth?.id || student?.legacyId;
+      try {
+        if (supabase?.rpc) {
+          await supabase.rpc('set_student_password', {
+            p_identifier: String(targetStudentId || emailLower),
+            p_new_password: String(newPassword)
+          });
+        }
+      } catch (_) {}
+
+      // Update through DataContext (triggers supabaseDataService.updateStudent with dual-layer payload)
+      if (targetStudentId && typeof updateStudent === 'function') {
+        try {
+          await updateStudent(targetStudentId, {
+            password: newPassword,
+            email: emailLower,
+            progress: { ...(student?.progress || {}), __auth_pwd: newPassword }
+          });
+        } catch (updateErr) {
+          console.warn('[StudentProfile] Note on updateStudent:', updateErr?.message);
+        }
+      }
+
+      // Direct Supabase table safety net write
+      try {
+        const isUUID = targetStudentId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetStudentId);
+        const directPayload = {
+          password: newPassword,
+          progress: { ...(student?.progress || {}), __auth_pwd: newPassword }
+        };
+        const query = supabase.from('students').update(directPayload);
+        if (isUUID) {
+          await query.eq('id', targetStudentId);
+        } else if (emailLower) {
+          await query.ilike('email', emailLower);
+        } else if (targetStudentId) {
+          await query.eq('legacy_id', targetStudentId);
+        }
+      } catch (_) {}
+
+      // 4. Persist new password locally under ID, legacyId, email, and registry
       try {
         if (student?.id) {
           localStorage.setItem(`codelift_student_pwd_${student.id}`, newPassword);
@@ -268,15 +311,9 @@ export default function StudentProfile() {
           if (auth?.userId) registry[auth.userId] = newPassword;
           localStorage.setItem('codelift_student_passwords', JSON.stringify(registry));
         } catch (_) {}
+      } catch (_) {}
 
-        if (student?.id && typeof updateStudent === 'function') {
-          await updateStudent(student.id, { password: newPassword });
-        }
-      } catch (studentErr) {
-        console.warn('[StudentProfile] Note on updateStudent:', studentErr?.message);
-      }
-
-      // 4. Update auth context state if stored
+      // 5. Update auth context state if stored
       if (typeof updateAuthUser === 'function') {
         try {
           updateAuthUser({ password: newPassword });

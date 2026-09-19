@@ -419,7 +419,7 @@ export async function fetchAllData() {
       name: s.name,
       email: s.email,
       phone: s.phone || '',
-      password: s.password || undefined,
+      password: s.password || s.progress?.__auth_pwd || undefined,
       batchId: s.batch_id || '',
       enrolledDate: s.enrolled_date,
       totalFee: Number(s.total_fee || 0),
@@ -725,8 +725,15 @@ export async function addStudent(studentData) {
     reset_requested: Boolean(studentData.reset_requested)
   };
 
-  if (isStudentPasswordColumnSupported && studentData.password) {
-    insertPayload.password = studentData.password;
+  if (studentData.password) {
+    if (isStudentPasswordColumnSupported) {
+      insertPayload.password = studentData.password;
+    }
+    // Also backup in progress jsonb for universal cross-device persistence
+    insertPayload.progress = {
+      ...(studentData.progress || {}),
+      __auth_pwd: studentData.password
+    };
   }
 
   const quizAttempts = studentData.quizAttempts || studentData.quiz_attempts;
@@ -742,9 +749,10 @@ export async function addStudent(studentData) {
 
   if (error && (error.code === 'PGRST204' || (error.message && (error.message.includes('quiz_attempts') || error.message.includes('password'))))) {
     if (error.message && error.message.includes('password')) {
-      console.warn('[supabaseDataService] students.password column missing in schema cache; retrying insert without password');
+      console.warn('[supabaseDataService] students.password column missing in schema cache; retrying insert with progress.__auth_pwd fallback');
       isStudentPasswordColumnSupported = false;
       delete insertPayload.password;
+      // insertPayload.progress.__auth_pwd remains intact!
     }
     if (error.message && error.message.includes('quiz_attempts')) {
       console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying insert without quiz_attempts');
@@ -764,6 +772,21 @@ export async function addStudent(studentData) {
   return data;
 }
 
+export async function setStudentPasswordRPC(identifier, newPassword) {
+  try {
+    const { data, error } = await supabase.rpc('set_student_password', {
+      p_identifier: String(identifier),
+      p_new_password: String(newPassword)
+    });
+    if (!error && data?.success) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('[supabaseDataService] set_student_password RPC note:', err?.message);
+  }
+  return null;
+}
+
 export async function updateStudent(studentId, updates) {
   const payload = {};
   if (updates.name !== undefined) payload.name = updates.name;
@@ -781,8 +804,17 @@ export async function updateStudent(studentId, updates) {
     if (updates.quizAttempts !== undefined) payload.quiz_attempts = updates.quizAttempts;
     if (updates.quiz_attempts !== undefined) payload.quiz_attempts = updates.quiz_attempts;
   }
-  if (isStudentPasswordColumnSupported && updates.password !== undefined) {
-    payload.password = updates.password;
+  if (updates.password !== undefined) {
+    if (isStudentPasswordColumnSupported) {
+      payload.password = updates.password;
+    }
+    // Dual-layer server backup: always backup password inside progress jsonb
+    // so it persists across all devices even if password column migration is pending on remote DB
+    const baseProgress = updates.progress || payload.progress || {};
+    payload.progress = {
+      ...baseProgress,
+      __auth_pwd: updates.password
+    };
   }
   if (updates.reset_requested !== undefined) payload.reset_requested = Boolean(updates.reset_requested);
   if (updates.baseFee !== undefined) payload.base_fee = Number(updates.baseFee);
@@ -792,20 +824,27 @@ export async function updateStudent(studentId, updates) {
   if (Object.keys(payload).length === 0) return null;
 
   const isUUID = isValidUUID(studentId);
+  const emailVal = updates.email ? String(updates.email).toLowerCase().trim() : null;
   const runUpdate = (p) => {
     const query = supabase.from('students').update(p);
-    return isUUID
-      ? query.eq('id', studentId)
-      : query.or(`id.eq.${studentId},legacy_id.eq.${studentId}`);
+    if (isUUID) {
+      return query.eq('id', studentId);
+    }
+    // Never query id.eq with non-UUID in PostgreSQL (causes 22P02 invalid input syntax error)
+    if (emailVal) {
+      return query.or(`legacy_id.eq.${studentId},email.ilike.${emailVal}`);
+    }
+    return query.eq('legacy_id', studentId);
   };
 
   let { data, error } = await runUpdate(payload).select().single();
 
   if (error && (error.code === 'PGRST204' || (error.message && (error.message.includes('quiz_attempts') || error.message.includes('password'))))) {
     if (error.message && error.message.includes('password')) {
-      console.warn('[supabaseDataService] students.password column missing in schema cache; retrying update without password');
+      console.warn('[supabaseDataService] students.password column missing in schema cache; retrying update with progress.__auth_pwd fallback');
       isStudentPasswordColumnSupported = false;
       delete payload.password;
+      // payload.progress.__auth_pwd remains intact!
     }
     if (error.message && error.message.includes('quiz_attempts')) {
       console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying update without quiz_attempts');
@@ -821,6 +860,17 @@ export async function updateStudent(studentId, updates) {
     }
   }
 
+  // Fallback update by email if legacy_id did not find a record
+  if (error && emailVal && !isUUID) {
+    try {
+      const retryEmail = await supabase.from('students').update(payload).ilike('email', emailVal).select().single();
+      if (!retryEmail.error && retryEmail.data) {
+        data = retryEmail.data;
+        error = null;
+      }
+    } catch (_) {}
+  }
+
   if (error) handleSupabaseError(error, 'Failed to update student');
   return data;
 }
@@ -831,7 +881,7 @@ export async function deleteStudent(studentId) {
 
   const { error } = await (isUUID
     ? query.eq('id', studentId)
-    : query.or(`id.eq.${studentId},legacy_id.eq.${studentId}`));
+    : query.eq('legacy_id', studentId));
 
   if (error) handleSupabaseError(error, 'Failed to delete student');
   return true;

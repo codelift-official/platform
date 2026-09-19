@@ -199,9 +199,9 @@ function CertificatePrintView({ cert, onClose }) {
 
 export default function StudentCertificates() {
   const { auth } = useAuth();
-  const { students = [], certificates = [], courses = [], certificateTemplates = [], batches = [] } = useData();
+  const { students = [], certificates = [], courses = [], certificateTemplates = [], batches = [], enrollments = [] } = useData();
 
-  const student = students.find(s => s.id === auth?.studentId || s.legacyId === auth?.studentId);
+  const student = students.find(s => s.id === auth?.studentId || s.legacyId === auth?.studentId || s.id === auth?.userId || s.email === auth?.email);
   const myCerts = certificates.filter(c =>
     (c.studentId === student?.id || (student?.legacyId && c.studentId === student?.legacyId)) &&
     !c.isRevoked &&
@@ -209,15 +209,32 @@ export default function StudentCertificates() {
   );
   const [viewCert, setViewCert] = useState(null);
 
-  // Fix: use the same batch-aware lookup as StudentDashboard
+  // Use robust batch-aware & enrollment-aware lookup without phantom fallbacks
   const batch = batches?.find(b => b.id === student?.batchId);
   const myCourses = courses.filter(c => {
-    if (!student?.batchId) return false;
-    if (Array.isArray(batch?.courseIds)) return batch.courseIds.includes(c.id);
-    return c.batchId === student.batchId || c.batchIds?.includes(student.batchId);
+    if (c.isPublished === false) return false;
+
+    // 1. Matched via student's batch
+    let isBatchAssigned = false;
+    if (student?.batchId) {
+      if (Array.isArray(batch?.courseIds) && batch.courseIds.includes(c.id)) isBatchAssigned = true;
+      if (c.batchId === student.batchId || (Array.isArray(c.batchIds) && c.batchIds.includes(student.batchId))) isBatchAssigned = true;
+    }
+    if (isBatchAssigned) return true;
+
+    // 2. Direct student enrollment (APPROVED, ACTIVE, PAID, FREE)
+    const isEnrolled = enrollments.some(
+      e => (e.studentId === student?.id || e.studentId === auth?.studentId || e.student_id === student?.id || e.student_id === auth?.studentId) &&
+        (e.courseId === c.id || e.courseId === c.slug || e.course_id === c.id || e.course_id === c.slug) &&
+        ['APPROVED', 'ACTIVE', 'PAID', 'FREE'].includes(e.status)
+    );
+    if (isEnrolled) return true;
+
+    return false;
   });
-  // Use first enrolled course as primary for backwards compatibility
-  const myCourse = myCourses[0] || courses[0] || null;
+
+  // Strict check: if no courses are allotted to the batch, myCourse is strictly null
+  const myCourse = myCourses.length > 0 ? myCourses[0] : null;
 
   const allTopics = myCourses.flatMap(c =>
     Array.isArray(c.modules) ? c.modules.flatMap(m => Array.isArray(m.topics) ? m.topics : []) : []
@@ -229,7 +246,7 @@ export default function StudentCertificates() {
   const alreadyCertified = myCerts.some(c =>
     myCourses.some(mc => mc.title === c.courseName || mc.title === c.courseTitle)
   );
-  const isPendingAdminIssuance = progress === 100 && !alreadyCertified;
+  const isPendingAdminIssuance = myCourses.length > 0 && progress === 100 && !alreadyCertified;
 
   return (
     <div>
@@ -241,7 +258,7 @@ export default function StudentCertificates() {
         </p>
       </div>
 
-      {/* Progress & Issuance Status Card */}
+      {/* Progress & Issuance Status Card - Only shown when student actually has allotted course(s) */}
       {myCourse && !alreadyCertified && (
         <div
           className="card border rounded-4 mb-3"
@@ -299,13 +316,29 @@ export default function StudentCertificates() {
         </div>
       )}
 
-      {/* Certificates List */}
+      {/* Certificates List & Empty States */}
       {myCerts.length === 0 ? (
-        <div className="empty-state">
-          <FiAward size={48} />
-          <h3>No certificates issued yet</h3>
-          <p>Complete all modules and topics in your curriculum. Once verified by your academy faculty, your credentials will appear here.</p>
-        </div>
+        myCourses.length === 0 ? (
+          <div className="empty-state text-center p-5 rounded-4 border" style={{ background: 'var(--card-bg)' }}>
+            <div className="mb-3">
+              <FiAward size={48} style={{ color: 'var(--text-secondary)', opacity: 0.5 }} />
+            </div>
+            <h5 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+              {student?.batchId ? 'No Courses Allotted to Your Batch' : 'No Batch Assigned'}
+            </h5>
+            <p style={{ color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', fontSize: '0.875rem', lineHeight: 1.6 }}>
+              {student?.batchId
+                ? 'Your assigned batch currently does not have any active curriculum allotted. Once your academy administrators assign courses to your batch, your course progression and certificate eligibility will appear here.'
+                : 'You are not currently enrolled in an active batch. Please contact academy administration for batch and course allocation.'}
+            </p>
+          </div>
+        ) : (
+          <div className="empty-state">
+            <FiAward size={48} />
+            <h3>No certificates issued yet</h3>
+            <p>Complete all modules and topics in your curriculum. Once verified by your academy faculty, your credentials will appear here.</p>
+          </div>
+        )
       ) : (
         <div className="row g-4">
           {myCerts.map(cert => {
