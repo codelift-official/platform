@@ -227,8 +227,8 @@ export function DataProvider({ children }) {
         const seedMap = new Map((unifiedCodingProblemsSeed || []).map((p) => [p.id, p]));
         const merged = [...(unifiedCodingProblemsSeed || [])];
         data.codingProblems.forEach((dp) => {
-          if (!seedMap.has(dp.id) && !dp.id?.startsWith('arena-q')) {
-            merged.push(dp);
+          if (!seedMap.has(dp.id) && !dp.id?.startsWith('arena-q') && (!dp.category || dp.category === 'Python')) {
+            merged.push({ ...dp, category: 'Python' });
           }
         });
         setCodingProblems(merged);

@@ -50,8 +50,9 @@ function loadScript(src) {
 // ─── Python Category Detection ──────────────────────────────────────────────
 
 function isPythonCategory(category) {
-  const pyCategories = ['Python', 'Data Structures', 'Algorithms', 'Flask'];
-  return pyCategories.includes(category);
+  // All CodeLift arena problems are pure Python (including 'Data Structures' and 'Algorithms')
+  const pyCategories = ['Python', 'Data Structures', 'Algorithms'];
+  return pyCategories.includes(category) || true;
 }
 
 function isSQLCategory(category) {
@@ -67,14 +68,7 @@ function isSQLCategory(category) {
  * TestResult: { input, expected, actual, passed, errorMsg? }
  */
 export async function runCode(code, testCases, category) {
-  if (isPythonCategory(category)) {
-    return runPython(code, testCases);
-  }
-  if (isSQLCategory(category)) {
-    return runSQL(code, testCases);
-  }
-  // Web Dev, etc.
-  return runHeuristic(code, testCases, category);
+  return runPython(code, testCases);
 }
 
 // ─── Python Runner via Pyodide ─────────────────────────────────────────────

@@ -153,7 +153,14 @@ export default function ProblemDetail() {
       setActiveTab('description');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problem?.id, currentId, studentId]);
+  }, [id]);
+
+  useEffect(() => {
+    if (problem && !id) {
+      setCode(getStoredCode(problem));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId, studentId]);
 
   // Handle user code edit with differentiated student vs guest persistence
   const handleCodeChange = (newCode) => {
@@ -414,13 +421,8 @@ export default function ProblemDetail() {
     return 'hard';
   };
 
-  const getLanguageFromCategory = (cat) => {
-    if (cat === 'SQL') return 'sql';
-    if (cat === 'Web Dev') return 'javascript';
-    return 'python';
-  };
-
-  const language = getLanguageFromCategory(problem.category);
+  const getLanguageFromCategory = () => 'python';
+  const language = 'python';
 
   // Compute solved status for current student or guest
   const isProblemSolved = useMemo(() => {

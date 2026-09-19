@@ -379,8 +379,7 @@ export default function Login() {
                   Request Sent!
                 </h5>
                 <p className="text-muted small mb-0">
-                  Admin notified on WhatsApp. Your password will be reset to{' '}
-                  <strong className="font-monospace">codelift123</strong> shortly.
+                  Admin notified on WhatsApp. Your password will be reset shortly.
                 </p>
               </div>
 

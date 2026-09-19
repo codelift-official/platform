@@ -80,8 +80,8 @@ export default function ProblemCatalog({ isStudentView = false }) {
   return (
     <div className={`cl-arena-page ${isStudentView ? 'cl-arena-student-embedded' : ''}`}>
       <SEO
-        title="50+ Coding & Problem Solving Challenges"
-        description="Master Python, Data Structures, Algorithms, SQL, and Flask with 50+ interactive coding problems and test runners."
+        title="Python Problem Solving Arena"
+        description="Master Python and problem solving with interactive coding challenges and instant test execution."
       />
 
       {/* Render Public Navbar strictly on public view */}

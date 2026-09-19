@@ -644,8 +644,8 @@ export async function fetchAllData() {
         const seedMap = new Map((SEED_PROBLEMS || []).map(p => [p.id, p]));
         const merged = [...(SEED_PROBLEMS || [])];
         for (const fp of fetchedProblems) {
-          if (!seedMap.has(fp.id) && !fp.id.startsWith('arena-q')) {
-            merged.push(fp);
+          if (!seedMap.has(fp.id) && !fp.id.startsWith('arena-q') && (!fp.category || fp.category === 'Python')) {
+            merged.push({ ...fp, category: 'Python' });
           }
         }
         codingProblems = merged;

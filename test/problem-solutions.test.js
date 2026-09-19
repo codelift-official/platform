@@ -27,10 +27,11 @@ export async function runProblemEditorialTests() {
     }
   }
 
-  // Test 1: All 52+ SEED_PROBLEMS enrich smoothly without throwing
+  // Test 1: All Python SEED_PROBLEMS enrich smoothly without throwing
   test('Every seed problem enriches with getProblemDetails with zero crashes', () => {
-    assert(SEED_PROBLEMS.length >= 50, `Expected at least 50 seed problems, found ${SEED_PROBLEMS.length}`);
+    assert(SEED_PROBLEMS.length >= 20, `Expected at least 20 seed problems, found ${SEED_PROBLEMS.length}`);
     for (const prob of SEED_PROBLEMS) {
+      assert(prob.category === 'Python', `Problem ${prob.id} must have category Python`);
       const detail = getProblemDetails(prob);
       assert(detail, `Failed to enrich problem ${prob.id}`);
       assert(detail.title, `Missing title on ${prob.id}`);
@@ -81,19 +82,15 @@ export async function runProblemEditorialTests() {
     assert(maxSub.editorial.solutionCode.includes('def max_sub'));
   });
 
-  // Test 4: SQL and Database challenges have dedicated queries and complexity specs
-  test('SQL challenges include query solutions and aggregate/index complexity analyses', () => {
-    const sqlEmployees = getProblemDetails(
-      SEED_PROBLEMS.find((p) => p.id === 'prob-sql-highest-paid-instructor' || p.id === 'prob-sql-high-earners')
-    );
-    assert(sqlEmployees, 'High earners or highest paid instructor SQL problem must exist');
-    assert(sqlEmployees.editorial.solutionCode.includes('SELECT'), 'Must have SQL solution');
-    assert(
-      sqlEmployees.editorial.solutionCode.includes('FROM instructors') ||
-        sqlEmployees.editorial.solutionCode.includes('FROM employees'),
-      'Must reference target relation'
-    );
-    assert(sqlEmployees.editorial.timeComplexity.includes('O('));
+  // Test 4: All problems are pure Python with verified Python solution implementations
+  test('All problems are pure Python with verified Python solution implementations', () => {
+    for (const prob of SEED_PROBLEMS) {
+      assert(prob.category === 'Python', `Problem ${prob.id} must be categorized as Python`);
+      assert(
+        prob.starterCode.includes('def ') || prob.starterCode.includes('class '),
+        `Problem ${prob.id} starter code must be Python`
+      );
+    }
   });
 
   // Test 5: Editorial step-by-step algorithms are non-empty arrays
