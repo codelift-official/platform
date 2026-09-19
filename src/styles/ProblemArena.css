@@ -563,6 +563,7 @@
   overflow: hidden;
   min-width: 0;
   background: #080c14;
+  color-scheme: dark;
 }
 
 .cl-code-cm-host .cm-editor {
@@ -640,6 +641,94 @@
   color: #79c0ff;
   font-weight: 600;
 }
+
+/* ─── Theme-Aware Code Editor ─────────────────────────────────────────
+   Base rules above are the dark appearance. When the app is running a
+   light theme (data-theme-mode='light' on <html>/<body>), the whole
+   editor surface, toolbar and syntax tokens flip to a light palette. */
+[data-theme-mode='light'] .cl-ide-editor-area {
+  background: transparent;
+}
+
+[data-theme-mode='light'] .cl-code-editor-wrap {
+  background: #ffffff;
+}
+
+[data-theme-mode='light'] .cl-code-editor-toolbar {
+  background: #f1f5f9;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+[data-theme-mode='light'] .cl-code-lang-badge {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+[data-theme-mode='light'] .cl-code-copy-btn {
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  color: rgba(15, 23, 42, 0.6);
+}
+
+[data-theme-mode='light'] .cl-code-copy-btn:hover {
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.3);
+  background: rgba(15, 23, 42, 0.05);
+}
+
+[data-theme-mode='light'] .cl-code-cm-host {
+  background: #ffffff;
+  color-scheme: light;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-editor {
+  color: #0f172a;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-content {
+  caret-color: #059669;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-gutters {
+  background: #f8fafc;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+  color: rgba(100, 116, 139, 0.45);
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-activeLine {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-activeLineGutter {
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(71, 85, 105, 0.75);
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-cursor {
+  border-left-color: #059669;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-selectionBackground {
+  background: rgba(16, 185, 129, 0.25) !important;
+}
+
+/* ── Light theme Python token palette (GitHub Light inspired) ── */
+[data-theme-mode='light'] .cl-code-cm-host .tok-keyword { color: #b91c1c; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-string { color: #0a3069; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-number { color: #0550ae; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-comment { color: #6e7781; font-style: italic; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-typeName,
+[data-theme-mode='light'] .cl-code-cm-host .tok-type-name { color: #116329; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-function,
+[data-theme-mode='light'] .cl-code-cm-host .tok-definition { color: #8250df; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-operator { color: #b91c1c; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-punctuation { color: #24292f; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-propertyName { color: #0550ae; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-meta { color: #0a3069; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-invalid { color: #b91c1c; text-decoration: underline; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-heading { color: #953800; }
+[data-theme-mode='light'] .cl-code-cm-host .tok-emphasis { color: #953800; font-style: italic; }
+[data-theme-mode='light'] .cl-code-cm-host .cm-builtin { color: #0550ae; font-weight: 600; }
 
 /* Editor area wrapper (unchanged surface) */
 .cl-ide-editor-area {

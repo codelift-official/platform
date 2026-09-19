@@ -495,6 +495,13 @@ describe('6. CodeEditor Component', () => {
   test('ProblemArena.css has .cl-code-cm-host', () => {
     expect(arenaCSS).toContain('.cl-code-cm-host');
   });
+
+  test('ProblemArena.css makes the editor theme-aware via [data-theme-mode]', () => {
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-code-editor-wrap");
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-code-cm-host");
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-code-cm-host .cm-gutters");
+    expect(arenaCSS).toContain("color-scheme: dark");
+  });
 });
 
 describe('7. Code Runner Utility', () => {

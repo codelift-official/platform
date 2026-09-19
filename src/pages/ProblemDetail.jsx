@@ -33,17 +33,13 @@ import {
 } from 'react-icons/fa';
 import '../styles/ProblemArena.css';
 
+// Legacy arena-qN codes map to the canonical problem at position N of the seed,
+// so old links and saved attempts keep resolving after every reorder.
 const LEGACY_ARENA_MAP = {
   'arena-q1': 'prob-hello-world',
-  'arena-q2': 'prob-sum-two-numbers',
-  'arena-q3': 'prob-reverse-string',
-  'arena-q4': 'prob-palindrome-check',
-  'arena-q5': 'prob-find-max-number',
-  'arena-q6': 'prob-fizzbuzz',
-  'arena-q7': 'prob-count-vowels',
-  'arena-q8': 'prob-factorial',
-  'arena-q9': 'prob-fibonacci-number',
-  'arena-q10': 'prob-even-odd-filter'
+  ...Object.fromEntries(
+    SEED_PROBLEMS.map((problem, index) => [`arena-q${index + 1}`, problem.id])
+  )
 };
 
 export default function ProblemDetail() {

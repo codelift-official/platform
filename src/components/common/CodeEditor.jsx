@@ -8,7 +8,9 @@
  *  - Standard IDE behaviors: line numbers, bracket matching, Tab/Shift+Tab
  *    indentation, autocompletion, undo/redo history
  *  - Controlled component faithful to React value/onChange semantics
- *  - Copy-to-clipboard toolbar button, dark-theme compatible
+ *  - Copy-to-clipboard toolbar button
+ *  - Theme-aware: follows the active app theme — dark palette by default,
+ *    light palette when data-theme-mode='light' (handled via CSS overrides)
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
