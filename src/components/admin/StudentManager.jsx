@@ -209,23 +209,33 @@ export default function StudentManager() {
     setShowCustomPassword(false);
   };
 
-  // Reset Student Password to Default
-  const handleResetToDefaultPassword = (student) => {
+  // Reset Student Password to Default (direct live DB call via set_student_password RPC)
+  const handleResetToDefaultPassword = async (student) => {
     if (!student) return;
     const defaultPwd = 'codelift123';
     try {
-      localStorage.removeItem(`codelift_student_pwd_${student.id}`);
-      if (student.email) {
-        localStorage.removeItem(`codelift_student_pwd_${student.email.toLowerCase()}`);
+      const { data, error } = await supabase.rpc('set_student_password', {
+        p_identifier: String(student.id || student.email || student.legacyId),
+        p_new_password: defaultPwd
+      });
+      if (!error && data?.success === true) {
+        await updateStudent(student.id, {
+          reset_requested: false, // clear the flag
+          isActive: true,
+          status: 'ACTIVE'
+        });
+      } else {
+        await updateStudent(student.id, {
+          password: defaultPwd,
+          reset_requested: false,
+          isActive: true,
+          status: 'ACTIVE'
+        });
       }
-    } catch (_) {}
-
-    updateStudent(student.id, {
-      password: defaultPwd,
-      reset_requested: false, // clear the flag
-      isActive: true,
-      status: 'ACTIVE'
-    });
+    } catch (e) {
+      toast.error(`Failed to reset password for ${student.name}.`);
+      return;
+    }
 
     toast.success(`Password reset to default "${defaultPwd}" for ${student.name}!`);
 
@@ -239,8 +249,8 @@ export default function StudentManager() {
     setPasswordEditStudent(null);
   };
 
-  // Save Custom Password
-  const handleSaveCustomPassword = (e) => {
+  // Save Custom Password (direct live DB call via set_student_password RPC)
+  const handleSaveCustomPassword = async (e) => {
     e.preventDefault();
     if (!passwordEditStudent) return;
     if (customPasswordInput.trim().length < 6) {
@@ -250,18 +260,28 @@ export default function StudentManager() {
 
     const newPwd = customPasswordInput.trim();
     try {
-      localStorage.setItem(`codelift_student_pwd_${passwordEditStudent.id}`, newPwd);
-      if (passwordEditStudent.email) {
-        localStorage.setItem(`codelift_student_pwd_${passwordEditStudent.email.toLowerCase()}`, newPwd);
+      const { data, error } = await supabase.rpc('set_student_password', {
+        p_identifier: String(passwordEditStudent.id || passwordEditStudent.email || passwordEditStudent.legacyId),
+        p_new_password: newPwd
+      });
+      if (!error && data?.success === true) {
+        await updateStudent(passwordEditStudent.id, {
+          reset_requested: false,
+          isActive: true,
+          status: 'ACTIVE'
+        });
+      } else {
+        await updateStudent(passwordEditStudent.id, {
+          password: newPwd,
+          reset_requested: false,
+          isActive: true,
+          status: 'ACTIVE'
+        });
       }
-    } catch (_) {}
-
-    updateStudent(passwordEditStudent.id, {
-      password: newPwd,
-      reset_requested: false, // clear the flag
-      isActive: true,
-      status: 'ACTIVE'
-    });
+    } catch (err) {
+      toast.error(`Failed to update password for ${passwordEditStudent.name}.`);
+      return;
+    }
 
     toast.success(`New password updated for ${passwordEditStudent.name}!`);
 

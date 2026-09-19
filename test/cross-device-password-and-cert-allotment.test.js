@@ -62,40 +62,52 @@ export function runCrossDevicePasswordAndCertAllotmentTests() {
   console.log('  ✓ supabaseDataService implements dual-layer password storage and RPC support');
   passedCount++;
 
-  // 5. AuthContext: Multi-device login resolution with empty localStorage
+  // 5. AuthContext: Multi-device login verification against the live DB (no localStorage)
   assert(
-    authCode.includes('serverPassword = student.password || student.progress?.__auth_pwd'),
-    'AuthContext must read serverPassword from both password column and progress.__auth_pwd'
+    authCode.includes('verifyStudentPasswordRPC'),
+    'AuthContext must verify credentials with the live verify_student_password DB call'
   );
   assert(
-    authCode.includes('customPassword = serverPassword || localCustomPassword'),
-    'AuthContext must treat server-side password as the primary source of truth'
+    authCode.includes('verification.success !== true') && authCode.includes('verification.student'),
+    'AuthContext must trust only the server-side verification for login'
   );
-  console.log('  ✓ AuthContext verifies server-side passwords across devices with empty local storage');
+  assert(
+    !authCode.includes('localCustomPassword') && !authCode.includes('codelift_student_passwords'),
+    'AuthContext must not resolve credentials from localStorage'
+  );
+  console.log('  ✓ AuthContext verifies server-side passwords across devices with direct DB calls only');
   passedCount++;
 
-  // 6. StudentProfile: Server-side password update with atomic RPC and DataContext
+  // 6. StudentProfile: Live DB password update with atomic RPC and server refresh
   assert(
     profileCode.includes("supabase.rpc('set_student_password'"),
-    'StudentProfile must trigger server-side RPC for password update'
+    'StudentProfile must trigger the server-side RPC for password update'
   );
   assert(
-    profileCode.includes('__auth_pwd: newPassword'),
-    'StudentProfile must ensure dual-layer payload during password updates'
+    profileCode.includes('refreshData'),
+    'StudentProfile must refresh in-memory state from the live DB after the update'
   );
-  console.log('  ✓ StudentProfile persists updated passwords directly to server and auth RPC');
+  assert(
+    !profileCode.includes('codelift_student_pwd_') && !profileCode.includes('__auth_pwd: newPassword'),
+    'StudentProfile must not persist passwords locally or hand-build the dual-layer payload in the UI layer'
+  );
+  console.log('  ✓ StudentProfile persists updated passwords directly to the server via the auth-syncing RPC');
   passedCount++;
 
-  // 7. DataContext: Dual-layer enrichment and server password hydration
+  // 7. DataContext: Dual-layer enrichment and server-only password hydration
   assert(
     dataContextCode.includes('__auth_pwd: enrichedUpdates.password'),
     'DataContext must enrich student password updates with dual-layer payload'
   );
   assert(
-    dataContextCode.includes('s.password || s.progress?.__auth_pwd'),
-    'DataContext must hydrate passwords from server dual-layer storage'
+    dataContextCode.includes('supabaseDataService.fetchAllData'),
+    'DataContext must hydrate passwords from the live server (dual-layer storage)'
   );
-  console.log('  ✓ DataContext synchronizes dual-layer passwords during background hydration and mutations');
+  assert(
+    !dataContextCode.includes('codelift_student_passwords'),
+    'DataContext must not rely on a localStorage password registry'
+  );
+  console.log('  ✓ DataContext synchronizes dual-layer passwords with server-only hydration and mutations');
   passedCount++;
 
   // 8. Migration 014: Exists with set_student_password RPC and reload notification

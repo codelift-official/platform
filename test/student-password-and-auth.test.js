@@ -11,129 +11,115 @@ export function runStudentPasswordAndAuthTests() {
   const studentManagerCode = fs.readFileSync('src/components/admin/StudentManager.jsx', 'utf8');
   const dataContextCode = fs.readFileSync('src/contexts/DataContext.jsx', 'utf8');
 
-  // 1. AuthContext: checks codelift_student_pwd_ under both ID and email
+  // 1. AuthContext: login verifies credentials with a live DB call, never from localStorage
   assert(
-    authContextCode.includes('localStorage.getItem(`codelift_student_pwd_${student.id}`)') &&
-    authContextCode.includes('localStorage.getItem(`codelift_student_pwd_${emailKey}`)'),
-    'AuthContext must check custom password by student ID and email'
+    authContextCode.includes("verifyStudentPasswordRPC(email.toLowerCase(), studentOrCreds.password)"),
+    'AuthContext must verify student credentials via the live verify_student_password DB call'
   );
-  console.log('  ✓ AuthContext resolves custom passwords from localStorage by both student ID and email');
+  assert(
+    !authContextCode.includes('codelift_student_pwd_') && !authContextCode.includes('codelift_student_passwords'),
+    'AuthContext must not read or write student passwords from localStorage'
+  );
+  console.log('  ✓ AuthContext verifies login against the live DB and has zero localStorage password usage');
   passedCount++;
 
-  // 2. AuthContext: strictly disallows old default passwords once a custom password exists
+  // 2. AuthContext: only the server password is accepted once a custom password has been set
   assert(
-    authContextCode.includes('const hasCustomPassword =') &&
-    authContextCode.includes('if (hasCustomPassword) {') &&
-    authContextCode.includes('if (studentOrCreds.password !== customPassword) {') &&
-    authContextCode.includes('throw new Error(\'Invalid email or password. Please check your credentials or click Forgot Password.\');'),
-    'AuthContext must strictly reject non-matching passwords when a custom password exists'
+    authContextCode.includes('if (!verification || verification.success !== true) {') &&
+    authContextCode.includes("throw new Error('Invalid email or password. Please check your credentials or click Forgot Password.');"),
+    'AuthContext must reject non-matching passwords based on the live DB verification result'
   );
-  console.log('  ✓ AuthContext rejects old default passwords once student sets a custom password');
+  console.log('  ✓ AuthContext rejects wrong passwords strictly from the live DB verification result');
   passedCount++;
 
-  // 3. AuthContext: fix getCachedStudents reference
+  // 3. AuthContext: use of getFallbackStudents (offline demo) without any stale references
   assert(
     !authContextCode.includes('const cached = getCachedStudents();'),
     'AuthContext must not call undefined getCachedStudents'
   );
   assert(
     authContextCode.includes('const cached = getFallbackStudents();'),
-    'AuthContext must call getFallbackStudents'
+    'AuthContext must call getFallbackStudents for offline demo records'
   );
   console.log('  ✓ AuthContext uses getFallbackStudents and has no undefined getCachedStudents references');
   passedCount++;
 
-  // 4. StudentProfile: verifies current password against custom password and disallows defaults if custom exists
+  // 4. StudentProfile: current password is verified with a live DB call (verify_student_password RPC)
   assert(
-    studentProfileCode.includes('hasCustomPwd') &&
-    studentProfileCode.includes('if (hasCustomPwd) {') &&
-    studentProfileCode.includes('if (currentPassword === knownSavedPwd) {'),
-    'StudentProfile must enforce existing custom password before allowing change'
+    studentProfileCode.includes("supabase.rpc('verify_student_password'"),
+    'StudentProfile must verify the current password with the live verify_student_password DB call'
   );
-  console.log('  ✓ StudentProfile enforces custom password check during password modification');
+  assert(
+    !studentProfileCode.includes('knownSavedPwd') && !studentProfileCode.includes('codelift_student_passwords'),
+    'StudentProfile must not rely on localStorage passwords or a local registry during verification'
+  );
+  console.log('  ✓ StudentProfile verifies the current password directly against the DB');
   passedCount++;
 
-  // 5. StudentProfile: stores new password under both student.id and email
+  // 5. StudentProfile: password update is a single direct DB write and surfaces success/error
   assert(
-    studentProfileCode.includes('localStorage.setItem(`codelift_student_pwd_${student.id}`, newPassword);') &&
-    studentProfileCode.includes('localStorage.setItem(`codelift_student_pwd_${emailLower}`, newPassword);'),
-    'StudentProfile must persist new password under student.id and lowercase email'
+    studentProfileCode.includes("supabase.rpc('set_student_password'"),
+    'StudentProfile must update the password with the live set_student_password DB call'
   );
-  console.log('  ✓ StudentProfile persists updated password under both student ID and lowercase email');
+  assert(
+    !studentProfileCode.includes('codelift_student_pwd_') && !studentProfileCode.includes('codelift_student_passwords'),
+    'StudentProfile must not persist passwords to localStorage'
+  );
+  console.log('  ✓ StudentProfile writes password updates straight to the DB with inline success/error feedback');
   passedCount++;
 
-  // 6. StudentManager: resets and clears localStorage on default reset, and updates on custom password edit
+  // 6. StudentManager: admin reset/custom password go straight to the DB via the RPC
   assert(
-    studentManagerCode.includes('localStorage.removeItem(`codelift_student_pwd_${student.id}`);') &&
-    studentManagerCode.includes('localStorage.setItem(`codelift_student_pwd_${passwordEditStudent.id}`, newPwd);'),
-    'StudentManager must sync localStorage on admin password resets and updates'
+    studentManagerCode.includes("supabase.rpc('set_student_password'"),
+    'StudentManager must reset and set student passwords with the live set_student_password DB call'
   );
-  console.log('  ✓ StudentManager synchronizes localStorage cache on admin password reset and edit');
+  assert(
+    !studentManagerCode.includes('codelift_student_pwd_') && !studentManagerCode.includes('codelift_student_passwords'),
+    'StudentManager must not synchronize passwords to localStorage'
+  );
+  console.log('  ✓ StudentManager performs admin password resets/edits directly on the DB');
   passedCount++;
 
-  // 7. DataContext: updates student password cache on addStudent, updateStudent, and deleteStudent
+  // 7. DataContext: student mutations sync the password server-side with zero localStorage
   assert(
-    dataContextCode.includes('localStorage.setItem(`codelift_student_pwd_${studentId}`, updates.password);') &&
-    dataContextCode.includes('localStorage.removeItem(`codelift_student_pwd_${studentId}`);'),
-    'DataContext must keep student password cache synchronized during mutations'
+    !dataContextCode.includes('codelift_student_pwd_') && !dataContextCode.includes('codelift_student_passwords'),
+    'DataContext must not keep a password cache in localStorage during student mutations'
   );
-  console.log('  ✓ DataContext keeps student password cache synchronized during student mutations');
+  assert(
+    dataContextCode.includes('supabaseDataService.setStudentPasswordRPC'),
+    'DataContext must sync password changes to the server through the RPC helper'
+  );
+  console.log('  ✓ DataContext keeps password data strictly server-side during add/update/delete');
   passedCount++;
 
-  // 8. Functional credential verification simulation
-  // Simulate the exact Milan Soni user journey
-  const storage = new Map();
-  const mockLocalStorage = {
-    getItem: (k) => storage.get(k) || null,
-    setItem: (k, v) => storage.set(k, String(v)),
-    removeItem: (k) => storage.delete(k),
-  };
-
-  const studentRecord = {
+  // 8. Functional credential verification simulation (server DB as the single source of truth)
+  // Simulate the exact Milan Soni user journey against a DB-backed record.
+  const dbRecord = {
     id: 'stu-milan-1',
     name: 'Milan Soni',
     email: 'milansoni208@gmail.com',
     status: 'ACTIVE',
+    password: 'codelift123' // students.password column — the canonical source
   };
 
+  // Mirrors the verify_student_password RPC: a single live DB call
   const verifyLogin = (email, inputPassword) => {
-    const emailKey = email.toLowerCase();
-    const customPassword =
-      (studentRecord.id && mockLocalStorage.getItem(`codelift_student_pwd_${studentRecord.id}`)) ||
-      mockLocalStorage.getItem(`codelift_student_pwd_${emailKey}`) ||
-      studentRecord.password ||
-      null;
-
-    const hasCustomPassword =
-      customPassword &&
-      customPassword !== 'codelift123' &&
-      customPassword !== 'password';
-
-    if (hasCustomPassword) {
-      if (inputPassword !== customPassword) {
-        throw new Error('Invalid email or password.');
-      }
-    } else {
-      const allowed = ['codelift123', 'password'];
-      if (customPassword) allowed.push(customPassword);
-      if (!allowed.includes(inputPassword)) {
-        throw new Error('Invalid email or password.');
-      }
+    if (inputPassword !== dbRecord.password) {
+      throw new Error('Invalid email or password.');
     }
     return true;
   };
 
-  // Step A: Initially, default password works
+  // Step A: Initially, default password works (DB holds the default)
   assert.strictEqual(verifyLogin('milansoni208@gmail.com', 'codelift123'), true);
 
-  // Step B: Milan changes password to milan123
-  mockLocalStorage.setItem(`codelift_student_pwd_${studentRecord.id}`, 'milan123');
-  mockLocalStorage.setItem(`codelift_student_pwd_milansoni208@gmail.com`, 'milan123');
+  // Step B: Milan changes password to milan123 through set_student_password (updates the DB record)
+  dbRecord.password = 'milan123';
 
   // Step C: Logging in with updated password milan123 succeeds!
   assert.strictEqual(verifyLogin('milansoni208@gmail.com', 'milan123'), true);
 
-  // Step D: Logging in with old password codelift123 MUST FAIL!
+  // Step D: Logging in with old password codelift123 MUST FAIL! (DB no longer holds it)
   let oldPwdFailed = false;
   try {
     verifyLogin('milansoni208@gmail.com', 'codelift123');
@@ -142,16 +128,19 @@ export function runStudentPasswordAndAuthTests() {
   }
   assert.strictEqual(oldPwdFailed, true, 'Old password codelift123 must be rejected after update');
 
-  // Step E: Admin resets password back to default
-  mockLocalStorage.removeItem(`codelift_student_pwd_${studentRecord.id}`);
-  mockLocalStorage.removeItem(`codelift_student_pwd_milansoni208@gmail.com`);
+  // Step E: Admin resets password back to default via set_student_password (DB now holds default)
+  dbRecord.password = 'codelift123';
 
   // Step F: Default password works again
   assert.strictEqual(verifyLogin('milansoni208@gmail.com', 'codelift123'), true);
 
-  console.log('  ✓ Milan Soni workflow simulation: allows updated password, rejects old password, restores on reset');
+  console.log('  ✓ Milan Soni workflow: DB-only credential flow allows update, rejects old password, restores on reset');
   passedCount++;
 
   console.log(`✨ All ${passedCount}/${totalCount} Student Password & Auth tests PASSED!`);
   return { passedCount, totalCount };
+}
+
+if (process.argv[1] && process.argv[1].endsWith('student-password-and-auth.test.js')) {
+  runStudentPasswordAndAuthTests();
 }

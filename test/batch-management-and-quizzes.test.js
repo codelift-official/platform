@@ -78,12 +78,15 @@ export function runBatchManagementAndQuizzesTests() {
   const adminProfileJsx = fs.readFileSync('src/components/admin/AdminProfile.jsx', 'utf8');
   assert(studentProfileJsx.includes('FiEye') && studentProfileJsx.includes('FiEyeOff'), 'StudentProfile must import FiEye and FiEyeOff');
   assert(studentProfileJsx.includes('showCurrentPassword') && studentProfileJsx.includes('showNewPassword') && studentProfileJsx.includes('showConfirmPassword'), 'StudentProfile must have visibility toggles for all 3 password inputs');
-  assert(studentProfileJsx.includes('codelift_student_pwd_'), 'StudentProfile must verify/persist student password locally');
-  assert(studentProfileJsx.includes("'codelift123'"), 'StudentProfile must recognize platform standard default codelift123');
+  assert(studentProfileJsx.includes("supabase.rpc('verify_student_password'"), 'StudentProfile must verify the current password with a live DB call');
+  assert(studentProfileJsx.includes("supabase.rpc('set_student_password'"), 'StudentProfile must update the password with a live DB call');
+  assert(!studentProfileJsx.includes('codelift_student_pwd_'), 'StudentProfile must not persist passwords to localStorage');
+  assert(studentProfileJsx.includes('codelift123'), 'StudentProfile must recognize platform standard default codelift123');
 
   assert(adminProfileJsx.includes('FiEye') && adminProfileJsx.includes('FiEyeOff'), 'AdminProfile must import FiEye and FiEyeOff');
   assert(adminProfileJsx.includes('showCurrentPassword') && adminProfileJsx.includes('showNewPassword') && adminProfileJsx.includes('showConfirmPassword'), 'AdminProfile must have visibility toggles for all 3 password inputs');
-  assert(adminProfileJsx.includes('codelift_admin_pwd'), 'AdminProfile must verify/persist admin password locally');
+  assert(adminProfileJsx.includes('supabase.auth.updateUser'), 'AdminProfile must update the admin password directly in Supabase Auth');
+  assert(!adminProfileJsx.includes('codelift_admin_pwd'), 'AdminProfile must not persist the admin password to localStorage');
   console.log('  ✓ StudentProfile and AdminProfile support view password toggles and password update resilience');
   passedCount++;
 

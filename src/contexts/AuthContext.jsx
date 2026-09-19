@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
+import { verifyStudentPasswordRPC, setStudentPasswordRPC } from '../services/supabaseDataService';
 import studentsSeed from '../../data/students.json';
 
 const AuthContext = createContext(null);
@@ -68,34 +69,6 @@ export function AuthProvider({ children }) {
       } catch (_) {}
 
       if (student) {
-        let customPassword = null;
-        try {
-          const emailKey = (student.email || user.email || '').toLowerCase().trim();
-          customPassword =
-            (student.id && localStorage.getItem(`codelift_student_pwd_${student.id}`)) ||
-            (student.legacy_id && localStorage.getItem(`codelift_student_pwd_${student.legacy_id}`)) ||
-            (user.id && localStorage.getItem(`codelift_student_pwd_${user.id}`)) ||
-            (emailKey && localStorage.getItem(`codelift_student_pwd_${emailKey}`)) ||
-            null;
-          if (!customPassword) {
-            const regRaw = localStorage.getItem('codelift_student_passwords');
-            if (regRaw) {
-              const reg = JSON.parse(regRaw);
-              customPassword = (student.id && reg[student.id]) || (student.legacy_id && reg[student.legacy_id]) || (emailKey && reg[emailKey]) || null;
-            }
-          }
-        } catch (_) {}
-
-        const serverPassword = student.password || student.progress?.__auth_pwd || null;
-        const resolvedPassword = customPassword || serverPassword || auth?.password || 'codelift123';
-        if (serverPassword && serverPassword !== 'codelift123' && serverPassword !== 'password') {
-          try {
-            if (student.id) localStorage.setItem(`codelift_student_pwd_${student.id}`, serverPassword);
-            if (student.legacy_id) localStorage.setItem(`codelift_student_pwd_${student.legacy_id}`, serverPassword);
-            if (student.email) localStorage.setItem(`codelift_student_pwd_${student.email.toLowerCase().trim()}`, serverPassword);
-          } catch (_) {}
-        }
-
         saveAuth({
           role: 'student',
           userId: student.id,
@@ -106,8 +79,7 @@ export function AuthProvider({ children }) {
           email: student.email || user.email,
           phone: student.phone || '',
           batchId: student.batch_id || '',
-          progress: student.progress || {},
-          password: resolvedPassword
+          progress: student.progress || {}
         });
         return;
       }
@@ -290,34 +262,20 @@ export function AuthProvider({ children }) {
           throw new Error('This student account is suspended or inactive. Please contact administration.');
         }
 
-        const customPwd =
-          (matched.id && localStorage.getItem(`codelift_student_pwd_${matched.id}`)) ||
-          (matched.legacyId && localStorage.getItem(`codelift_student_pwd_${matched.legacyId}`)) ||
-          localStorage.getItem(`codelift_student_pwd_${email}`) ||
-          matched.password ||
-          null;
-
-        const hasCustomPwd = customPwd && customPwd !== 'codelift123' && customPwd !== 'password';
+        const sourcePwd = matched.password || 'codelift123';
+        const hasCustomPwd = sourcePwd && sourcePwd !== 'codelift123' && sourcePwd !== 'password';
 
         if (hasCustomPwd) {
-          if (studentOrCreds?.password !== customPwd) {
+          if (studentOrCreds?.password !== sourcePwd) {
             throw new Error('Invalid student credentials. Please check your email and password.');
           }
         } else {
           const allowed = ['codelift123', 'password'];
-          if (customPwd) allowed.push(customPwd);
+          if (sourcePwd) allowed.push(sourcePwd);
           if (studentOrCreds?.password && !allowed.includes(studentOrCreds.password)) {
             throw new Error('Invalid student credentials. Default student password is "codelift123".');
           }
         }
-
-        try {
-          if (hasCustomPwd || (studentOrCreds.password && studentOrCreds.password !== 'codelift123' && studentOrCreds.password !== 'password')) {
-            if (matched.id) localStorage.setItem(`codelift_student_pwd_${matched.id}`, studentOrCreds.password);
-            if (matched.legacyId) localStorage.setItem(`codelift_student_pwd_${matched.legacyId}`, studentOrCreds.password);
-            localStorage.setItem(`codelift_student_pwd_${email}`, studentOrCreds.password);
-          }
-        } catch (_) {}
 
         const next = {
           role: 'student',
@@ -329,8 +287,7 @@ export function AuthProvider({ children }) {
           email: matched.email,
           phone: matched.phone || '',
           batchId: matched.batchId || '',
-          progress: matched.progress || {},
-          password: studentOrCreds?.password || customPwd || 'codelift123'
+          progress: matched.progress || {}
         };
         saveAuth(next);
         return next;
@@ -349,8 +306,7 @@ export function AuthProvider({ children }) {
         email: email || 'rahul.sharma@example.com',
         phone: '+91 9876543210',
         batchId: 'batch-fswd-morning',
-        progress: { t1: true, t2: true, t3: true, t4: true },
-        password: studentOrCreds?.password || 'codelift123'
+        progress: { t1: true, t2: true, t3: true, t4: true }
       };
       saveAuth(next);
       return next;
@@ -374,177 +330,59 @@ export function AuthProvider({ children }) {
         if (adminErr.message?.includes('Administrator accounts')) throw adminErr;
       }
 
-      // First attempt Supabase Auth sign in
+      // Live DB verification: single RPC call against public.students (no localStorage middle layer)
+      const verification = await verifyStudentPasswordRPC(email.toLowerCase(), studentOrCreds.password);
+
+      if (!verification || verification.success !== true) {
+        if (verification && verification.error === 'SUSPENDED') {
+          throw new Error('This student account is suspended or inactive. Please contact administration.');
+        }
+        throw new Error('Invalid email or password. Please check your credentials or click Forgot Password.');
+      }
+
+      const student = verification.student || null;
+
+      // Establish Supabase Auth session (live, server-side). If auth.users is stale,
+      // resync it through set_student_password and retry once.
       let authUser = null;
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password: studentOrCreds.password
-        });
-        if (!error && data?.user) {
-          authUser = data.user;
-        }
-      } catch (authErr) {
-        // Fallback to student record verification below
-      }
-
-      // Check student record in Supabase or local cache
-      let student = null;
-      try {
-        let query = supabase.from('students').select('*');
-        if (authUser) {
-          query = query.or(`id.eq.${authUser.id},email.ilike.${email.toLowerCase()}`);
-        } else {
-          query = query.ilike('email', email.toLowerCase());
-        }
-        const { data: stdRecords } = await query.limit(1);
-        if (Array.isArray(stdRecords) && stdRecords.length > 0) {
-          student = stdRecords[0];
-        }
-      } catch (err) {
-        // Supabase error, check local cache
-      }
-
-      if (!student) {
-        const cached = getFallbackStudents();
-        student = cached.find((s) => (s.email || '').toLowerCase() === email.toLowerCase());
-      }
-
-      // If Supabase auth succeeded
-      if (authUser) {
-        if (student && (student.is_active === false || student.isActive === false || student.status === 'SUSPENDED')) {
-          await supabase.auth.signOut();
-          throw new Error('This student account is suspended or inactive. Please contact administration.');
-        }
-
-        // Keep local password cache in sync
-        try {
-          localStorage.setItem(`codelift_student_pwd_${email.toLowerCase()}`, studentOrCreds.password);
-          if (student?.id) {
-            localStorage.setItem(`codelift_student_pwd_${student.id}`, studentOrCreds.password);
-          }
-          if (authUser.id) {
-            localStorage.setItem(`codelift_student_pwd_${authUser.id}`, studentOrCreds.password);
-          }
-        } catch (_) {}
-
-        const next = {
-          role: 'student',
-          userId: authUser.id,
-          studentId: student?.id || authUser.id,
-          studentName: student?.name || authUser.user_metadata?.name || 'Student',
-          name: student?.name || authUser.user_metadata?.name || 'Student',
-          email: authUser.email,
-          phone: student?.phone || '',
-          batchId: student?.batch_id || student?.batchId || '',
-          progress: student?.progress || {},
-          password: studentOrCreds.password
-        };
-        saveAuth(next);
-        return next;
-      }
-
-      // If Supabase Auth failed (e.g. enrolled via admin, seed student, or local auth), check student record
       if (student) {
-        if (student.is_active === false || student.isActive === false || student.status === 'SUSPENDED') {
-          throw new Error('This student account is suspended or inactive. Please contact administration.');
-        }
-
-        const emailKey = (student.email || email).toLowerCase().trim();
-        let localCustomPassword = null;
         try {
-          localCustomPassword =
-            (student.id && localStorage.getItem(`codelift_student_pwd_${student.id}`)) ||
-            (student.legacy_id && localStorage.getItem(`codelift_student_pwd_${student.legacy_id}`)) ||
-            (student.legacyId && localStorage.getItem(`codelift_student_pwd_${student.legacyId}`)) ||
-            localStorage.getItem(`codelift_student_pwd_${emailKey}`) ||
-            null;
-          if (!localCustomPassword) {
-            const regRaw = localStorage.getItem('codelift_student_passwords');
-            if (regRaw) {
-              const reg = JSON.parse(regRaw);
-              localCustomPassword = (student.id && reg[student.id]) || (student.legacy_id && reg[student.legacy_id]) || (student.legacyId && reg[student.legacyId]) || (emailKey && reg[emailKey]) || null;
-            }
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: student.email || email,
+            password: studentOrCreds.password
+          });
+          if (!error && data?.user) {
+            authUser = data.user;
           }
         } catch (_) {}
-
-        // Server-side dual-layer password is the primary ground truth across all devices
-        const serverPassword = student.password || student.progress?.__auth_pwd || null;
-        const customPassword = serverPassword || localCustomPassword || student.password || null;
-
-        const hasCustomPassword =
-          customPassword &&
-          customPassword !== 'codelift123' &&
-          customPassword !== 'password';
-        const hasCustomSavedPwd = hasCustomPassword;
-
-        if (hasCustomPassword) {
-          // If a custom password has been set, ONLY the custom password is valid!
-          if (studentOrCreds.password !== customPassword) {
-            throw new Error('Invalid email or password. Please check your credentials or click Forgot Password.');
-          }
-        } else {
-          // No custom password set yet: allow platform default passwords or existing customPassword
-          const allowed = ['codelift123', 'password'];
-          if (customPassword) allowed.push(customPassword);
-          if (!allowed.includes(studentOrCreds.password)) {
-            throw new Error('Invalid email or password. Please check your credentials or click Forgot Password.');
-          }
-        }
-
-        // Cache valid password for seamless subsequent verification on this device
-        try {
-          if (student.id) localStorage.setItem(`codelift_student_pwd_${student.id}`, studentOrCreds.password);
-          if (student.legacy_id) localStorage.setItem(`codelift_student_pwd_${student.legacy_id}`, studentOrCreds.password);
-          if (student.legacyId) localStorage.setItem(`codelift_student_pwd_${student.legacyId}`, studentOrCreds.password);
-          localStorage.setItem(`codelift_student_pwd_${emailKey}`, studentOrCreds.password);
-          const regRaw = localStorage.getItem('codelift_student_passwords');
-          const reg = regRaw ? JSON.parse(regRaw) : {};
-          reg[student.id] = studentOrCreds.password;
-          reg[emailKey] = studentOrCreds.password;
-          localStorage.setItem('codelift_student_passwords', JSON.stringify(reg));
-        } catch (_) {}
-
-        // If not already authenticated in Supabase Auth, attempt background sign-in or session provisioning
         if (!authUser) {
           try {
-            const { data: sAuth } = await supabase.auth.signInWithPassword({
+            await setStudentPasswordRPC(student.id, studentOrCreds.password);
+            const { data, error } = await supabase.auth.signInWithPassword({
               email: student.email || email,
               password: studentOrCreds.password
             });
-            if (!sAuth?.user) {
-              for (const cand of ['codelift123', 'password']) {
-                const { data: candAuth } = await supabase.auth.signInWithPassword({
-                  email: student.email || email,
-                  password: cand
-                });
-                if (candAuth?.user) {
-                  await supabase.auth.updateUser({ password: studentOrCreds.password });
-                  break;
-                }
-              }
+            if (!error && data?.user) {
+              authUser = data.user;
             }
           } catch (_) {}
         }
-
-        const next = {
-          role: 'student',
-          userId: student.id,
-          studentId: student.id,
-          id: student.id,
-          studentName: student.name || 'Student',
-          name: student.name || 'Student',
-          email: student.email || email,
-          phone: student.phone || '',
-          batchId: student.batch_id || student.batchId || '',
-          progress: student.progress || {},
-          password: studentOrCreds.password
-        };
-        saveAuth(next);
-        return next;
       }
 
-      throw new Error('Student account not found with this email. Please check your email or contact administration.');
+      const next = {
+        role: 'student',
+        userId: authUser?.id || student.id,
+        studentId: student.id,
+        id: student.id || authUser?.id,
+        studentName: student.name || 'Student',
+        name: student.name || 'Student',
+        email: student.email || email,
+        phone: student.phone || '',
+        batchId: student.batch_id || student.batchId || '',
+        progress: student.progress || {}
+      };
+      saveAuth(next);
+      return next;
     }
 
     if (!studentOrCreds || studentOrCreds.isActive === false || studentOrCreds.status === 'SUSPENDED') {

@@ -179,38 +179,8 @@ export function DataProvider({ children }) {
             if (rawQ) cachedQuizzes = JSON.parse(rawQ);
           } catch (_) {}
 
-          // Retain custom password across background hydration
-          let cachedPassword = null;
-          try {
-            const emailKey = (s.email || '').toLowerCase().trim();
-            cachedPassword =
-              (s.id && localStorage.getItem(`codelift_student_pwd_${s.id}`)) ||
-              (s.legacyId && localStorage.getItem(`codelift_student_pwd_${s.legacyId}`)) ||
-              (emailKey && localStorage.getItem(`codelift_student_pwd_${emailKey}`)) ||
-              null;
-            if (!cachedPassword) {
-              const regRaw = localStorage.getItem('codelift_student_passwords');
-              if (regRaw) {
-                const reg = JSON.parse(regRaw);
-                cachedPassword = (s.id && reg[s.id]) || (s.legacyId && reg[s.legacyId]) || (emailKey && reg[emailKey]) || null;
-              }
-            }
-          } catch (_) {}
-
-          const savedCustomPwd = cachedPassword;
-          const serverPwd = s.password || s.progress?.__auth_pwd || null;
-          const resolvedPassword = serverPwd || savedCustomPwd || 'codelift123';
-          if (serverPwd && serverPwd !== 'codelift123' && serverPwd !== 'password') {
-            try {
-              if (s.id) localStorage.setItem(`codelift_student_pwd_${s.id}`, serverPwd);
-              if (s.legacyId) localStorage.setItem(`codelift_student_pwd_${s.legacyId}`, serverPwd);
-              if (s.email) localStorage.setItem(`codelift_student_pwd_${s.email.toLowerCase().trim()}`, serverPwd);
-            } catch (_) {}
-          }
-
           return {
             ...s,
-            password: resolvedPassword,
             progress: { ...(s.progress || {}), ...cachedProgress },
             quizAttempts: { ...(s.quiz_attempts || s.quizAttempts || {}), ...cachedQuizzes }
           };
@@ -342,15 +312,10 @@ export function DataProvider({ children }) {
       } : newStudent;
 
       if (studentData.password && studentData.password !== 'codelift123' && studentData.password !== 'password') {
-        try {
-          localStorage.setItem(`codelift_student_pwd_${assignedId}`, studentData.password);
-          if (finalized.id && finalized.id !== assignedId) {
-            localStorage.setItem(`codelift_student_pwd_${finalized.id}`, studentData.password);
-          }
-          if (studentData.email) {
-            localStorage.setItem(`codelift_student_pwd_${studentData.email.toLowerCase()}`, studentData.password);
-          }
-        } catch (_) {}
+        // Ensure auth.users stays in sync for newly created custom passwords (live server call)
+        if (supabaseDataService.setStudentPasswordRPC) {
+          supabaseDataService.setStudentPasswordRPC(finalized.email || finalized.id || assignedId, studentData.password).catch(() => {});
+        }
       }
 
       setStudents((prev) => prev.map((s) => s.id === assignedId ? finalized : s));
@@ -376,53 +341,11 @@ export function DataProvider({ children }) {
     }
 
     if (updates.password !== undefined) {
-      try {
-        const student = students.find((s) => s.id === studentId || s.legacyId === studentId);
-        const emailKey = (student?.email || '').toLowerCase().trim();
-        if (updates.password && updates.password !== 'codelift123' && updates.password !== 'password') {
-          localStorage.setItem(`codelift_student_pwd_${studentId}`, updates.password);
-          if (emailKey) {
-            localStorage.setItem(`codelift_student_pwd_${emailKey}`, updates.password);
-          }
-          if (student?.id && student.id !== studentId) {
-            localStorage.setItem(`codelift_student_pwd_${student.id}`, updates.password);
-          }
-          if (student?.legacyId) {
-            localStorage.setItem(`codelift_student_pwd_${student.legacyId}`, updates.password);
-          }
-          try {
-            const regRaw = localStorage.getItem('codelift_student_passwords');
-            const reg = regRaw ? JSON.parse(regRaw) : {};
-            reg[studentId] = updates.password;
-            if (emailKey) reg[emailKey] = updates.password;
-            if (student?.id) reg[student.id] = updates.password;
-            if (student?.legacyId) reg[student.legacyId] = updates.password;
-            localStorage.setItem('codelift_student_passwords', JSON.stringify(reg));
-          } catch (_) {}
-        } else if (updates.password === 'codelift123' || updates.password === 'password' || !updates.password) {
-          localStorage.removeItem(`codelift_student_pwd_${studentId}`);
-          if (emailKey) {
-            localStorage.removeItem(`codelift_student_pwd_${emailKey}`);
-          }
-          if (student?.id && student.id !== studentId) {
-            localStorage.removeItem(`codelift_student_pwd_${student.id}`);
-          }
-          if (student?.legacyId) {
-            localStorage.removeItem(`codelift_student_pwd_${student.legacyId}`);
-          }
-          try {
-            const regRaw = localStorage.getItem('codelift_student_passwords');
-            if (regRaw) {
-              const reg = JSON.parse(regRaw);
-              delete reg[studentId];
-              if (emailKey) delete reg[emailKey];
-              if (student?.id) delete reg[student.id];
-              if (student?.legacyId) delete reg[student.legacyId];
-              localStorage.setItem('codelift_student_passwords', JSON.stringify(reg));
-            }
-          } catch (_) {}
-        }
-      } catch (_) {}
+      // Live sync of the password to auth.users + progress->__auth_pwd through the single set_student_password RPC
+      if (supabaseDataService.setStudentPasswordRPC) {
+        const passwordStudent = students.find((s) => s.id === studentId || s.legacyId === studentId);
+        supabaseDataService.setStudentPasswordRPC(passwordStudent?.email || studentId, updates.password).catch(() => {});
+      }
     }
 
     const student = students.find((s) => s.id === studentId || s.legacyId === studentId);
@@ -436,12 +359,6 @@ export function DataProvider({ children }) {
         ...(enrichedUpdates.progress || {}),
         __auth_pwd: enrichedUpdates.password
       };
-      if (supabaseDataService.setStudentPasswordRPC) {
-        supabaseDataService.setStudentPasswordRPC(studentId, enrichedUpdates.password).catch(() => {});
-        if (student?.email) {
-          supabaseDataService.setStudentPasswordRPC(student.email, enrichedUpdates.password).catch(() => {});
-        }
-      }
     }
 
     setStudents((prev) => prev.map((s) => (s.id === studentId || s.legacyId === studentId ? { ...s, ...enrichedUpdates } : s)));
@@ -464,17 +381,6 @@ export function DataProvider({ children }) {
 
   const deleteStudent = async (studentId) => {
     activeMutationsRef.current += 1;
-    const toDelete = students.find((s) => s.id === studentId || s.legacyId === studentId);
-    try {
-      localStorage.removeItem(`codelift_student_pwd_${studentId}`);
-      if (toDelete?.email) {
-        localStorage.removeItem(`codelift_student_pwd_${toDelete.email.toLowerCase()}`);
-      }
-      if (toDelete?.id && toDelete.id !== studentId) {
-        localStorage.removeItem(`codelift_student_pwd_${toDelete.id}`);
-      }
-    } catch (_) {}
-
     setStudents((prev) => prev.filter((s) => s.id !== studentId && s.legacyId !== studentId));
     try {
       await supabaseDataService.deleteStudent(studentId);

@@ -772,6 +772,21 @@ export async function addStudent(studentData) {
   return data;
 }
 
+export async function verifyStudentPasswordRPC(identifier, password) {
+  try {
+    const { data, error } = await supabase.rpc('verify_student_password', {
+      p_identifier: String(identifier),
+      p_password: String(password)
+    });
+    if (!error && data) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('[supabaseDataService] verify_student_password RPC note:', err?.message);
+  }
+  return null;
+}
+
 export async function setStudentPasswordRPC(identifier, newPassword) {
   try {
     const { data, error } = await supabase.rpc('set_student_password', {

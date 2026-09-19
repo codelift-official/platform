@@ -22,32 +22,34 @@ export function runStudentPasswordPersistenceTests() {
     }
   }
 
-  // 1. AuthContext preserves password across 1-hour token refresh
-  test('AuthContext preserves custom password across 1-hour JWT refresh in hydrateProfile', () => {
+  // 1. AuthContext keeps the session alive across 1-hour JWT refresh, hydrating from the DB only
+  test('AuthContext preserves the DB-backed session across 1-hour JWT refresh', () => {
     const authCode = fs.readFileSync(path.join(rootDir, 'src', 'contexts', 'AuthContext.jsx'), 'utf8');
 
     assert(authCode.includes('TOKEN_REFRESHED'), 'AuthContext must handle TOKEN_REFRESHED');
-    assert(authCode.includes('codelift_student_passwords'), 'AuthContext must read from unified password registry');
-    assert(authCode.includes('resolvedPassword'), 'hydrateProfile must resolve and preserve password');
-    assert(authCode.includes('hasCustomSavedPwd'), 'loginStudent must guard custom passwords from being overridden');
+    assert(authCode.includes('verifyStudentPasswordRPC'), 'loginStudent must verify credentials with the live DB call');
+    assert(!authCode.includes('codelift_student_passwords'), 'AuthContext must not read the localStorage password registry');
+    assert(!authCode.includes('resolvedPassword'), 'hydrateProfile must not resolve passwords from localStorage');
   });
 
-  // 2. DataContext preserves custom password across background syncFromSupabase
-  test('DataContext preserves student password across background syncFromSupabase', () => {
+  // 2. DataContext hydrates the server-side dual-layer password across background syncFromSupabase
+  test('DataContext preserves the server password across background syncFromSupabase', () => {
     const dataContextCode = fs.readFileSync(path.join(rootDir, 'src', 'contexts', 'DataContext.jsx'), 'utf8');
 
     assert(dataContextCode.includes('syncFromSupabase'), 'DataContext must define syncFromSupabase');
-    assert(dataContextCode.includes('savedCustomPwd'), 'syncFromSupabase must preserve savedCustomPwd');
-    assert(dataContextCode.includes('codelift_student_passwords'), 'DataContext must sync with codelift_student_passwords registry');
+    assert(dataContextCode.includes('supabaseDataService.fetchAllData'), 'syncFromSupabase must re-fetch the live DB');
+    assert(!dataContextCode.includes('savedCustomPwd'), 'syncFromSupabase must not preserve passwords from localStorage');
+    assert(!dataContextCode.includes('codelift_student_passwords'), 'DataContext must not use the localStorage password registry');
   });
 
-  // 3. StudentProfile persists new password to unified registry and updates student
-  test('StudentProfile persists password to registry and triggers updateStudent', () => {
+  // 3. StudentProfile persists the new password through a single live DB call and refreshes from the server
+  test('StudentProfile persists the password directly to the DB and refreshes server state', () => {
     const profileCode = fs.readFileSync(path.join(rootDir, 'src', 'components', 'student', 'StudentProfile.jsx'), 'utf8');
 
-    assert(profileCode.includes('codelift_student_passwords'), 'StudentProfile must store in codelift_student_passwords');
-    assert(profileCode.includes('updateStudent'), 'StudentProfile must call updateStudent');
-    assert(profileCode.includes('updateAuthUser'), 'StudentProfile must call updateAuthUser');
+    assert(profileCode.includes("supabase.rpc('set_student_password'"), "StudentProfile must write via the set_student_password RPC");
+    assert(profileCode.includes("supabase.rpc('verify_student_password'"), "StudentProfile must verify via the verify_student_password RPC");
+    assert(profileCode.includes('refreshData'), 'StudentProfile must refresh in-memory state from the DB after the update');
+    assert(!profileCode.includes('codelift_student_passwords'), 'StudentProfile must not store passwords in the localStorage registry');
   });
 
   // 4. ProblemDetail maps legacy arena-q1 to canonical prob-hello-world

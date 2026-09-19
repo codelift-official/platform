@@ -25,7 +25,7 @@ import {
 
 export default function StudentProfile() {
   const { auth, updateAuthUser } = useAuth();
-  const { students, batches, courses, assignments, submissions, certificates, updateStudent } = useData();
+  const { students, batches, courses, assignments, submissions, certificates, updateStudent, refreshData } = useData();
   const navigate = useNavigate();
 
   const student = Array.isArray(students)
@@ -138,193 +138,79 @@ export default function StudentProfile() {
     try {
       const email = student?.email || auth?.email;
       const emailLower = (email || '').toLowerCase();
+      const targetStudentId = student?.id || auth?.studentId || auth?.userId || auth?.id || student?.legacyId;
 
-      // 1. Verify current password:
-      let registryPwd = null;
+      // 1. Verify current password with a single live DB call (verify_student_password RPC)
+      let currentVerified = false;
       try {
-        const registry = JSON.parse(localStorage.getItem('codelift_student_passwords') || '{}');
-        registryPwd =
-          (student?.id && registry[student.id]) ||
-          (student?.legacyId && registry[student.legacyId]) ||
-          (student?.legacy_id && registry[student.legacy_id]) ||
-          (emailLower && registry[emailLower]) ||
-          (auth?.studentId && registry[auth.studentId]) ||
-          (auth?.userId && registry[auth.userId]);
+        const { data: verifyData, error: verifyError } = await supabase.rpc('verify_student_password', {
+          p_identifier: String(emailLower || targetStudentId),
+          p_password: String(currentPassword)
+        });
+        currentVerified = !verifyError && verifyData?.success === true;
       } catch (_) {}
 
-      // Check if student already has an active custom password
-      const knownSavedPwd =
-        (student?.id && localStorage.getItem(`codelift_student_pwd_${student.id}`)) ||
-        (student?.legacyId && localStorage.getItem(`codelift_student_pwd_${student.legacyId}`)) ||
-        (student?.legacy_id && localStorage.getItem(`codelift_student_pwd_${student.legacy_id}`)) ||
-        (emailLower && localStorage.getItem(`codelift_student_pwd_${emailLower}`)) ||
-        (auth?.studentId && localStorage.getItem(`codelift_student_pwd_${auth.studentId}`)) ||
-        (auth?.userId && localStorage.getItem(`codelift_student_pwd_${auth.userId}`)) ||
-        registryPwd ||
-        student?.password ||
-        auth?.password;
-
-      let isVerified = false;
-      const hasCustomPwd = knownSavedPwd && knownSavedPwd !== 'codelift123' && knownSavedPwd !== 'password';
-
-      if (hasCustomPwd) {
-        // If a custom password has already been set, only that specific password is valid
-        if (currentPassword === knownSavedPwd) {
-          isVerified = true;
-        }
-      } else {
-        // No custom password set yet: allow standard defaults ('codelift123', 'password') or knownSavedPwd
-        if (
-          currentPassword === 'codelift123' ||
-          currentPassword === 'password' ||
-          (knownSavedPwd && currentPassword === knownSavedPwd)
-        ) {
-          isVerified = true;
-        }
-      }
-
-      if (!isVerified && email) {
+      if (!currentVerified && emailLower) {
+        // Secondary live check against Supabase Auth
         try {
-          const { error: verifyError } = await supabase.auth.signInWithPassword({
-            email,
-            password: currentPassword,
+          const { data: sData, error: sErr } = await supabase.auth.signInWithPassword({
+            email: emailLower,
+            password: currentPassword
           });
-          if (!verifyError) {
-            isVerified = true;
-          }
+          currentVerified = !sErr && !!sData?.user;
         } catch (_) {}
       }
 
-      if (!isVerified) {
+      if (!currentVerified) {
         toast.error('Current password is incorrect');
         setPasswordMsg({ type: 'danger', text: 'Current password is incorrect.' });
         return;
       }
 
-      // 2. Update password in Supabase Auth (if session / user exists)
+      // 2. Update with a single live DB call (set_student_password RPC syncs students.password,
+      // progress->__auth_pwd and auth.users atomically, and clears reset_requested)
+      let updateApplied = false;
       try {
-        const { data: userRes } = await supabase.auth.getUser();
-        if (userRes?.user) {
-          await supabase.auth.updateUser({ password: newPassword });
-        } else if (email) {
-          let signedIn = false;
-          const candidates = [currentPassword, 'codelift123', 'password'].filter(Boolean);
-          for (const cand of candidates) {
-            const { data: sData, error: sErr } = await supabase.auth.signInWithPassword({
-              email,
-              password: cand
-            });
-            if (!sErr && sData?.user) {
-              signedIn = true;
-              await supabase.auth.updateUser({ password: newPassword });
-              break;
-            }
-          }
-          if (!signedIn) {
-            // Attempt signup so Supabase Auth user record exists for subsequent logins
-            await supabase.auth.signUp({
-              email,
+        const { data: rpcData, error: rpcError } = await supabase.rpc('set_student_password', {
+          p_identifier: String(targetStudentId || emailLower),
+          p_new_password: String(newPassword)
+        });
+        updateApplied = !rpcError && rpcData?.success === true;
+      } catch (_) {}
+
+      if (updateApplied) {
+        // Refresh in-memory/reactive state from the live DB (single direct write already applied)
+        if (typeof refreshData === 'function') {
+          try {
+            await refreshData();
+          } catch (_) {}
+        }
+
+        toast.success('Password updated successfully');
+        setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        // Offline/local dev fallback: persist through the app's data layer (no localStorage)
+        if (targetStudentId && typeof updateStudent === 'function') {
+          try {
+            await updateStudent(targetStudentId, {
               password: newPassword,
-              options: {
-                data: {
-                  name: student?.name || auth?.name || 'Student',
-                  role: 'student'
-                }
-              }
+              email: emailLower
             });
+            toast.success('Password updated successfully');
+            setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            return;
+          } catch (updateErr) {
+            console.warn('[StudentProfile] Note on updateStudent:', updateErr?.message);
           }
         }
-      } catch (authErr) {
-        console.warn('[StudentProfile] Note on auth updateUser:', authErr?.message);
+        throw new Error('Could not update password on the server. Please try again.');
       }
-
-      // 3. Server-side dual-layer update via RPC & DataContext & direct Supabase write
-      const targetStudentId = student?.id || auth?.studentId || auth?.userId || auth?.id || student?.legacyId;
-      try {
-        if (supabase?.rpc) {
-          await supabase.rpc('set_student_password', {
-            p_identifier: String(targetStudentId || emailLower),
-            p_new_password: String(newPassword)
-          });
-        }
-      } catch (_) {}
-
-      // Update through DataContext (triggers supabaseDataService.updateStudent with dual-layer payload)
-      if (targetStudentId && typeof updateStudent === 'function') {
-        try {
-          await updateStudent(targetStudentId, {
-            password: newPassword,
-            email: emailLower,
-            progress: { ...(student?.progress || {}), __auth_pwd: newPassword }
-          });
-        } catch (updateErr) {
-          console.warn('[StudentProfile] Note on updateStudent:', updateErr?.message);
-        }
-      }
-
-      // Direct Supabase table safety net write
-      try {
-        const isUUID = targetStudentId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetStudentId);
-        const directPayload = {
-          password: newPassword,
-          progress: { ...(student?.progress || {}), __auth_pwd: newPassword }
-        };
-        const query = supabase.from('students').update(directPayload);
-        if (isUUID) {
-          await query.eq('id', targetStudentId);
-        } else if (emailLower) {
-          await query.ilike('email', emailLower);
-        } else if (targetStudentId) {
-          await query.eq('legacy_id', targetStudentId);
-        }
-      } catch (_) {}
-
-      // 4. Persist new password locally under ID, legacyId, email, and registry
-      try {
-        if (student?.id) {
-          localStorage.setItem(`codelift_student_pwd_${student.id}`, newPassword);
-        }
-        if (student?.legacyId) {
-          localStorage.setItem(`codelift_student_pwd_${student.legacyId}`, newPassword);
-        }
-        if (student?.legacy_id) {
-          localStorage.setItem(`codelift_student_pwd_${student.legacy_id}`, newPassword);
-        }
-        if (emailLower) {
-          localStorage.setItem(`codelift_student_pwd_${emailLower}`, newPassword);
-        }
-        if (auth?.studentId && auth.studentId !== student?.id) {
-          localStorage.setItem(`codelift_student_pwd_${auth.studentId}`, newPassword);
-        }
-        if (auth?.userId && auth.userId !== student?.id) {
-          localStorage.setItem(`codelift_student_pwd_${auth.userId}`, newPassword);
-        }
-
-        // Unified registry
-        try {
-          const registry = JSON.parse(localStorage.getItem('codelift_student_passwords') || '{}');
-          if (student?.id) registry[student.id] = newPassword;
-          if (student?.legacyId) registry[student.legacyId] = newPassword;
-          if (student?.legacy_id) registry[student.legacy_id] = newPassword;
-          if (emailLower) registry[emailLower] = newPassword;
-          if (auth?.studentId) registry[auth.studentId] = newPassword;
-          if (auth?.userId) registry[auth.userId] = newPassword;
-          localStorage.setItem('codelift_student_passwords', JSON.stringify(registry));
-        } catch (_) {}
-      } catch (_) {}
-
-      // 5. Update auth context state if stored
-      if (typeof updateAuthUser === 'function') {
-        try {
-          updateAuthUser({ password: newPassword });
-        } catch (_) {}
-      }
-
-      toast.success('Password updated successfully');
-      setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
     } catch (err) {
       console.error('[StudentProfile] Password update failed:', err);
       toast.error(err.message || 'Failed to update password');
@@ -736,12 +622,16 @@ export default function StudentProfile() {
                   </Col>
                 </Row>
 
-                <div className="d-flex justify-content-end">
+                <div className="d-flex justify-content-between align-items-center gap-3 mt-1">
+                  <div className="text-muted small">
+                    Forgot your current password? Admin can reset it to the default password{' '}
+                    <code className="fw-semibold" style={{ color: 'var(--text-secondary)' }}>codelift123</code>.
+                  </div>
                   <Button
                     type="submit"
                     variant="success"
                     disabled={isChangingPassword}
-                    className="d-flex align-items-center gap-2 rounded-pill px-4 shadow-sm"
+                    className="d-flex align-items-center gap-2 rounded-pill px-4 shadow-sm flex-shrink-0"
                   >
                     <FiCheck size={15} />
                     <span>{isChangingPassword ? 'Updating...' : 'Update Password'}</span>

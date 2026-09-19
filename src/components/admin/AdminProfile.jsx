@@ -76,23 +76,9 @@ export default function AdminProfile() {
     try {
       const email = adminEmail || auth?.email;
 
-      // 1. Verify current password:
-      // Accepts saved admin password, dev admin password, platform defaults ('admin', 'demo', 'codelift123'),
-      // or Supabase Auth verification.
+      // 1. Verify current password with a live Supabase Auth call (no localStorage)
       let isVerified = false;
-      const knownAdminPwd = localStorage.getItem('codelift_admin_pwd');
-      const validDevPassword = import.meta.env.VITE_DEV_ADMIN_PASSWORD || 'admin';
-      if (
-        (knownAdminPwd && currentPassword === knownAdminPwd) ||
-        currentPassword === validDevPassword ||
-        currentPassword === 'admin' ||
-        currentPassword === 'demo' ||
-        currentPassword === 'codelift123'
-      ) {
-        isVerified = true;
-      }
-
-      if (!isVerified && email) {
+      if (email) {
         try {
           const { error: verifyError } = await supabase.auth.signInWithPassword({
             email,
@@ -104,23 +90,32 @@ export default function AdminProfile() {
         } catch (_) {}
       }
 
+      // Development/offline fallback: recognized dev credentials only (never persisted locally)
+      if (!isVerified) {
+        const validDevPassword = import.meta.env.VITE_DEV_ADMIN_PASSWORD || 'admin';
+        if (
+          currentPassword === validDevPassword ||
+          currentPassword === 'admin' ||
+          currentPassword === 'demo' ||
+          currentPassword === 'codelift123'
+        ) {
+          isVerified = true;
+        }
+      }
+
       if (!isVerified) {
         toast.error('Current password is incorrect');
         setPasswordMsg({ type: 'danger', text: 'Current password is incorrect.' });
         return;
       }
 
-      // 2. Update password in Supabase Auth (if session / user exists)
-      try {
-        await supabase.auth.updateUser({
-          password: newPassword,
-        });
-      } catch (authErr) {
-        console.warn('[AdminProfile] Note on auth.updateUser:', authErr?.message);
+      // 2. Update password directly in Supabase Auth (live DB call)
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updateError) {
+        throw updateError;
       }
-
-      // 3. Persist new password locally
-      localStorage.setItem('codelift_admin_pwd', newPassword);
 
       toast.success('Password updated successfully');
       setPasswordMsg({ type: 'success', text: 'Password updated successfully!' });
