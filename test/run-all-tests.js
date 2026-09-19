@@ -24,6 +24,8 @@ import { runStudentCreationAndQuizAttemptsTests } from './student-creation-and-q
 import { runPageLoaderHydrationTests } from './page-loader-hydration.test.js';
 import { runStudentPasswordAndAuthTests } from './student-password-and-auth.test.js';
 import { runCertificateAndCompletionTests } from './certificate-and-completion-fixes.test.js';
+import { runUnifiedCodeArenaTests } from './unified-code-arena.test.js';
+import { runStudentPasswordPersistenceTests } from './student-password-persistence.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -195,6 +197,24 @@ async function runAll() {
     suiteResults.push({ name: 'Certificate Pipeline, Admin Gating & 100% Completion Polish', passed: r18.passedCount, total: r18.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Certificate Pipeline, Admin Gating & 100% Completion Polish', error: err.message, ok: false });
+  }
+
+  try {
+    const r19 = runUnifiedCodeArenaTests();
+    totalPassed += r19.passedCount;
+    totalTests += r19.totalCount;
+    suiteResults.push({ name: 'Unified Code Arena, Admin Control & Differentiated Progress Tracking', passed: r19.passedCount, total: r19.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Unified Code Arena, Admin Control & Differentiated Progress Tracking', error: err.message, ok: false });
+  }
+
+  try {
+    const r20 = runStudentPasswordPersistenceTests();
+    totalPassed += r20.passedCount;
+    totalTests += r20.totalCount;
+    suiteResults.push({ name: 'Student Password Persistence & 1-Hour Token Refresh Shield', passed: r20.passedCount, total: r20.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Student Password Persistence & 1-Hour Token Refresh Shield', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

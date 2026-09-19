@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient.js';
+import { SEED_PROBLEMS } from '../data/problemsSeed.js';
 
 // ==============================================================================
 // TYPED CUSTOM ERRORS
@@ -418,6 +419,7 @@ export async function fetchAllData() {
       name: s.name,
       email: s.email,
       phone: s.phone || '',
+      password: s.password || undefined,
       batchId: s.batch_id || '',
       enrolledDate: s.enrolled_date,
       totalFee: Number(s.total_fee || 0),
@@ -623,12 +625,12 @@ export async function fetchAllData() {
         supabase.from('coding_attempts').select('*').order('attempted_at', { ascending: false })
       ]);
       if (cpRes?.data?.length) {
-        codingProblems = cpRes.data.map(cp => ({
+        const fetchedProblems = cpRes.data.map(cp => ({
           id: cp.id,
           title: cp.title,
           description: cp.description || '',
           difficulty: cp.difficulty || 'Easy',
-          category: cp.category || 'Lists',
+          category: cp.category || 'Python',
           orderIndex: Number(cp.order_index || 1),
           xp: Number(cp.xp || 50),
           hints: cp.hints || [],
@@ -636,6 +638,19 @@ export async function fetchAllData() {
           testCases: cp.test_cases || [],
           hiddenTestCases: cp.hidden_test_cases || []
         }));
+
+        // Always prioritize the canonical SEED_PROBLEMS (e.g. prob-hello-world)
+        // and append any custom problems added via Admin
+        const seedMap = new Map((SEED_PROBLEMS || []).map(p => [p.id, p]));
+        const merged = [...(SEED_PROBLEMS || [])];
+        for (const fp of fetchedProblems) {
+          if (!seedMap.has(fp.id) && !fp.id.startsWith('arena-q')) {
+            merged.push(fp);
+          }
+        }
+        codingProblems = merged;
+      } else {
+        codingProblems = Array.isArray(SEED_PROBLEMS) ? [...SEED_PROBLEMS] : [];
       }
       if (caRes?.data?.length) {
         codingAttempts = caRes.data.map(ca => ({
@@ -685,6 +700,7 @@ export async function fetchAllData() {
 // STUDENT MUTATIONS
 // ==============================================================================
 let isQuizAttemptsColumnSupported = true;
+let isStudentPasswordColumnSupported = true;
 
 export async function addStudent(studentData) {
   const assignedId = isValidUUID(studentData.id) ? studentData.id : genUUID();
@@ -709,6 +725,10 @@ export async function addStudent(studentData) {
     reset_requested: Boolean(studentData.reset_requested)
   };
 
+  if (isStudentPasswordColumnSupported && studentData.password) {
+    insertPayload.password = studentData.password;
+  }
+
   const quizAttempts = studentData.quizAttempts || studentData.quiz_attempts;
   if (isQuizAttemptsColumnSupported && quizAttempts && Object.keys(quizAttempts).length > 0) {
     insertPayload.quiz_attempts = quizAttempts;
@@ -720,10 +740,17 @@ export async function addStudent(studentData) {
     .select()
     .single();
 
-  if (error && (error.code === 'PGRST204' || (error.message && error.message.includes('quiz_attempts')))) {
-    console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying insert without quiz_attempts');
-    isQuizAttemptsColumnSupported = false;
-    delete insertPayload.quiz_attempts;
+  if (error && (error.code === 'PGRST204' || (error.message && (error.message.includes('quiz_attempts') || error.message.includes('password'))))) {
+    if (error.message && error.message.includes('password')) {
+      console.warn('[supabaseDataService] students.password column missing in schema cache; retrying insert without password');
+      isStudentPasswordColumnSupported = false;
+      delete insertPayload.password;
+    }
+    if (error.message && error.message.includes('quiz_attempts')) {
+      console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying insert without quiz_attempts');
+      isQuizAttemptsColumnSupported = false;
+      delete insertPayload.quiz_attempts;
+    }
     const retry = await supabase
       .from('students')
       .insert(insertPayload)
@@ -754,6 +781,9 @@ export async function updateStudent(studentId, updates) {
     if (updates.quizAttempts !== undefined) payload.quiz_attempts = updates.quizAttempts;
     if (updates.quiz_attempts !== undefined) payload.quiz_attempts = updates.quiz_attempts;
   }
+  if (isStudentPasswordColumnSupported && updates.password !== undefined) {
+    payload.password = updates.password;
+  }
   if (updates.reset_requested !== undefined) payload.reset_requested = Boolean(updates.reset_requested);
   if (updates.baseFee !== undefined) payload.base_fee = Number(updates.baseFee);
   if (updates.concessionAmount !== undefined) payload.concession_amount = Number(updates.concessionAmount);
@@ -771,10 +801,17 @@ export async function updateStudent(studentId, updates) {
 
   let { data, error } = await runUpdate(payload).select().single();
 
-  if (error && (error.code === 'PGRST204' || (error.message && error.message.includes('quiz_attempts')))) {
-    console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying update without quiz_attempts');
-    isQuizAttemptsColumnSupported = false;
-    delete payload.quiz_attempts;
+  if (error && (error.code === 'PGRST204' || (error.message && (error.message.includes('quiz_attempts') || error.message.includes('password'))))) {
+    if (error.message && error.message.includes('password')) {
+      console.warn('[supabaseDataService] students.password column missing in schema cache; retrying update without password');
+      isStudentPasswordColumnSupported = false;
+      delete payload.password;
+    }
+    if (error.message && error.message.includes('quiz_attempts')) {
+      console.warn('[supabaseDataService] students.quiz_attempts column missing in schema cache; retrying update without quiz_attempts');
+      isQuizAttemptsColumnSupported = false;
+      delete payload.quiz_attempts;
+    }
     if (Object.keys(payload).length > 0) {
       const retry = await runUpdate(payload).select().single();
       data = retry.data;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { SEED_PROBLEMS } from '../data/problemsSeed';
 import { useData } from '../contexts/DataContext';
@@ -7,45 +7,56 @@ import Navbar from '../components/common/Navbar';
 import SEO from '../components/common/SEO';
 import {
   FaCode,
-  FaSearch,
-  FaTrophy,
   FaCheckCircle,
   FaFire,
   FaTerminal,
-  FaTimes,
-  FaLayerGroup,
   FaBolt,
-  FaMedal
+  FaTrophy,
+  FaUserGraduate
 } from 'react-icons/fa';
 import '../styles/ProblemArena.css';
 
-export default function ProblemCatalog() {
-  const { problemAttempts } = useData();
-  const { currentUser } = useAuth();
+export default function ProblemCatalog({ isStudentView = false }) {
+  const { codingProblems = [], codingAttempts = [], problemAttempts = [] } = useData();
+  const { auth, currentUser } = useAuth();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('All');
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const isStudent = isStudentView || auth?.role === 'student' || Boolean(auth?.studentId);
+  const currentStudentId = auth?.studentId || currentUser?.id || auth?.user?.id;
 
-  // Solved problems set for currentUser
-  const solvedProblemIds = new Set(
-    (problemAttempts || [])
-      .filter((pa) => pa.studentId === currentUser?.id && pa.passed)
-      .map((pa) => pa.problemId)
-  );
-
-  const categories = ['All', 'Python', 'Data Structures', 'Algorithms', 'Web Dev', 'SQL', 'Flask'];
-
-  const filteredProblems = SEED_PROBLEMS.filter((p) => {
-    if (selectedCategory !== 'All' && p.category !== selectedCategory) return false;
-    if (selectedDifficulty !== 'All' && p.difficulty !== selectedDifficulty) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      if (!p.title.toLowerCase().includes(q) && !p.description.toLowerCase().includes(q)) return false;
+  // Guest solved IDs from client-side storage (ephemeral to device/browser)
+  const [guestSolvedIds] = useState(() => {
+    try {
+      const cached = localStorage.getItem('codelift_guest_solved_problems');
+      return cached ? JSON.parse(cached) : [];
+    } catch (_) {
+      return [];
     }
-    return true;
   });
+
+  // Solved problems resolution: authenticated student attempts vs guest client-side storage
+  const solvedProblemIds = useMemo(() => {
+    if (isStudent && currentStudentId) {
+      const studentAttemptIds = new Set();
+      (codingAttempts || []).forEach((a) => {
+        if ((a.studentId === currentStudentId || a.studentId === auth?.email) && a.passed) {
+          studentAttemptIds.add(a.problemId);
+        }
+      });
+      (problemAttempts || []).forEach((a) => {
+        if ((a.studentId === currentStudentId || a.studentId === auth?.email) && a.passed) {
+          studentAttemptIds.add(a.problemId);
+        }
+      });
+      return studentAttemptIds;
+    }
+    return new Set(guestSolvedIds);
+  }, [isStudent, currentStudentId, codingAttempts, problemAttempts, guestSolvedIds, auth]);
+
+  // Single Source of Truth: problems managed by Admin in DataContext (fallback to seed)
+  const problemsList = useMemo(() => {
+    const list = (codingProblems && codingProblems.length > 0) ? codingProblems : SEED_PROBLEMS;
+    return [...list].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+  }, [codingProblems]);
 
   const getDifficultyClass = (diff) => {
     if (diff === 'Easy') return 'easy';
@@ -54,72 +65,87 @@ export default function ProblemCatalog() {
   };
 
   // Stats calculation
-  const totalProblems = SEED_PROBLEMS.length;
+  const totalProblems = problemsList.length;
   const solvedCount = solvedProblemIds.size;
-  const totalUserXp = SEED_PROBLEMS
+  const totalUserXp = problemsList
     .filter((p) => solvedProblemIds.has(p.id))
     .reduce((acc, curr) => acc + (curr.xp || 50), 0);
-  const totalXpAvailable = SEED_PROBLEMS.reduce((acc, curr) => acc + (curr.xp || 50), 0);
+  const totalXpAvailable = problemsList.reduce((acc, curr) => acc + (curr.xp || 50), 0);
 
-  // Leaderboard Calculation
-  const leaderboardMap = {};
-  (problemAttempts || []).forEach((pa) => {
-    if (pa.passed) {
-      const sid = pa.studentId || 'Anonymous';
-      leaderboardMap[sid] = (leaderboardMap[sid] || 0) + (pa.score || 50);
-    }
-  });
-
-  const leaderboardList = Object.entries(leaderboardMap)
-    .map(([studentId, totalXp]) => ({ studentId, totalXp }))
-    .sort((a, b) => b.totalXp - a.totalXp);
+  // Dynamic route target based on view context
+  const getProblemUrl = (probId) => {
+    return isStudentView ? `/student/arena/${probId}` : `/problems/${probId}`;
+  };
 
   return (
-    <div className="cl-arena-page">
+    <div className={`cl-arena-page ${isStudentView ? 'cl-arena-student-embedded' : ''}`}>
       <SEO
         title="50+ Coding & Problem Solving Challenges"
         description="Master Python, Data Structures, Algorithms, SQL, and Flask with 50+ interactive coding problems and test runners."
       />
-      <Navbar />
+
+      {/* Render Public Navbar strictly on public view */}
+      {!isStudentView && <Navbar />}
 
       {/* Atmospheric Theme-Adaptive Hero Header */}
-      <section className="cl-arena-hero">
+      <section className={`cl-arena-hero ${isStudentView ? 'py-4' : ''}`}>
         <div className="container max-w-7xl">
           <div className="row align-items-center g-4">
             <div className="col-lg-8 text-center text-lg-start d-flex flex-column align-items-center align-items-lg-start">
               <span className="cl-arena-badge">
-                <span className="live-dot" /> 50+ Real-World Coding Challenges
+                <span className="live-dot" /> {isStudent ? (
+                  <span className="d-inline-flex align-items-center gap-1">
+                    <FaUserGraduate /> Student Coding Arena
+                  </span>
+                ) : (
+                  '50+ Real-World Coding Challenges'
+                )}
               </span>
               <h1 className="cl-arena-title">Problem Solving Arena</h1>
+              <p className="text-secondary small mb-0 mt-1">
+                {isStudent
+                  ? 'All problems are synchronized with your academic profile. Complete challenges to earn XP and showcase mastery.'
+                  : 'Practice coding challenges in your browser. Progress is saved locally in guest mode.'}
+              </p>
+            </div>
+
+            {/* Interactive Coder Progress Ribbon */}
+            <div className="col-lg-4 d-flex justify-content-center justify-content-lg-end">
+              <div
+                className="d-flex align-items-center gap-3 p-3 rounded-4 shadow-sm border"
+                style={{
+                  background: 'color-mix(in srgb, var(--card-bg, #0f172a) 90%, transparent)',
+                  borderColor: 'var(--border-color, rgba(255,255,255,0.1))'
+                }}
+              >
+                <div className="text-center px-2">
+                  <div className="fw-bold fs-5 text-success d-flex align-items-center justify-content-center gap-1">
+                    <FaCheckCircle size={15} /> {solvedCount}/{totalProblems}
+                  </div>
+                  <div className="text-secondary" style={{ fontSize: '0.72rem' }}>Challenges Solved</div>
+                </div>
+                <div style={{ width: '1px', height: '32px', background: 'var(--border-color, rgba(255,255,255,0.1))' }} />
+                <div className="text-center px-2">
+                  <div className="fw-bold fs-5 text-warning d-flex align-items-center justify-content-center gap-1">
+                    <FaBolt size={14} /> {totalUserXp}
+                  </div>
+                  <div className="text-secondary" style={{ fontSize: '0.72rem' }}>Total XP Earned</div>
+                </div>
+              </div>
             </div>
           </div>
-
         </div>
       </section>
 
       {/* Main Content Area */}
       <main className="container max-w-7xl py-4 py-md-3">
-
-
-        {/* Empty State */}
-        {filteredProblems.length === 0 ? (
-          <div className="cl-arena-filters-card text-center py-5">
+        {problemsList.length === 0 ? (
+          <div className="cl-arena-empty-state text-center py-5 rounded-4 shadow-sm border" style={{ background: 'var(--card-bg, #0f172a)', borderColor: 'var(--border-color, rgba(255,255,255,0.1))' }}>
             <FaCode className="text-secondary fs-1 mb-3 opacity-50" />
-            <h5 className="fw-bold mb-2">No matching coding challenges found</h5>
+            <h5 className="fw-bold mb-2">No coding challenges available</h5>
             <p className="text-secondary small mb-3">
-              Try adjusting your search keywords or switching category filters.
+              Challenges will appear here once published by your instructor or platform administrator.
             </p>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-success rounded-pill px-4 fw-bold"
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategory('All');
-                setSelectedDifficulty('All');
-              }}
-            >
-              Show All Challenges
-            </button>
           </div>
         ) : (
           <>
@@ -138,7 +164,7 @@ export default function ProblemCatalog() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredProblems.map((prob) => {
+                    {problemsList.map((prob) => {
                       const isSolved = solvedProblemIds.has(prob.id);
                       return (
                         <tr key={prob.id}>
@@ -148,13 +174,13 @@ export default function ProblemCatalog() {
                                 <FaCheckCircle /> Solved
                               </span>
                             ) : (
-                              <span className="cl-problem-category-tag">
+                              <span className="cl-problem-category-tag opacity-75">
                                 Unsolved
                               </span>
                             )}
                           </td>
                           <td>
-                            <Link to={`/problems/${prob.id}`} className="cl-problem-title-link">
+                            <Link to={getProblemUrl(prob.id)} className="cl-problem-title-link">
                               {prob.title}
                             </Link>
                           </td>
@@ -170,12 +196,12 @@ export default function ProblemCatalog() {
                           </td>
                           <td>
                             <span className="cl-xp-pill">
-                              <FaFire size={11} /> +{prob.xp} XP
+                              <FaFire size={11} /> +{prob.xp || 50} XP
                             </span>
                           </td>
                           <td className="text-end pe-4">
-                            <Link to={`/problems/${prob.id}`} className="cl-btn-solve">
-                              <FaTerminal size={12} /> Solve
+                            <Link to={getProblemUrl(prob.id)} className="cl-btn-solve">
+                              <FaTerminal size={12} /> {isSolved ? 'Review' : 'Solve'}
                             </Link>
                           </td>
                         </tr>
@@ -188,7 +214,7 @@ export default function ProblemCatalog() {
 
             {/* Mobile Cards View (< 768px) */}
             <div className="cl-arena-mobile-list d-md-none">
-              {filteredProblems.map((prob) => {
+              {problemsList.map((prob) => {
                 const isSolved = solvedProblemIds.has(prob.id);
                 return (
                   <div key={prob.id} className="cl-arena-mobile-card">
@@ -201,13 +227,13 @@ export default function ProblemCatalog() {
                       </span>
                     </div>
 
-                    <Link to={`/problems/${prob.id}`} className="text-decoration-none">
+                    <Link to={getProblemUrl(prob.id)} className="text-decoration-none">
                       <h5 className="cl-arena-mobile-title">{prob.title}</h5>
                     </Link>
 
                     <div className="d-flex align-items-center justify-content-between my-2">
                       <span className="cl-xp-pill">
-                        <FaFire size={11} /> +{prob.xp} XP
+                        <FaFire size={11} /> +{prob.xp || 50} XP
                       </span>
                       {isSolved ? (
                         <span className="cl-diff-badge easy">
@@ -222,11 +248,13 @@ export default function ProblemCatalog() {
 
                     <div className="cl-arena-mobile-footer">
                       <Link
-                        to={`/problems/${prob.id}`}
-                        className="btn btn-success w-100 rounded-pill fw-bold d-inline-flex align-items-center justify-content-center gap-2"
+                        to={getProblemUrl(prob.id)}
+                        className={`btn w-100 rounded-pill fw-bold d-inline-flex align-items-center justify-content-center gap-2 ${
+                          isSolved ? 'btn-outline-success' : 'btn-success'
+                        }`}
                         style={{ minHeight: 44 }}
                       >
-                        <FaTerminal /> Solve Challenge
+                        <FaTerminal /> {isSolved ? 'Review Solution' : 'Solve Challenge'}
                       </Link>
                     </div>
                   </div>
@@ -239,4 +267,3 @@ export default function ProblemCatalog() {
     </div>
   );
 }
-

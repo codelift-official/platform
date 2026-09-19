@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { SEED_PROBLEMS } from '../data/problemsSeed';
 import { getProblemDetails } from '../data/problemSolutions';
 import { useData } from '../contexts/DataContext';
@@ -32,23 +33,104 @@ import {
 } from 'react-icons/fa';
 import '../styles/ProblemArena.css';
 
-export default function ProblemDetail() {
-  const { id } = useParams();
-  const { currentUser } = useAuth();
-  const { recordProblemAttempt } = useData();
+const LEGACY_ARENA_MAP = {
+  'arena-q1': 'prob-hello-world',
+  'arena-q2': 'prob-sum-two-numbers',
+  'arena-q3': 'prob-reverse-string',
+  'arena-q4': 'prob-palindrome-check',
+  'arena-q5': 'prob-find-max-number',
+  'arena-q6': 'prob-fizzbuzz',
+  'arena-q7': 'prob-count-vowels',
+  'arena-q8': 'prob-factorial',
+  'arena-q9': 'prob-fibonacci-number',
+  'arena-q10': 'prob-even-odd-filter'
+};
 
-  const problem = SEED_PROBLEMS.find((p) => p.id === id);
-  const currentIndex = SEED_PROBLEMS.findIndex((p) => p.id === id);
-  const prevProblem = currentIndex > 0 ? SEED_PROBLEMS[currentIndex - 1] : null;
+export default function ProblemDetail() {
+  const { id, problemId } = useParams();
+  const currentId = id || problemId;
+  const location = useLocation();
+  const isStudentRoute = location.pathname.startsWith('/student');
+  const arenaHomeUrl = isStudentRoute ? '/student/arena' : '/problems';
+  const getProblemUrl = (probId) => (isStudentRoute ? `/student/arena/${probId}` : `/problems/${probId}`);
+
+  const { currentUser, auth } = useAuth();
+  const studentId = auth?.studentId || currentUser?.id || auth?.user?.id || (currentUser?.role === 'student' ? currentUser?.id : null);
+  const isStudent = isStudentRoute || auth?.role === 'student' || currentUser?.role === 'student' || Boolean(studentId);
+
+  const {
+    codingProblems = [],
+    codingAttempts = [],
+    problemAttempts = [],
+    recordProblemAttempt,
+    submitCodingAttempt
+  } = useData();
+
+  const activeProblemList = useMemo(() => {
+    return (codingProblems && codingProblems.length > 0) ? codingProblems : SEED_PROBLEMS;
+  }, [codingProblems]);
+
+  // Canonical ID resolution: smoothly map legacy arena-q* to high-quality SEED_PROBLEMS
+  const canonicalId = useMemo(() => {
+    if (!currentId) return 'prob-hello-world';
+    if (LEGACY_ARENA_MAP[currentId]) return LEGACY_ARENA_MAP[currentId];
+    if (currentId.startsWith('arena-q')) {
+      const num = parseInt(currentId.replace('arena-q', ''), 10);
+      if (!isNaN(num) && num > 0 && num <= SEED_PROBLEMS.length) {
+        return SEED_PROBLEMS[num - 1].id;
+      }
+      return 'prob-hello-world';
+    }
+    return currentId;
+  }, [currentId]);
+
+  const problem = useMemo(() => {
+    return (
+      activeProblemList.find((p) => p.id === canonicalId) ||
+      SEED_PROBLEMS.find((p) => p.id === canonicalId) ||
+      activeProblemList.find((p) => p.id === currentId) ||
+      SEED_PROBLEMS.find((p) => p.id === currentId) ||
+      activeProblemList[0] ||
+      SEED_PROBLEMS[0]
+    );
+  }, [activeProblemList, canonicalId, currentId]);
+
+  const currentIndex = activeProblemList.findIndex((p) => p?.id === problem?.id);
+  const prevProblem = currentIndex > 0 ? activeProblemList[currentIndex - 1] : null;
   const nextProblem =
-    currentIndex >= 0 && currentIndex < SEED_PROBLEMS.length - 1
-      ? SEED_PROBLEMS[currentIndex + 1]
+    currentIndex >= 0 && currentIndex < activeProblemList.length - 1
+      ? activeProblemList[currentIndex + 1]
       : null;
 
   // Enrich with LeetCode-tier detailed specification, structured examples & editorial
   const detail = useMemo(() => (problem ? getProblemDetails(problem) : null), [problem]);
 
-  const [code, setCode] = useState(problem?.starterCode || '');
+  // Initial code resolution: student-specific saved code or attempts -> guest storage -> starterCode
+  const getStoredCode = (prob) => {
+    if (!prob) return '';
+    try {
+      if (studentId) {
+        const studentCode =
+          localStorage.getItem(`codelift_student_code_${studentId}_${prob.id}`) ||
+          (currentId && localStorage.getItem(`codelift_student_code_${studentId}_${currentId}`));
+        if (studentCode) return studentCode;
+
+        const attempt =
+          (codingAttempts || []).find((a) => (a.studentId === studentId || a.studentId === auth?.email) && (a.problemId === prob.id || a.problemId === currentId)) ||
+          (problemAttempts || []).find((a) => (a.studentId === studentId || a.studentId === auth?.email) && (a.problemId === prob.id || a.problemId === currentId));
+        if (attempt?.code || attempt?.codeSubmitted) {
+          return attempt.code || attempt.codeSubmitted;
+        }
+      }
+      const guestCode =
+        localStorage.getItem(`codelift_guest_code_${prob.id}`) ||
+        (currentId && localStorage.getItem(`codelift_guest_code_${currentId}`));
+      if (guestCode) return guestCode;
+    } catch (_) {}
+    return prob.starterCode || '';
+  };
+
+  const [code, setCode] = useState(() => getStoredCode(problem));
   const [activeTab, setActiveTab] = useState('description'); // 'description' | 'solution' | 'hints' | 'tests'
   const [revealedSolution, setRevealedSolution] = useState(false);
   const [revealedHints, setRevealedHints] = useState({});
@@ -60,10 +142,10 @@ export default function ProblemDetail() {
   const [pyodideStatus, setPyodideStatus] = useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'
   const pyodideToastRef = useRef(null);
 
-  // Update starter code and reset tabs when problem changes
+  // Update code and reset tabs when problem or student changes
   useEffect(() => {
     if (problem) {
-      setCode(problem.starterCode || '');
+      setCode(getStoredCode(problem));
       setTestResults(null);
       setExecutionMode(null);
       setRevealedSolution(false);
@@ -71,11 +153,37 @@ export default function ProblemDetail() {
       setActiveTab('description');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [problem?.id, currentId, studentId]);
+
+  // Handle user code edit with differentiated student vs guest persistence
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+    try {
+      if (studentId) {
+        localStorage.setItem(`codelift_student_code_${studentId}_${problem.id}`, newCode);
+        if (currentId && currentId !== problem.id) {
+          localStorage.setItem(`codelift_student_code_${studentId}_${currentId}`, newCode);
+        }
+      } else {
+        localStorage.setItem(`codelift_guest_code_${problem.id}`, newCode);
+        if (currentId && currentId !== problem.id) {
+          localStorage.setItem(`codelift_guest_code_${currentId}`, newCode);
+        }
+      }
+    } catch (_) {}
+  };
 
   // Reset to starter code handler
   const resetCode = () => {
     if (!problem) return;
+    try {
+      if (studentId) {
+        localStorage.removeItem(`codelift_student_code_${studentId}_${problem.id}`);
+        if (currentId) localStorage.removeItem(`codelift_student_code_${studentId}_${currentId}`);
+      }
+      localStorage.removeItem(`codelift_guest_code_${problem.id}`);
+      if (currentId) localStorage.removeItem(`codelift_guest_code_${currentId}`);
+    } catch (_) {}
     setCode(problem.starterCode || '');
     setTestResults(null);
     toast.success('Code reset to starter template.', { duration: 1500 });
@@ -157,21 +265,109 @@ export default function ProblemDetail() {
       const passCount = results.filter((r) => r.passed).length;
 
       if (allPassed) {
-        toast.success(`🎉 All ${results.length} test cases passed! +${problem.xp} XP`, {
-          duration: 4000,
-        });
-        if (currentUser) {
-          recordProblemAttempt({
-            studentId: currentUser.id,
-            problemId: problem.id,
-            codeSubmitted: code,
-            passed: true,
-            score: problem.xp,
-            testResults: results,
-            hintsUsed: Object.keys(revealedHints).length,
+        try {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.65 }
+          });
+        } catch (_) {}
+
+        if (isStudent && studentId) {
+          try {
+            localStorage.setItem(`codelift_student_code_${studentId}_${problem.id}`, code);
+            if (currentId) localStorage.setItem(`codelift_student_code_${studentId}_${currentId}`, code);
+          } catch (_) {}
+
+          if (recordProblemAttempt) {
+            recordProblemAttempt({
+              studentId,
+              problemId: problem.id,
+              codeSubmitted: code,
+              passed: true,
+              score: problem.xp || 50,
+              testResults: results,
+              hintsUsed: Object.keys(revealedHints).length,
+            });
+            if (currentId && currentId !== problem.id) {
+              recordProblemAttempt({
+                studentId,
+                problemId: currentId,
+                codeSubmitted: code,
+                passed: true,
+                score: problem.xp || 50,
+                testResults: results,
+                hintsUsed: Object.keys(revealedHints).length,
+              });
+            }
+          }
+          if (submitCodingAttempt) {
+            submitCodingAttempt({
+              studentId,
+              problemId: problem.id,
+              code,
+              visibleResults: results,
+              passed: true,
+              xpEarned: problem.xp || 50
+            });
+            if (currentId && currentId !== problem.id) {
+              submitCodingAttempt({
+                studentId,
+                problemId: currentId,
+                code,
+                visibleResults: results,
+                passed: true,
+                xpEarned: problem.xp || 50
+              });
+            }
+          }
+          toast.success(`🎉 All ${results.length} test cases passed! +${problem.xp || 50} XP saved to your profile!`, {
+            duration: 4000,
+          });
+        } else {
+          // Guest user: save ONLY in client-side storage, no server/database calls
+          try {
+            const cached = localStorage.getItem('codelift_guest_solved_problems');
+            const list = cached ? JSON.parse(cached) : [];
+            if (!list.includes(problem.id)) {
+              list.push(problem.id);
+            }
+            if (currentId && !list.includes(currentId)) {
+              list.push(currentId);
+            }
+            localStorage.setItem('codelift_guest_solved_problems', JSON.stringify(list));
+            localStorage.setItem(`codelift_guest_code_${problem.id}`, code);
+            if (currentId) localStorage.setItem(`codelift_guest_code_${currentId}`, code);
+          } catch (_) {}
+
+          toast.success(`🎉 All ${results.length} test cases passed! (Guest session saved locally in browser)`, {
+            duration: 4500,
           });
         }
       } else {
+        if (isStudent && studentId) {
+          if (recordProblemAttempt) {
+            recordProblemAttempt({
+              studentId,
+              problemId: problem.id,
+              codeSubmitted: code,
+              passed: false,
+              score: 0,
+              testResults: results,
+              hintsUsed: Object.keys(revealedHints).length,
+            });
+          }
+          if (submitCodingAttempt) {
+            submitCodingAttempt({
+              studentId,
+              problemId: problem.id,
+              code,
+              visibleResults: results,
+              passed: false,
+              xpEarned: 0
+            });
+          }
+        }
         toast.error(`${passCount}/${results.length} passed — review your output below.`, {
           duration: 3000,
         });
@@ -188,7 +384,7 @@ export default function ProblemDetail() {
 
   const loadSolutionIntoEditor = () => {
     if (detail?.editorial?.solutionCode) {
-      setCode(detail.editorial.solutionCode);
+      handleCodeChange(detail.editorial.solutionCode);
       toast.success('Official solution loaded into editor! You can now run or edit it.', {
         icon: '⚡',
         duration: 3000,
@@ -226,20 +422,40 @@ export default function ProblemDetail() {
 
   const language = getLanguageFromCategory(problem.category);
 
+  // Compute solved status for current student or guest
+  const isProblemSolved = useMemo(() => {
+    if (isStudent && studentId) {
+      const inCoding = (codingAttempts || []).some(
+        (a) => (a.studentId === studentId || a.studentId === auth?.email) && (a.problemId === problem?.id || a.problemId === currentId) && a.passed
+      );
+      const inProblem = (problemAttempts || []).some(
+        (a) => (a.studentId === studentId || a.studentId === auth?.email) && (a.problemId === problem?.id || a.problemId === currentId) && a.passed
+      );
+      return inCoding || inProblem;
+    }
+    try {
+      const cached = localStorage.getItem('codelift_guest_solved_problems');
+      const list = cached ? JSON.parse(cached) : [];
+      return list.includes(problem?.id) || (currentId && list.includes(currentId));
+    } catch (_) {
+      return false;
+    }
+  }, [isStudent, studentId, codingAttempts, problemAttempts, problem?.id, currentId, auth?.email]);
+
   return (
-    <div className="cl-arena-page">
+    <div className={`cl-arena-page ${isStudentRoute ? 'cl-arena-student-embedded' : ''}`}>
       <SEO
         title={`${problem.title} — Problem Solving Arena`}
         description={detail.description || problem.description}
       />
-      <Navbar />
+      {!isStudentRoute && <Navbar />}
 
       <main className="container-fluid max-w-7xl py-4 px-3 px-md-4">
         {/* Navigation Breadcrumb & Controls */}
         <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
           <div className="d-flex align-items-center gap-3">
             <Link
-              to="/problems"
+              to={arenaHomeUrl}
               className="text-decoration-none text-secondary small fw-bold d-flex align-items-center gap-2"
             >
               <FaArrowLeft /> Problem Arena
@@ -248,17 +464,17 @@ export default function ProblemDetail() {
             {/* Prev / Next navigation */}
             <div className="d-flex align-items-center gap-1">
               <Link
-                to={prevProblem ? `/problems/${prevProblem.id}` : '#'}
+                to={prevProblem ? getProblemUrl(prevProblem.id) : '#'}
                 className={`cl-problem-nav-link ${!prevProblem ? 'disabled' : ''}`}
                 title={prevProblem ? `Previous: ${prevProblem.title}` : 'First problem'}
               >
                 <FaChevronLeft size={10} /> Prev
               </Link>
               <span className="text-secondary small font-monospace px-1">
-                {currentIndex + 1} / {SEED_PROBLEMS.length}
+                {currentIndex + 1} / {activeProblemList.length}
               </span>
               <Link
-                to={nextProblem ? `/problems/${nextProblem.id}` : '#'}
+                to={nextProblem ? getProblemUrl(nextProblem.id) : '#'}
                 className={`cl-problem-nav-link ${!nextProblem ? 'disabled' : ''}`}
                 title={nextProblem ? `Next: ${nextProblem.title}` : 'Last problem'}
               >
@@ -275,6 +491,25 @@ export default function ProblemDetail() {
             <span className="cl-xp-pill">
               <FaFire size={11} /> +{problem.xp} XP
             </span>
+            {isProblemSolved && (
+              <span
+                className="cl-solved-pill"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#10b981',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '9999px'
+                }}
+              >
+                <FaCheckCircle size={12} /> Solved
+              </span>
+            )}
 
             {/* Pyodide status indicator */}
             {isPythonCategory(problem.category) && (
@@ -878,7 +1113,7 @@ export default function ProblemDetail() {
               <div className="cl-ide-editor-area" style={{ padding: 0 }}>
                 <CodeEditor
                   value={code}
-                  onChange={setCode}
+                  onChange={handleCodeChange}
                   language={language}
                   minRows={16}
                   fontSize={fontSize}

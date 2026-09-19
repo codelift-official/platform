@@ -56,6 +56,7 @@ export default function StudentDashboard() {
     enrollments = [],
     codingProblems = [],
     codingAttempts = [],
+    problemAttempts = [],
     getBatchHistory
   } = useData();
 
@@ -116,9 +117,15 @@ export default function StudentDashboard() {
     : [];
 
   const myCodingAttempts = Array.isArray(codingAttempts)
-    ? codingAttempts.filter(a => a?.studentId === student?.id || (student?.legacyId && a?.studentId === student?.legacyId))
+    ? codingAttempts.filter(a => a?.studentId === student?.id || (student?.legacyId && a?.studentId === student?.legacyId) || (student?.email && a?.studentId === student?.email))
     : [];
-  const solvedCodingProblems = (codingProblems || []).filter(p => myCodingAttempts.some(a => a.problemId === p.id && a.passed));
+  const myProblemAttempts = Array.isArray(problemAttempts)
+    ? problemAttempts.filter(a => a?.studentId === student?.id || (student?.legacyId && a?.studentId === student?.legacyId) || (student?.email && a?.studentId === student?.email))
+    : [];
+  const solvedCodingProblems = (codingProblems || []).filter(p =>
+    myCodingAttempts.some(a => a.problemId === p.id && a.passed) ||
+    myProblemAttempts.some(a => a.problemId === p.id && a.passed)
+  );
 
   const progress = allTopics.length > 0
     ? Math.round((completedTopics.length / allTopics.length) * 100)

@@ -23,6 +23,22 @@ import completedBatchesSeed from '../../data/completedBatches.json';
 import problemAttemptsSeed from '../../data/problemAttempts.json';
 import codingProblemsSeed from '../../data/codingProblems.json';
 import codingAttemptsSeed from '../../data/codingAttempts.json';
+import { SEED_PROBLEMS } from '../data/problemsSeed';
+
+// Unified Code Arena problems seed with complete challenge set
+export const unifiedCodingProblemsSeed = (SEED_PROBLEMS || []).map((p, idx) => ({
+  id: p.id,
+  title: p.title,
+  category: p.category || 'Python',
+  difficulty: p.difficulty || 'Easy',
+  orderIndex: idx + 1,
+  xp: p.xp || 50,
+  description: p.description || '',
+  starterCode: p.starterCode || '',
+  hints: Array.isArray(p.hints) ? p.hints : [],
+  testCases: Array.isArray(p.testCases) ? p.testCases : [],
+  hiddenTestCases: Array.isArray(p.hiddenTestCases) ? p.hiddenTestCases : []
+}));
 
 const DataContext = createContext(null);
 
@@ -108,7 +124,16 @@ export function DataProvider({ children }) {
   const [certificateTemplates, setCertificateTemplates] = useState(() => (isSupabaseConfigured ? [] : (certificateTemplatesSeed || [])));
   const [completedBatches, setCompletedBatches] = useState(() => (isSupabaseConfigured ? [] : (completedBatchesSeed || [])));
   const [problemAttempts, setProblemAttempts] = useState(() => (isSupabaseConfigured ? [] : (problemAttemptsSeed || [])));
-  const [codingProblems, setCodingProblems] = useState(() => (isSupabaseConfigured ? [] : (codingProblemsSeed || [])));
+  const [codingProblems, setCodingProblems] = useState(() => {
+    try {
+      const cached = localStorage.getItem('codelift_coding_problems');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed.some(p => p.id?.startsWith('prob-'))) return parsed;
+      }
+    } catch (_) {}
+    return unifiedCodingProblemsSeed || [];
+  });
   const [codingAttempts, setCodingAttempts] = useState(() => {
     try {
       const cached = localStorage.getItem('codelift_coding_attempts');
@@ -154,8 +179,29 @@ export function DataProvider({ children }) {
             if (rawQ) cachedQuizzes = JSON.parse(rawQ);
           } catch (_) {}
 
+          // Retain custom password across background hydration
+          let cachedPassword = null;
+          try {
+            const emailKey = (s.email || '').toLowerCase().trim();
+            cachedPassword =
+              (s.id && localStorage.getItem(`codelift_student_pwd_${s.id}`)) ||
+              (s.legacyId && localStorage.getItem(`codelift_student_pwd_${s.legacyId}`)) ||
+              (emailKey && localStorage.getItem(`codelift_student_pwd_${emailKey}`)) ||
+              null;
+            if (!cachedPassword) {
+              const regRaw = localStorage.getItem('codelift_student_passwords');
+              if (regRaw) {
+                const reg = JSON.parse(regRaw);
+                cachedPassword = (s.id && reg[s.id]) || (s.legacyId && reg[s.legacyId]) || (emailKey && reg[emailKey]) || null;
+              }
+            }
+          } catch (_) {}
+
+          const savedCustomPwd = cachedPassword;
+
           return {
             ...s,
+            password: savedCustomPwd || s.password || 'codelift123',
             progress: { ...(s.progress || {}), ...cachedProgress },
             quizAttempts: { ...(s.quiz_attempts || s.quizAttempts || {}), ...cachedQuizzes }
           };
@@ -177,7 +223,21 @@ export function DataProvider({ children }) {
       if (data.certificateTemplates?.length) setCertificateTemplates(data.certificateTemplates);
       if (data.completedBatches?.length) setCompletedBatches(data.completedBatches);
       if (data.problemAttempts?.length) setProblemAttempts(data.problemAttempts);
-      if (data.codingProblems?.length) setCodingProblems(data.codingProblems);
+      if (data.codingProblems?.length) {
+        const seedMap = new Map((unifiedCodingProblemsSeed || []).map((p) => [p.id, p]));
+        const merged = [...(unifiedCodingProblemsSeed || [])];
+        data.codingProblems.forEach((dp) => {
+          if (!seedMap.has(dp.id) && !dp.id?.startsWith('arena-q')) {
+            merged.push(dp);
+          }
+        });
+        setCodingProblems(merged);
+        try {
+          localStorage.setItem('codelift_coding_problems', JSON.stringify(merged));
+        } catch (_) {}
+      } else {
+        setCodingProblems(unifiedCodingProblemsSeed);
+      }
       if (data.codingAttempts?.length) {
         setCodingAttempts((prev) => {
           const merged = [...data.codingAttempts];
@@ -309,22 +369,49 @@ export function DataProvider({ children }) {
     if (updates.password !== undefined) {
       try {
         const student = students.find((s) => s.id === studentId || s.legacyId === studentId);
+        const emailKey = (student?.email || '').toLowerCase().trim();
         if (updates.password && updates.password !== 'codelift123' && updates.password !== 'password') {
           localStorage.setItem(`codelift_student_pwd_${studentId}`, updates.password);
-          if (student?.email) {
-            localStorage.setItem(`codelift_student_pwd_${student.email.toLowerCase()}`, updates.password);
+          if (emailKey) {
+            localStorage.setItem(`codelift_student_pwd_${emailKey}`, updates.password);
           }
           if (student?.id && student.id !== studentId) {
             localStorage.setItem(`codelift_student_pwd_${student.id}`, updates.password);
           }
+          if (student?.legacyId) {
+            localStorage.setItem(`codelift_student_pwd_${student.legacyId}`, updates.password);
+          }
+          try {
+            const regRaw = localStorage.getItem('codelift_student_passwords');
+            const reg = regRaw ? JSON.parse(regRaw) : {};
+            reg[studentId] = updates.password;
+            if (emailKey) reg[emailKey] = updates.password;
+            if (student?.id) reg[student.id] = updates.password;
+            if (student?.legacyId) reg[student.legacyId] = updates.password;
+            localStorage.setItem('codelift_student_passwords', JSON.stringify(reg));
+          } catch (_) {}
         } else if (updates.password === 'codelift123' || updates.password === 'password' || !updates.password) {
           localStorage.removeItem(`codelift_student_pwd_${studentId}`);
-          if (student?.email) {
-            localStorage.removeItem(`codelift_student_pwd_${student.email.toLowerCase()}`);
+          if (emailKey) {
+            localStorage.removeItem(`codelift_student_pwd_${emailKey}`);
           }
           if (student?.id && student.id !== studentId) {
             localStorage.removeItem(`codelift_student_pwd_${student.id}`);
           }
+          if (student?.legacyId) {
+            localStorage.removeItem(`codelift_student_pwd_${student.legacyId}`);
+          }
+          try {
+            const regRaw = localStorage.getItem('codelift_student_passwords');
+            if (regRaw) {
+              const reg = JSON.parse(regRaw);
+              delete reg[studentId];
+              if (emailKey) delete reg[emailKey];
+              if (student?.id) delete reg[student.id];
+              if (student?.legacyId) delete reg[student.legacyId];
+              localStorage.setItem('codelift_student_passwords', JSON.stringify(reg));
+            }
+          } catch (_) {}
         }
       } catch (_) {}
     }
@@ -1336,7 +1423,35 @@ export function DataProvider({ children }) {
       hintsUsed: Number(hintsUsed) || 0,
       status: passed ? 'Completed' : 'Submitted'
     };
-    setProblemAttempts((prev) => [newAttempt, ...prev]);
+    setProblemAttempts((prev) => {
+      const next = [newAttempt, ...(prev || []).filter(a => a.id !== newAttempt.id)];
+      try {
+        localStorage.setItem('codelift_problem_attempts', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+
+    // Mirror to codingAttempts so StudentDashboard and student arena reflect the solved count
+    const mirrorCodingAttempt = {
+      id: genId('ca'),
+      studentId,
+      problemId,
+      code: codeSubmitted,
+      passed: Boolean(passed),
+      xpEarned: Number(score) || 0,
+      visibleResults: testResults || [],
+      hiddenResultsSummary: { total: 0, passed: 0 },
+      attemptedAt: new Date().toISOString()
+    };
+    setCodingAttempts((prev) => {
+      const next = [mirrorCodingAttempt, ...(prev || []).filter(a => a.id !== mirrorCodingAttempt.id)];
+      try {
+        localStorage.setItem('codelift_coding_attempts', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+    supabaseDataService.addCodingAttempt(mirrorCodingAttempt).catch(() => {});
+
     return newAttempt;
   };
 
@@ -1355,7 +1470,13 @@ export function DataProvider({ children }) {
       testCases: Array.isArray(problemData.testCases) ? problemData.testCases : [],
       hiddenTestCases: Array.isArray(problemData.hiddenTestCases) ? problemData.hiddenTestCases : []
     };
-    setCodingProblems((prev) => [...prev, newProblem]);
+    setCodingProblems((prev) => {
+      const next = [...prev, newProblem];
+      try {
+        localStorage.setItem('codelift_coding_problems', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
     supabaseDataService.saveCodingProblem(newProblem).catch(() => { });
     toast.success('Problem created successfully!');
     return newProblem;
@@ -1366,20 +1487,32 @@ export function DataProvider({ children }) {
       const updated = prev.map((p) => (p.id === problemId ? { ...p, ...updates } : p));
       const target = updated.find((p) => p.id === problemId);
       if (target) supabaseDataService.saveCodingProblem(target).catch(() => { });
+      try {
+        localStorage.setItem('codelift_coding_problems', JSON.stringify(updated));
+      } catch (_) {}
       return updated;
     });
     toast.success('Problem updated successfully!');
   };
 
   const deleteCodingProblem = (problemId) => {
-    setCodingProblems((prev) => prev.filter((p) => p.id !== problemId));
+    setCodingProblems((prev) => {
+      const next = prev.filter((p) => p.id !== problemId);
+      try {
+        localStorage.setItem('codelift_coding_problems', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
     supabaseDataService.deleteCodingProblemSupabase(problemId).catch(() => { });
     toast.success('Problem deleted!');
   };
 
   const resetCodingProblemsToSeed = () => {
-    setCodingProblems(codingProblemsSeed);
-    toast.success('Reset all coding problems to seed questions!');
+    setCodingProblems(unifiedCodingProblemsSeed);
+    try {
+      localStorage.setItem('codelift_coding_problems', JSON.stringify(unifiedCodingProblemsSeed));
+    } catch (_) {}
+    toast.success('Reset all coding problems to seed challenges!');
   };
 
   const submitCodingAttempt = ({ studentId, problemId, code, visibleResults, hiddenResults, passed, xpEarned }) => {
@@ -1404,6 +1537,27 @@ export function DataProvider({ children }) {
       } catch (_) { }
       return next;
     });
+
+    // Mirror to problemAttempts
+    const mirrorProblemAttempt = {
+      id: genId('pa'),
+      studentId,
+      problemId,
+      codeSubmitted: code,
+      passed: Boolean(passed),
+      score: Number(xpEarned) || 0,
+      testResults: visibleResults || [],
+      attemptedAt: new Date().toISOString(),
+      status: passed ? 'Completed' : 'Submitted'
+    };
+    setProblemAttempts((prev) => {
+      const next = [mirrorProblemAttempt, ...(prev || []).filter(a => a.id !== mirrorProblemAttempt.id)];
+      try {
+        localStorage.setItem('codelift_problem_attempts', JSON.stringify(next));
+      } catch (_) {}
+      return next;
+    });
+
     supabaseDataService.addCodingAttempt(newAttempt).catch(() => { });
     return newAttempt;
   };
@@ -1750,7 +1904,7 @@ export function DataProvider({ children }) {
     setCertificateTemplates(certificateTemplatesSeed);
     setCompletedBatches(completedBatchesSeed);
     setProblemAttempts(problemAttemptsSeed);
-    setCodingProblems(codingProblemsSeed);
+    setCodingProblems(unifiedCodingProblemsSeed);
     setCodingAttempts(codingAttemptsSeed);
     setPlatformSettings(DEFAULT_PLATFORM_SETTINGS);
 

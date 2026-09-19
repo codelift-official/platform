@@ -176,8 +176,8 @@ export default function App() {
                   <Route index element={<Navigate to="dashboard" replace />} />
                   <Route path="dashboard" element={<StudentDashboard />} />
                   <Route path="courses" element={<StudentCourses />} />
-                  <Route path="arena" element={<CodingArena />} />
-                  <Route path="arena/:problemId" element={<PythonIDE />} />
+                  <Route path="arena" element={<ProblemCatalog isStudentView={true} />} />
+                  <Route path="arena/:problemId" element={<ProblemDetail />} />
                   <Route path="assignments" element={<StudentAssignments />} />
                   <Route path="tests" element={<StudentTests />} />
                   <Route path="test-result/:attemptId" element={<ResultPage />} />
