@@ -453,28 +453,26 @@ describe('6. CodeEditor Component', () => {
     expect(codeEditorSrc).toContain('export default function CodeEditor');
   });
 
-  test('CodeEditor.jsx handles Tab key', () => {
-    expect(codeEditorSrc).toContain("e.key === 'Tab'");
+  test('CodeEditor.jsx integrates CodeMirror 6', () => {
+    expect(codeEditorSrc).toContain("from 'codemirror'");
+    expect(codeEditorSrc).toContain('EditorView');
+    expect(codeEditorSrc).toContain('basicSetup');
   });
 
-  test('CodeEditor.jsx handles Enter key for auto-indent', () => {
-    expect(codeEditorSrc).toContain("e.key === 'Enter'");
+  test('CodeEditor.jsx enables Python language mode & inbuilt highlighting', () => {
+    expect(codeEditorSrc).toContain('@codemirror/lang-python');
+    expect(codeEditorSrc).toContain('python()');
+    expect(codeEditorSrc).toContain('PY_BUILTINS');
+    expect(codeEditorSrc).toContain('cm-builtin');
   });
 
-  test('CodeEditor.jsx handles Shift+Tab for de-indent', () => {
-    expect(codeEditorSrc).toContain('e.shiftKey');
+  test('CodeEditor.jsx ships standard-IDE Tab/Shift+Tab indentation', () => {
+    expect(codeEditorSrc).toContain('indentWithTab');
   });
 
-  test('CodeEditor.jsx handles Ctrl+/ for toggle comment', () => {
-    expect(codeEditorSrc).toContain("e.key === '/'");
-  });
-
-  test('CodeEditor.jsx renders line numbers', () => {
-    expect(codeEditorSrc).toContain('cl-code-line-numbers');
-  });
-
-  test('CodeEditor.jsx syncs scroll between line numbers and textarea', () => {
-    expect(codeEditorSrc).toContain('syncScroll');
+  test('CodeEditor.jsx renders the CodeMirror editor surface', () => {
+    expect(codeEditorSrc).toContain('cl-code-cm-host');
+    expect(codeEditorSrc).toContain('cl-code-editor-wrap');
   });
 
   test('CodeEditor.jsx has copy-to-clipboard button', () => {
@@ -485,12 +483,17 @@ describe('6. CodeEditor Component', () => {
     expect(arenaCSS).toContain('.cl-code-editor-wrap');
   });
 
-  test('ProblemArena.css has .cl-code-line-numbers', () => {
-    expect(arenaCSS).toContain('.cl-code-line-numbers');
+  test('ProblemArena.css styles CodeMirror line numbers column', () => {
+    expect(arenaCSS).toContain('.cm-lineNumbers');
   });
 
-  test('ProblemArena.css has .cl-code-textarea', () => {
-    expect(arenaCSS).toContain('.cl-code-textarea');
+  test('ProblemArena.css colors Python syntax tokens & builtin calls', () => {
+    expect(arenaCSS).toContain('.tok-keyword');
+    expect(arenaCSS).toContain('cm-builtin');
+  });
+
+  test('ProblemArena.css has .cl-code-cm-host', () => {
+    expect(arenaCSS).toContain('.cl-code-cm-host');
   });
 });
 

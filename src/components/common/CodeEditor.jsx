@@ -1,156 +1,178 @@
 /**
- * CodeEditor.jsx — Smart Code Editor with Line Numbers & Auto-Indent
+ * CodeEditor.jsx — CodeMirror 6 Powered Smart Code Editor
  *
  * Features:
- *  - Line numbers sidebar (synced scroll)
- *  - Tab key → inserts 4 spaces
- *  - Shift+Tab → removes up to 4 leading spaces
- *  - Enter after `:` → auto-indents to match + 4 extra spaces
- *  - Bracket/quote auto-close: `(`, `[`, `{`, `"`, `'`
- *  - Ctrl+/ → toggle line comment (#)
- *  - Monospace font, dark theme compatible
+ *  - Real Python syntax highlighting (keywords, strings, comments, numbers,
+ *    decorators, type names) via @codemirror/lang-python
+ *  - Inbuilt function detection & coloring (print, len, range, max, ...)
+ *  - Standard IDE behaviors: line numbers, bracket matching, Tab/Shift+Tab
+ *    indentation, autocompletion, undo/redo history
+ *  - Controlled component faithful to React value/onChange semantics
+ *  - Copy-to-clipboard toolbar button, dark-theme compatible
  */
 
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { EditorView, basicSetup } from 'codemirror';
+import { indentWithTab } from '@codemirror/commands';
+import { python } from '@codemirror/lang-python';
+import { indentUnit, syntaxTree } from '@codemirror/language';
+import { Decoration, ViewPlugin, keymap } from '@codemirror/view';
 
-const INDENT = '    '; // 4 spaces
+const INDENT_UNIT = '    '; // 4 spaces — matches platform convention
+
+// Python builtin functions that should be colored as inbuilt (call sites only)
+const PY_BUILTINS = new Set([
+  'abs', 'all', 'any', 'ascii', 'bin', 'bool', 'bytearray', 'bytes', 'callable',
+  'chr', 'classmethod', 'compile', 'complex', 'delattr', 'dict', 'dir', 'divmod',
+  'enumerate', 'eval', 'exec', 'filter', 'float', 'format', 'frozenset',
+  'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id', 'input', 'int',
+  'isinstance', 'issubclass', 'iter', 'len', 'list', 'locals', 'map', 'max',
+  'memoryview', 'min', 'next', 'object', 'oct', 'open', 'ord', 'pow', 'print',
+  'property', 'range', 'repr', 'reversed', 'round', 'set', 'setattr', 'slice',
+  'sorted', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'vars',
+  'zip', '__import__'
+]);
+const BUILTIN_RE = new RegExp(`\\b(${[...PY_BUILTINS].join('|')})\\s*\\(`, 'g');
+
+/** Collect absolute ranges belonging to comments/strings so we skip them. */
+function collectMaskedRanges(state) {
+  const masked = [];
+  const visit = (node) => {
+    const t = node.type.name;
+    if (t === 'Comment' || t === 'LineComment' || t === 'BlockComment' ||
+        t === 'String' || t === 'Quoted' || t === 'Docstring') {
+      masked.push([node.from, node.to]);
+    }
+    for (let c = node.firstChild; c; c = c.nextSibling) visit(c);
+  };
+  const tree = syntaxTree(state);
+  if (tree && tree.topNode) visit(tree.topNode);
+  return masked;
+}
+
+function isMasked(pos, masked) {
+  for (let i = 0; i < masked.length; i++) {
+    if (pos >= masked[i][0] && pos < masked[i][1]) return true;
+  }
+  return false;
+}
+
+/** Compute CodeMirror decorations coloring builtin function call names. */
+function computeBuiltinDecorations(view) {
+  const decorations = [];
+  const state = view.state;
+  const doc = state.doc;
+  const masked = collectMaskedRanges(state);
+
+  for (const { from, to } of view.visibleRanges) {
+    const text = doc.sliceString(from, to);
+    let m;
+    BUILTIN_RE.lastIndex = 0;
+    while ((m = BUILTIN_RE.exec(text)) !== null) {
+      const absStart = from + m.index;
+      const absNameEnd = absStart + m[1].length;
+      if (isMasked(absStart, masked)) continue;
+      decorations.push(
+        Decoration.mark({ class: 'cm-builtin' }).range(absStart, absNameEnd)
+      );
+    }
+  }
+  return Decoration.set(decorations, true);
+}
+
+// View plugin keeps builtin coloring live as the document or viewport changes
+const builtinHighlightPlugin = ViewPlugin.fromClass(
+  class {
+    constructor(view) {
+      this.decorations = computeBuiltinDecorations(view);
+    }
+    update(update) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = computeBuiltinDecorations(update.view);
+      }
+    }
+  },
+  { decorations: (v) => v.decorations }
+);
+
+// Static shared extensions (attached to each instance)
+function buildExtensions(language, onChangeRef) {
+  const extensions = [
+    basicSetup,
+    keymap.of([indentWithTab]),
+    python(),
+    indentUnit.of(INDENT_UNIT),
+    builtinHighlightPlugin,
+  ];
+  if (language === 'python' || !language) {
+    extensions.push(
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged && onChangeRef.current) {
+          onChangeRef.current(update.state.doc.toString());
+        }
+      })
+    );
+  }
+  return extensions;
+}
 
 export default function CodeEditor({
-  value,
+  value = '',
   onChange,
   language = 'python',
   minRows = 15,
   fontSize = 14,
 }) {
-  const textareaRef = useRef(null);
-  const lineNumRef = useRef(null);
-  const [lineCount, setLineCount] = useState(1);
+  const hostRef = useRef(null);
+  const viewRef = useRef(null);
+  const onChangeRef = useRef(onChange);
+  const [copied, setCopied] = useState(false);
 
-  // Keep line count up-to-date
+  // Keep the latest onChange handler available to the editor listener
   useEffect(() => {
-    const lines = (value || '').split('\n').length;
-    setLineCount(Math.max(lines, minRows));
-  }, [value, minRows]);
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
-  // Sync line-number column scroll with textarea scroll
-  const syncScroll = useCallback(() => {
-    if (lineNumRef.current && textareaRef.current) {
-      lineNumRef.current.scrollTop = textareaRef.current.scrollTop;
+  // Create / tear down the CodeMirror instance (rebuilt when language changes)
+  useEffect(() => {
+    if (!hostRef.current) return undefined;
+    const view = new EditorView({
+      doc: value || '',
+      parent: hostRef.current,
+      extensions: buildExtensions(language.toLowerCase(), onChangeRef),
+    });
+    viewRef.current = view;
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
+
+  // Keep the controlled value in sync with external updates (reset/problem switch)
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    const current = view.state.doc.toString();
+    if (current !== (value || '')) {
+      view.dispatch({
+        changes: { from: 0, to: current.length, insert: value || '' },
+      });
     }
-  }, []);
-
-  const handleKeyDown = useCallback(
-    (e) => {
-      const ta = e.target;
-      const { selectionStart: start, selectionEnd: end, value: val } = ta;
-
-      // ── Tab / Shift+Tab ───────────────────────────────────────────────
-      if (e.key === 'Tab') {
-        e.preventDefault();
-
-        if (e.shiftKey) {
-          // Remove up to 4 leading spaces from selection lines
-          const lineStart = val.lastIndexOf('\n', start - 1) + 1;
-          const before = val.slice(0, lineStart);
-          const line = val.slice(lineStart, end);
-          const deindented = line.replace(/^ {1,4}/, '');
-          const removed = line.length - deindented.length;
-          const newVal = before + deindented + val.slice(end);
-          onChange(newVal);
-          // Restore cursor
-          requestAnimationFrame(() => {
-            ta.selectionStart = Math.max(start - removed, lineStart);
-            ta.selectionEnd = Math.max(end - removed, lineStart);
-          });
-        } else {
-          // Insert INDENT at cursor
-          const newVal = val.slice(0, start) + INDENT + val.slice(end);
-          onChange(newVal);
-          requestAnimationFrame(() => {
-            ta.selectionStart = start + INDENT.length;
-            ta.selectionEnd = start + INDENT.length;
-          });
-        }
-        return;
-      }
-
-      // ── Enter — smart indent ──────────────────────────────────────────
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const lineStart = val.lastIndexOf('\n', start - 1) + 1;
-        const currentLine = val.slice(lineStart, start);
-        const leadingSpaces = currentLine.match(/^(\s*)/)[1];
-        const endsWithColon = currentLine.trimEnd().endsWith(':');
-
-        let insertIndent = leadingSpaces;
-        if (endsWithColon) insertIndent += INDENT;
-
-        const insertion = '\n' + insertIndent;
-        const newVal = val.slice(0, start) + insertion + val.slice(end);
-        onChange(newVal);
-        requestAnimationFrame(() => {
-          const newPos = start + insertion.length;
-          ta.selectionStart = newPos;
-          ta.selectionEnd = newPos;
-        });
-        return;
-      }
-
-      // ── Bracket / Quote Auto-Close ────────────────────────────────────
-      const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
-      if (pairs[e.key] && start === end) {
-        e.preventDefault();
-        const close = pairs[e.key];
-        const newVal = val.slice(0, start) + e.key + close + val.slice(end);
-        onChange(newVal);
-        requestAnimationFrame(() => {
-          ta.selectionStart = start + 1;
-          ta.selectionEnd = start + 1;
-        });
-        return;
-      }
-
-      // ── Ctrl+/ — Toggle Comment ───────────────────────────────────────
-      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
-        e.preventDefault();
-        const lineStart = val.lastIndexOf('\n', start - 1) + 1;
-        const lineEnd = val.indexOf('\n', start);
-        const end2 = lineEnd === -1 ? val.length : lineEnd;
-        const line = val.slice(lineStart, end2);
-
-        let newLine;
-        let cursorDelta;
-        if (line.trimStart().startsWith('# ')) {
-          newLine = line.replace(/^(\s*)# /, '$1');
-          cursorDelta = -2;
-        } else if (line.trimStart().startsWith('#')) {
-          newLine = line.replace(/^(\s*)#/, '$1');
-          cursorDelta = -1;
-        } else {
-          newLine = line.replace(/^(\s*)/, '$1# ');
-          cursorDelta = 2;
-        }
-
-        const newVal = val.slice(0, lineStart) + newLine + val.slice(end2);
-        onChange(newVal);
-        requestAnimationFrame(() => {
-          const newPos = Math.max(lineStart, start + cursorDelta);
-          ta.selectionStart = newPos;
-          ta.selectionEnd = newPos;
-        });
-      }
-    },
-    [value, onChange]
-  );
+  }, [value, language]);
 
   // Copy code to clipboard
-  const [copied, setCopied] = useState(false);
   const copyCode = useCallback(() => {
     navigator.clipboard.writeText(value || '').then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     });
   }, [value]);
+
+  // Click anywhere on the editor surface to focus it
+  const focusEditor = useCallback(() => {
+    if (viewRef.current) viewRef.current.focus();
+  }, []);
 
   return (
     <div
@@ -180,35 +202,14 @@ export default function CodeEditor({
         </button>
       </div>
 
-      {/* ── Editor Body ── */}
-      <div className="cl-code-editor-body" style={{ display: 'flex' }}>
-        {/* Line Numbers */}
+      {/* ── Editor Surface ── */}
+      <div className="cl-code-editor-body">
         <div
-          ref={lineNumRef}
-          className="cl-code-line-numbers"
-          aria-hidden="true"
-        >
-          {Array.from({ length: lineCount }, (_, i) => (
-            <div key={i + 1} className="cl-code-line-num">
-              {i + 1}
-            </div>
-          ))}
-        </div>
-
-        {/* Code Textarea */}
-        <textarea
-          ref={textareaRef}
-          id="cl-code-textarea"
-          className="cl-code-textarea"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onScroll={syncScroll}
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
-          placeholder={`# Write your ${language} solution here...\n# Tab = 4 spaces  |  Enter after ':' = auto-indent  |  Ctrl+/ = comment`}
-          rows={minRows}
+          ref={hostRef}
+          id="cl-code-editor-host"
+          className="cl-code-cm-host"
+          onClick={focusEditor}
+          style={{ minHeight: `${Math.max(minRows, 3) * 24}px` }}
         />
       </div>
     </div>
