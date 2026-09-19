@@ -3,6 +3,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { FiX, FiSend, FiUser, FiMail, FiPhone, FiCompass, FiMessageSquare } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { useData } from '../../contexts/DataContext';
 import { ADMIN_WA as SERVICE_ADMIN_WA } from '../../services/notificationService';
 import './InterestFormModal.css';
 
@@ -15,6 +16,7 @@ export default function InterestFormModal({
   subtitle = 'Fill in your details to register. Our admissions team will connect with you directly on WhatsApp.',
   submitLabel = 'Submit Details on WhatsApp'
 }) {
+  const { sendEmail } = useData();
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -117,6 +119,22 @@ Thank you!`;
 
     const waUrl = `https://wa.me/${ADMIN_WA}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+    try {
+      if (typeof sendEmail === 'function') {
+        sendEmail(
+          'signup_request',
+          { name: form.name.trim(), email: form.email.trim() },
+          {
+            student_name: form.name.trim(),
+            course_title: form.interest,
+            phone: cleanedPhone
+          }
+        ).catch((err) => console.warn('[EmailJS] signup_request email failed:', err));
+      }
+    } catch (e) {
+      console.warn('[EmailJS] signup_request notification failed:', e);
+    }
 
     toast.success('Opening WhatsApp with your details...');
     handleClose();

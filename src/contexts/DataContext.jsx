@@ -25,6 +25,14 @@ import codingProblemsSeed from '../../data/codingProblems.json';
 import codingAttemptsSeed from '../../data/codingAttempts.json';
 import { SEED_PROBLEMS } from '../data/problemsSeed';
 
+import {
+  sendNotificationEmail,
+  sendBatchNotificationEmail,
+  getMonthlyEmailUsage,
+  testEmailConfiguration,
+  DEFAULT_EMAIL_TEMPLATES
+} from '../services/emailService';
+
 // Unified Code Arena problems seed with complete challenge set
 export const unifiedCodingProblemsSeed = (SEED_PROBLEMS || []).map((p, idx) => ({
   id: p.id,
@@ -66,19 +74,35 @@ function genId(prefix = '') {
 const DEFAULT_PLATFORM_SETTINGS = {
   revenueSplit: 100,
   paymentInstructions: 'UPI: codelift@upi | Bank Transfer: HDFC Bank A/C 98765432101, IFSC: HDFC0001234',
-  instituteName: 'CodeLift Engineering Academy',
-  signatoryName: 'Ashish Kumar',
-  signatoryTitle: 'Director of Academic Affairs',
+  // Certificate credentials intentionally start empty — the admin provisions
+  // the real academy + signatory names (never a mock/hardcoded person).
+  instituteName: '',
+  signatoryName: '',
+  signatoryTitle: '',
   featureFlags: {
     marketplaceEnabled: true,
     problemSolvingEnabled: true,
     autoCertificates: false
+  },
+  emailSettings: {
+    enabled: false,
+    serviceId: '',
+    templateId: '',
+    publicKey: '',
+    supportEmail: 'support@codelift.dev',
+    emailEventTemplates: DEFAULT_EMAIL_TEMPLATES
   }
 };
 
 function normalizeCourse(c) {
   if (!c) return c;
   const courseId = c.id || c.slug;
+  const directPrice = Number(
+    c.price !== undefined && c.price !== null
+      ? c.price
+      : (c.fee !== undefined && c.fee !== null ? c.fee : 0)
+  );
+  const isFree = directPrice > 0 ? false : Boolean(c.isFree ?? c.is_free);
   const modules = (c.modules || []).map((m) => {
     const quizQuestions = Array.isArray(m.quizQuestions) ? m.quizQuestions : [];
     const topics = (m.topics || []).map((t) => ({
@@ -97,6 +121,9 @@ function normalizeCourse(c) {
   return {
     ...c,
     id: courseId,
+    price: directPrice,
+    fee: directPrice,
+    isFree,
     modules
   };
 }
@@ -200,6 +227,9 @@ export function DataProvider({ children }) {
       if (data.submissions?.length) setSubmissions(data.submissions);
       if (data.certificates?.length) setCertificates(data.certificates);
       if (data.certificateTemplates?.length) setCertificateTemplates(data.certificateTemplates);
+      if (data.platformSettings) {
+        setPlatformSettings((prev) => ({ ...prev, ...data.platformSettings }));
+      }
       if (data.completedBatches?.length) setCompletedBatches(data.completedBatches);
       if (data.problemAttempts?.length) setProblemAttempts(data.problemAttempts);
       if (data.codingProblems?.length) {
@@ -479,6 +509,21 @@ export function DataProvider({ children }) {
   const updateBatch = (batchId, updates) => {
     setBatches((prev) => prev.map((b) => (b.id === batchId ? { ...b, ...updates } : b)));
     supabaseDataService.updateBatch(batchId, updates).catch((e) => console.error('[DataContext] updateBatch failed:', e));
+    if (updates && updates.feeAmount !== undefined) {
+      const newFee = Number(updates.feeAmount);
+      setStudents((prev) =>
+        prev.map((s) => {
+          if (s.batchId === batchId && s.isActive !== false) {
+            return {
+              ...s,
+              totalFee: newFee,
+              feeAmount: newFee
+            };
+          }
+          return s;
+        })
+      );
+    }
   };
 
   const toggleBatchActive = (batchId) => {
@@ -630,6 +675,13 @@ export function DataProvider({ children }) {
       resolvedCategoryId = categories.find((c) => c.id === 'cat-web')?.id || categories[0]?.id || null;
     }
 
+    const priceNum = Number(
+      courseData.price !== undefined && courseData.price !== null
+        ? courseData.price
+        : (courseData.fee !== undefined && courseData.fee !== null ? courseData.fee : 0)
+    );
+    const isFreeResolved = priceNum > 0 ? false : (courseData.isFree !== undefined ? Boolean(courseData.isFree) : true);
+
     const newCourse = {
       id: courseData.id || genId('course'),
       slug: courseData.title ? courseData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : `course-${Date.now()}`,
@@ -642,6 +694,9 @@ export function DataProvider({ children }) {
       isApproved: true,
       modules: [],
       ...courseData,
+      price: priceNum,
+      fee: priceNum,
+      isFree: isFreeResolved,
       categoryId: resolvedCategoryId
     };
     setCourses((prev) => [newCourse, ...prev]);
@@ -656,11 +711,24 @@ export function DataProvider({ children }) {
   };
 
   const updateCourse = async (courseId, updates) => {
+    const rawPrice = updates.price !== undefined ? updates.price : updates.fee;
+    const priceNum = rawPrice !== undefined && rawPrice !== null ? Number(rawPrice) : undefined;
+    const isFreeResolved = priceNum !== undefined
+      ? (priceNum > 0 ? false : (updates.isFree !== undefined ? Boolean(updates.isFree) : true))
+      : (updates.isFree !== undefined ? Boolean(updates.isFree) : undefined);
+
+    const resolvedUpdates = {
+      ...updates,
+      ...(priceNum !== undefined ? { price: priceNum, fee: priceNum } : {}),
+      ...(isFreeResolved !== undefined ? { isFree: isFreeResolved } : {}),
+      updatedAt: new Date().toISOString()
+    };
+
     setCourses((prev) =>
-      prev.map((c) => (c.id === courseId ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c))
+      prev.map((c) => (c.id === courseId || c.slug === courseId ? { ...c, ...resolvedUpdates } : c))
     );
     try {
-      await supabaseDataService.updateCourse(courseId, updates);
+      await supabaseDataService.updateCourse(courseId, resolvedUpdates);
     } catch (e) {
       console.error('[DataContext] updateCourse failed:', e);
       throw e;
@@ -733,6 +801,27 @@ export function DataProvider({ children }) {
     supabaseDataService
       .attachCourseToBatch(courseId, batchId)
       .catch((e) => console.error('[DataContext] attachCourseToBatch failed:', e));
+
+    try {
+      const targetBatch = batches.find((b) => b.id === batchId);
+      const targetCourse = courses.find((c) => c.id === courseId);
+      const batchStudents = students.filter(
+        (s) => s.batchId === batchId || (Array.isArray(s.batchIds) && s.batchIds.includes(batchId))
+      );
+      if (batchStudents.length > 0) {
+        sendBatchNotificationEmail(
+          'course_allotment_batch',
+          batchStudents,
+          {
+            batch_name: targetBatch?.name || 'Your Cohort',
+            course_title: targetCourse?.title || 'Course Curriculum'
+          },
+          platformSettings?.emailSettings
+        ).catch((err) => console.warn('[EmailJS] course_allotment_batch notification failed:', err));
+      }
+    } catch (notifyErr) {
+      console.warn('[EmailJS] Batch course notification exception:', notifyErr);
+    }
   };
 
   const detachCourseFromBatch = async (courseId, batchId) => {
@@ -793,6 +882,27 @@ export function DataProvider({ children }) {
       })
     );
     supabaseDataService.attachTestToBatch(testId, batchId).catch((e) => console.error('[DataContext] attachTestToBatch failed:', e));
+
+    try {
+      const targetBatch = batches.find((b) => b.id === batchId);
+      const targetTest = tests.find((t) => t.id === testId);
+      const batchStudents = students.filter(
+        (s) => s.batchId === batchId || (Array.isArray(s.batchIds) && s.batchIds.includes(batchId))
+      );
+      if (batchStudents.length > 0) {
+        sendBatchNotificationEmail(
+          'test_allotment_batch',
+          batchStudents,
+          {
+            batch_name: targetBatch?.name || 'Your Cohort',
+            test_title: targetTest?.title || 'Assessment'
+          },
+          platformSettings?.emailSettings
+        ).catch((err) => console.warn('[EmailJS] test_allotment_batch notification failed:', err));
+      }
+    } catch (notifyErr) {
+      console.warn('[EmailJS] Batch test notification exception:', notifyErr);
+    }
   };
 
   const unassignTestFromBatch = async (testId, batchId) => {
@@ -827,7 +937,13 @@ export function DataProvider({ children }) {
   };
 
   const assignStudentToBatch = async (studentId, batchId) => {
-    return await updateStudent(studentId, { batchId });
+    const targetBatch = batches.find((b) => b.id === batchId);
+    const updates = { batchId };
+    if (targetBatch && typeof targetBatch.feeAmount === 'number') {
+      updates.totalFee = targetBatch.feeAmount;
+      updates.feeAmount = targetBatch.feeAmount;
+    }
+    return await updateStudent(studentId, updates);
   };
 
   const removeStudentFromBatch = async (studentId) => {
@@ -937,7 +1053,8 @@ export function DataProvider({ children }) {
       courseType,
       isCohort: courseType === 'cohort',
       price: typeof data.price === 'number' ? data.price : 0,
-      isFree: data.isFree !== undefined ? Boolean(data.isFree) : (!data.price || data.price === 0),
+      fee: typeof data.price === 'number' ? data.price : 0,
+      isFree: typeof data.price === 'number' && data.price > 0 ? false : (data.isFree !== undefined ? Boolean(data.isFree) : true),
       isPublished: data.isPublished !== undefined ? Boolean(data.isPublished) : true,
       isApproved: true,
       thumbnail: data.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600',
@@ -1240,9 +1357,10 @@ export function DataProvider({ children }) {
       status: certData.status || 'issued',
       isRevoked: false,
       templateId: targetTpl?.id,
-      instituteName: certData.instituteName || platformSettings?.instituteName || targetTpl?.instituteName || 'CodeLift Engineering Academy',
-      signatoryName: certData.signatoryName || platformSettings?.signatoryName || targetTpl?.signatoryName || 'Ashish Kumar',
-      signatoryTitle: certData.signatoryTitle || platformSettings?.signatoryTitle || targetTpl?.signatoryTitle || 'Director of Academic Affairs',
+      courseId: certData.courseId || null,
+      instituteName: certData.instituteName || platformSettings?.instituteName || targetTpl?.instituteName || '',
+      signatoryName: certData.signatoryName || platformSettings?.signatoryName || targetTpl?.signatoryName || '',
+      signatoryTitle: certData.signatoryTitle || platformSettings?.signatoryTitle || targetTpl?.signatoryTitle || '',
       certTitle: targetTpl?.certTitle || 'CERTIFICATE OF COMPLETION',
       design: targetTpl?.design ? { ...targetTpl.design } : undefined,
       ...certData
@@ -1250,6 +1368,26 @@ export function DataProvider({ children }) {
 
     setCertificates((prev) => [newCert, ...prev]);
     supabaseDataService.issueCertificate(newCert).catch((e) => console.error('[DataContext] issueCertificate failed:', e));
+
+    try {
+      const studentObj = students.find((s) => s.id === newCert.studentId || s.legacyId === newCert.studentId);
+      if (studentObj) {
+        sendNotificationEmail(
+          'certificate_issued',
+          studentObj,
+          {
+            course_title: newCert.courseName || newCert.courseTitle || 'Course Curriculum',
+            certificate_id: newCert.certificateId,
+            institute_name: newCert.instituteName || platformSettings?.instituteName || 'CodeLift Academy',
+            signatory_name: newCert.signatoryName || platformSettings?.signatoryName || 'Academic Director'
+          },
+          platformSettings?.emailSettings
+        ).catch((err) => console.warn('[EmailJS] certificate_issued email failed:', err));
+      }
+    } catch (certErr) {
+      console.warn('[EmailJS] Certificate email notification exception:', certErr);
+    }
+
     return newCert;
   };
 
@@ -1265,9 +1403,9 @@ export function DataProvider({ children }) {
       id: genId('tpl'),
       name: templateData.name || 'Custom Certificate Template',
       isActive: Boolean(templateData.isActive),
-      instituteName: templateData.instituteName || 'CodeLift Engineering Academy',
-      signatoryName: templateData.signatoryName || 'Vikram Nair',
-      signatoryTitle: templateData.signatoryTitle || 'Director of Academic Affairs',
+      instituteName: templateData.instituteName || '',
+      signatoryName: templateData.signatoryName || '',
+      signatoryTitle: templateData.signatoryTitle || '',
       certTitle: templateData.certTitle || 'CERTIFICATE OF COMPLETION',
       design: {
         accentColor: '#15803D',
@@ -1305,22 +1443,30 @@ export function DataProvider({ children }) {
       return [...prev, newTemplate];
     });
 
+    supabaseDataService.upsertCertificateTemplate(newTemplate)
+      .catch((e) => console.error('[DataContext] addCertificateTemplate failed:', e));
     return newTemplate;
   };
 
   const updateCertificateTemplate = (templateId, updates) => {
+    let merged = null;
     setCertificateTemplates((prev) =>
       prev.map((t) => {
         if (t.id === templateId) {
-          return {
+          merged = {
             ...t,
             ...updates,
             design: updates.design ? { ...t.design, ...updates.design } : t.design
           };
+          return merged;
         }
         return t;
       })
     );
+    if (merged) {
+      supabaseDataService.upsertCertificateTemplate(merged)
+        .catch((e) => console.error('[DataContext] updateCertificateTemplate failed:', e));
+    }
   };
 
   const setActiveCertificateTemplate = (templateId) => {
@@ -1330,6 +1476,8 @@ export function DataProvider({ children }) {
         isActive: t.id === templateId
       }))
     );
+    supabaseDataService.setCertificateTemplateActive(templateId)
+      .catch((e) => console.error('[DataContext] setActiveCertificateTemplate failed:', e));
   };
 
   const deleteCertificateTemplate = (templateId) => {
@@ -1340,6 +1488,8 @@ export function DataProvider({ children }) {
       }
       return filtered;
     });
+    supabaseDataService.deleteCertificateTemplate(templateId)
+      .catch((e) => console.error('[DataContext] deleteCertificateTemplate failed:', e));
   };
 
   // ── PROBLEM SOLVING MODULE ──────────────────────────────────────────────────
@@ -1580,7 +1730,63 @@ export function DataProvider({ children }) {
     };
     setTestAttempts((prev) => [newAttempt, ...prev]);
     supabaseDataService.submitTestAttempt(newAttempt).catch((e) => console.error(e));
+
+    try {
+      const studentObj = students.find((s) => s.id === newAttempt.studentId || s.legacyId === newAttempt.studentId);
+      const testObj = tests.find((t) => t.id === newAttempt.testId);
+      if (studentObj) {
+        sendNotificationEmail(
+          'test_submission',
+          studentObj,
+          {
+            test_title: testObj?.title || 'Assessment',
+            score: score,
+            total_questions: totalQuestions,
+            percentage: percentage,
+            status: percentage >= newAttempt.passingPercentage ? 'Passed' : 'Needs Review'
+          },
+          platformSettings?.emailSettings
+        ).catch((err) => console.warn('[EmailJS] test_submission email failed:', err));
+      }
+    } catch (testErr) {
+      console.warn('[EmailJS] Test submission email exception:', testErr);
+    }
+
     return newAttempt;
+  };
+
+  const allowTestRetake = async (attemptId) => {
+    const targetAttempt = testAttempts.find((a) => a.id === attemptId);
+    if (!targetAttempt) {
+      toast.error('Attempt not found');
+      return;
+    }
+
+    setTestAttempts((prev) => prev.filter((a) => a.id !== attemptId));
+    if (isSupabaseConfigured) {
+      supabaseDataService.deleteTestAttempt(attemptId).catch((e) => console.error('[DataContext] deleteTestAttempt failed:', e));
+    }
+
+    try {
+      const student = students.find((s) => s.id === targetAttempt.studentId || s.legacyId === targetAttempt.studentId);
+      const test = tests.find((t) => t.id === targetAttempt.testId);
+
+      if (student) {
+        sendNotificationEmail(
+          'test_retake',
+          student,
+          {
+            test_title: test?.title || 'Assessment',
+            student_name: student?.name || 'Student'
+          },
+          platformSettings?.emailSettings
+        ).catch((err) => console.warn('[EmailJS] test_retake email failed:', err));
+      }
+    } catch (retakeErr) {
+      console.warn('[EmailJS] Test retake email exception:', retakeErr);
+    }
+
+    toast.success('Retake granted! Student has been notified.');
   };
 
   // ── ASSIGNMENTS & SUBMISSIONS ───────────────────────────────────────────────
@@ -1626,6 +1832,24 @@ export function DataProvider({ children }) {
 
     supabaseDataService.addSubmission(newSubmission).catch((e) => console.error(e));
     toast.success('Assignment submitted successfully!');
+
+    try {
+      if (student) {
+        sendNotificationEmail(
+          'assignment_submission',
+          student,
+          {
+            assignment_title: assignment?.title || 'Practical Assignment',
+            submission_url: submissionUrl || 'Direct Link / Solution File',
+            notes: notes || 'No extra notes provided.'
+          },
+          platformSettings?.emailSettings
+        ).catch((err) => console.warn('[EmailJS] assignment_submission email failed:', err));
+      }
+    } catch (subErr) {
+      console.warn('[EmailJS] Assignment submission email exception:', subErr);
+    }
+
     return newSubmission;
   };
 
@@ -1634,6 +1858,29 @@ export function DataProvider({ children }) {
       prev.map((s) => (s.id === submissionId ? { ...s, grade: Number(grade), feedback } : s))
     );
     supabaseDataService.gradeSubmission(submissionId, grade, feedback).catch((e) => console.error(e));
+
+    try {
+      const sub = submissions.find((s) => s.id === submissionId);
+      if (sub) {
+        const student = students.find((s) => s.id === sub.studentId || s.legacyId === sub.studentId);
+        const assignment = assignments.find((a) => a.id === sub.assignmentId);
+        if (student) {
+          sendNotificationEmail(
+            'assignment_graded',
+            student,
+            {
+              assignment_title: assignment?.title || 'Practical Assignment',
+              marks: grade,
+              max_marks: assignment?.maxMarks || assignment?.maxScore || 100,
+              feedback: feedback || 'Evaluated by faculty.'
+            },
+            platformSettings?.emailSettings
+          ).catch((err) => console.warn('[EmailJS] assignment_graded email failed:', err));
+        }
+      }
+    } catch (gradeErr) {
+      console.warn('[EmailJS] Assignment graded email exception:', gradeErr);
+    }
   };
 
   const addAssignment = async (assignmentData) => {
@@ -1675,6 +1922,30 @@ export function DataProvider({ children }) {
     try {
       await supabaseDataService.addAssignment(newAssignment);
       toast.success('Assignment created and assigned to batch!');
+
+      try {
+        const targetStudents = students.filter(
+          (s) =>
+            normalizedBatchIds.includes(s.batchId) ||
+            (Array.isArray(s.batchIds) && s.batchIds.some((bId) => normalizedBatchIds.includes(bId)))
+        );
+        if (targetStudents.length > 0) {
+          sendBatchNotificationEmail(
+            'assignment_allotment_batch',
+            targetStudents,
+            {
+              assignment_title: newAssignment.title,
+              batch_name:
+                normalizedBatchIds.length === 1
+                  ? batches.find((b) => b.id === normalizedBatchIds[0])?.name || 'Your Cohort'
+                  : 'Your Cohort'
+            },
+            platformSettings?.emailSettings
+          ).catch((err) => console.warn('[EmailJS] assignment_allotment_batch email failed:', err));
+        }
+      } catch (batchErr) {
+        console.warn('[EmailJS] Assignment allotment bulk email notification exception:', batchErr);
+      }
     } catch (e) {
       console.error('[DataContext] addAssignment failed:', e);
       toast.error('Failed to create assignment on database.');
@@ -1740,10 +2011,41 @@ export function DataProvider({ children }) {
     }
   };
 
-  // ── PLATFORM SETTINGS ───────────────────────────────────────────────────────
+  // ── PLATFORM SETTINGS & EMAIL NOTIFICATIONS ────────────────────────────────
   const updatePlatformSettings = (newSettings) => {
-    setPlatformSettings((prev) => ({ ...prev, ...newSettings }));
+    setPlatformSettings((prev) => {
+      const next = { ...prev, ...newSettings };
+      supabaseDataService.updatePlatformSettings(next)
+        .catch((e) => console.error('[DataContext] updatePlatformSettings failed:', e));
+      return next;
+    });
   };
+
+  const sendEmail = useCallback(async (eventType, recipient, dynamicData = {}) => {
+    try {
+      const emailConfig = {
+        ...(platformSettings?.emailSettings || DEFAULT_PLATFORM_SETTINGS.emailSettings),
+        instituteName: platformSettings?.instituteName
+      };
+      return await sendNotificationEmail(eventType, recipient, dynamicData, emailConfig);
+    } catch (err) {
+      console.warn(`[DataContext] sendEmail failed for ${eventType}:`, err);
+      return { success: false, error: err.message };
+    }
+  }, [platformSettings]);
+
+  const sendBatchEmail = useCallback(async (eventType, studentsList, dynamicData = {}) => {
+    try {
+      const emailConfig = {
+        ...(platformSettings?.emailSettings || DEFAULT_PLATFORM_SETTINGS.emailSettings),
+        instituteName: platformSettings?.instituteName
+      };
+      return await sendBatchNotificationEmail(eventType, studentsList, dynamicData, emailConfig);
+    } catch (err) {
+      console.warn(`[DataContext] sendBatchEmail failed for ${eventType}:`, err);
+      return { sent: [], failed: [], skipped: [], total: studentsList?.length || 0, error: err.message };
+    }
+  }, [platformSettings]);
 
   // ── BACKUP RESTORE & FACTORY RESET ──────────────────────────────────────────
   const importAllData = async (payload) => {
@@ -1959,6 +2261,7 @@ export function DataProvider({ children }) {
         updateTest,
         deleteTest,
         submitTestAttempt,
+        allowTestRetake,
         attachCourseToBatch,
         detachCourseFromBatch,
         assignTestToBatch,
@@ -1966,8 +2269,13 @@ export function DataProvider({ children }) {
         assignStudentToBatch,
         removeStudentFromBatch,
         updatePlatformSettings,
+        sendEmail,
+        sendBatchEmail,
+        getMonthlyEmailUsage,
+        testEmailConfiguration,
         importAllData,
         resetToDefaults,
+        syncFromSupabase,
         refreshData: syncFromSupabase
       }}
     >

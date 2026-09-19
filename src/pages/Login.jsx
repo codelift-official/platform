@@ -27,7 +27,7 @@ import './Login.css';
 export default function Login() {
   const navigate = useNavigate();
   const { loginStudent } = useAuth();
-  const { students = [], createPasswordResetRequest } = useData();
+  const { students = [], createPasswordResetRequest, sendEmail } = useData();
 
   const [studentEmail, setStudentEmail] = useState('');
   const [studentPassword, setStudentPassword] = useState('');
@@ -116,6 +116,23 @@ export default function Login() {
         reason: 'Forgot student portal password'
       });
       openAdminWhatsApp(waMsg);
+
+      try {
+        if (typeof sendEmail === 'function' && result.studentEmail) {
+          sendEmail(
+            'forgot_password',
+            { name: result.studentName, email: result.studentEmail },
+            {
+              student_name: result.studentName || 'Student',
+              student_email: result.studentEmail,
+              ticket_id: result.ticketId
+            }
+          ).catch((err) => console.warn('[EmailJS] forgot_password email failed:', err));
+        }
+      } catch (emailErr) {
+        console.warn('[EmailJS] forgot_password exception:', emailErr);
+      }
+
       toast.success('Reset request submitted! Admin notified on WhatsApp. 🔑');
     } catch (err) {
       console.error('[ResetRequest] Error:', err);

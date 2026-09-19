@@ -5,16 +5,22 @@ import {
   FaClipboardList,
   FaPlus,
   FaTrash,
+  FaEdit,
   FaQuestionCircle,
   FaBullseye
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
+function generateQuestionId(prefix = 'q') {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export default function TestManager() {
-  const { tests = [], batches = [], addTest, deleteTest } = useData();
+  const { tests = [], batches = [], addTest, updateTest, deleteTest } = useData();
   const createTest = addTest; // Alias for backward compat
 
   const [showModal, setShowModal] = useState(false);
+  const [editingTestId, setEditingTestId] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [passingPercentage, setPassingPercentage] = useState(70);
@@ -24,7 +30,7 @@ export default function TestManager() {
   const [deletingTestId, setDeletingTestId] = useState(null);
   const [questions, setQuestions] = useState([
     {
-      id: `q-1`,
+      id: generateQuestionId(),
       text: '',
       options: ['', '', '', ''],
       correctAnswer: 0
@@ -51,11 +57,60 @@ export default function TestManager() {
   const testList = Array.isArray(tests) ? tests : [];
   const batchList = Array.isArray(batches) ? batches : [];
 
+  const handleOpenCreate = () => {
+    setEditingTestId(null);
+    setTitle('');
+    setDescription('');
+    setPassingPercentage(70);
+    setAllowRetake(false);
+    setSelectedBatches([]);
+    setQuestions([
+      {
+        id: generateQuestionId(),
+        text: '',
+        options: ['', '', '', ''],
+        correctAnswer: 0
+      }
+    ]);
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (test) => {
+    setEditingTestId(test.id);
+    setTitle(test.title || '');
+    setDescription(test.description || '');
+    setPassingPercentage(test.passingPercentage !== undefined ? test.passingPercentage : 70);
+    setAllowRetake(Boolean(test.allowRetake));
+    const rawBatches = Array.isArray(test.assignedBatchIds)
+      ? test.assignedBatchIds
+      : (Array.isArray(test.batchIds) ? test.batchIds : []);
+    setSelectedBatches(rawBatches);
+    const existingQuestions = Array.isArray(test.questions) && test.questions.length > 0
+      ? test.questions.map((q, idx) => ({
+          id: q.id || generateQuestionId(`q-${test.id}-${idx + 1}`),
+          text: q.text || q.question || '',
+          options: Array.isArray(q.options) && q.options.length >= 4
+            ? [...q.options]
+            : [q.options?.[0] || '', q.options?.[1] || '', q.options?.[2] || '', q.options?.[3] || ''],
+          correctAnswer: Number(q.correctAnswer ?? q.correctIndex ?? 0)
+        }))
+      : [
+          {
+            id: generateQuestionId(`q-${test.id}`),
+            text: '',
+            options: ['', '', '', ''],
+            correctAnswer: 0
+          }
+        ];
+    setQuestions(existingQuestions);
+    setShowModal(true);
+  };
+
   const handleAddQuestion = () => {
     setQuestions((prev) => [
       ...prev,
       {
-        id: `q-${Date.now()}-${prev.length + 1}`,
+        id: generateQuestionId(editingTestId ? `q-${editingTestId}` : 'q'),
         text: '',
         options: ['', '', '', ''],
         correctAnswer: 0
@@ -66,6 +121,8 @@ export default function TestManager() {
   const handleRemoveQuestion = (idx) => {
     if (questions.length > 1) {
       setQuestions((prev) => prev.filter((_, i) => i !== idx));
+    } else {
+      toast.error('A test must contain at least one question.');
     }
   };
 
@@ -98,48 +155,66 @@ export default function TestManager() {
     );
   };
 
+  const handleSelectAllBatches = () => {
+    setSelectedBatches(batchList.map((b) => b.id));
+  };
+
+  const handleClearBatches = () => {
+    setSelectedBatches([]);
+  };
+
   const handleSaveTest = (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      toast.error('Please enter a test title.');
+      return;
+    }
 
-    // Validate that questions have text and options
+    // Validate that all questions have prompts and 4 options
     for (let i = 0; i < questions.length; i++) {
       if (!questions[i].text.trim()) {
-        alert(`Question ${i + 1} is missing question prompt.`);
+        toast.error(`Question ${i + 1} is missing the question statement.`);
         return;
       }
       for (let j = 0; j < 4; j++) {
         if (!questions[i].options[j]?.trim()) {
-          alert(`Question ${i + 1} is missing Option ${String.fromCharCode(65 + j)}.`);
+          toast.error(`Question ${i + 1} is missing Option ${String.fromCharCode(65 + j)}.`);
           return;
         }
       }
     }
 
-    createTest({
-      title,
-      description,
+    // Ensure all questions have distinct unique IDs
+    const normalizedQuestions = questions.map((q, idx) => ({
+      ...q,
+      id: q.id && !q.id.match(/^q-\d+$/)
+        ? q.id
+        : generateQuestionId(editingTestId ? `q-${editingTestId}-${idx + 1}` : `q-${Date.now()}-${idx + 1}`)
+    }));
+
+    const testPayload = {
+      title: title.trim(),
+      description: description.trim(),
       passingPercentage: Number(passingPercentage) || 70,
       allowRetake: Boolean(allowRetake),
-      assignedBatchIds: selectedBatches.length > 0 ? selectedBatches : batchList.map((b) => b.id),
-      questions
-    });
+      // DO NOT fallback to all batches - strictly respect selectedBatches
+      assignedBatchIds: selectedBatches,
+      batchIds: selectedBatches,
+      questions: normalizedQuestions
+    };
 
-    // Reset Form
-    setTitle('');
-    setDescription('');
-    setPassingPercentage(70);
-    setAllowRetake(false);
-    setSelectedBatches([]);
-    setQuestions([
-      {
-        id: `q-1`,
-        text: '',
-        options: ['', '', '', ''],
-        correctAnswer: 0
+    if (editingTestId) {
+      if (updateTest) {
+        updateTest(editingTestId, testPayload);
       }
-    ]);
+      toast.success(`Test "${title}" updated successfully!`);
+    } else {
+      createTest(testPayload);
+      toast.success(`New test "${title}" created successfully!`);
+    }
+
     setShowModal(false);
+    setEditingTestId(null);
   };
 
   return (
@@ -154,7 +229,7 @@ export default function TestManager() {
         </div>
         <Button
           variant="primary"
-          onClick={() => setShowModal(true)}
+          onClick={handleOpenCreate}
           className="d-flex align-items-center gap-2 align-self-start align-self-sm-auto shadow-sm"
         >
           <FaPlus size={12} />
@@ -218,33 +293,50 @@ export default function TestManager() {
                       </td>
                       <td>
                         <div className="d-flex flex-wrap gap-1">
-                          {test.assignedBatchIds?.map((bId) => {
-                            const batch = batchList.find((b) => b.id === bId);
-                            return (
-                              <Badge key={bId} className="badge-theme small">
-                                {batch ? batch.name : bId}
-                              </Badge>
-                            );
-                          })}
+                          {Array.isArray(test.assignedBatchIds) && test.assignedBatchIds.length > 0 ? (
+                            test.assignedBatchIds.map((bId) => {
+                              const batch = batchList.find((b) => b.id === bId);
+                              return (
+                                <Badge key={bId} className="badge-theme small">
+                                  {batch ? batch.name : bId}
+                                </Badge>
+                              );
+                            })
+                          ) : (
+                            <span className="text-muted small fst-italic">No Batches Assigned</span>
+                          )}
                         </div>
                       </td>
                       <td className="text-end">
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          disabled={isDeleting}
-                          className="d-inline-flex align-items-center justify-content-center rounded-2 p-1.5"
-                          style={{ width: 32, height: 32 }}
-                          onClick={() => handleDeleteTest(test.id, test.title)}
-                          title="Delete Test"
-                          aria-label="Delete Test"
-                        >
-                          {deletingTestId === test.id ? (
-                            <Spinner size="sm" animation="border" style={{ width: 14, height: 14 }} />
-                          ) : (
-                            <FaTrash size={12} />
-                          )}
-                        </Button>
+                        <div className="d-inline-flex align-items-center gap-1.5">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            className="d-inline-flex align-items-center justify-content-center rounded-2 p-1.5"
+                            style={{ width: 32, height: 32 }}
+                            onClick={() => handleOpenEdit(test)}
+                            title="Edit Test & Questions"
+                            aria-label="Edit Test"
+                          >
+                            <FaEdit size={12} />
+                          </Button>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            disabled={isDeleting}
+                            className="d-inline-flex align-items-center justify-content-center rounded-2 p-1.5"
+                            style={{ width: 32, height: 32 }}
+                            onClick={() => handleDeleteTest(test.id, test.title)}
+                            title="Delete Test"
+                            aria-label="Delete Test"
+                          >
+                            {deletingTestId === test.id ? (
+                              <Spinner size="sm" animation="border" style={{ width: 14, height: 14 }} />
+                            ) : (
+                              <FaTrash size={12} />
+                            )}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -255,10 +347,12 @@ export default function TestManager() {
         </Card.Body>
       </Card>
 
-      {/* Create Test Modal with Dynamic Question Builder */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
+      {/* Create / Edit Test Modal with Dynamic Question Builder */}
+      <Modal show={showModal} onHide={() => { setShowModal(false); setEditingTestId(null); }} size="lg" centered>
         <Modal.Header closeButton style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
-          <Modal.Title className="fs-5 fw-bold" style={{ color: 'var(--text-primary)' }}>Build New Test Assessment</Modal.Title>
+          <Modal.Title className="fs-5 fw-bold" style={{ color: 'var(--text-primary)' }}>
+            {editingTestId ? 'Edit Assessment Test' : 'Build New Test Assessment'}
+          </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSaveTest}>
           <Modal.Body className="space-y-4" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
@@ -323,7 +417,7 @@ export default function TestManager() {
               </div>
             </Form.Group>
 
-            {/* Retake Setting (Bug #9) */}
+            {/* Retake Setting */}
             <Form.Group className="mb-3 p-3 rounded border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
               <Form.Check
                 type="switch"
@@ -340,20 +434,48 @@ export default function TestManager() {
 
             {/* Batch Selection Checkboxes */}
             <Form.Group className="mb-4">
-              <Form.Label className="fw-semibold small d-block">
-                Assign to Cohorts (Select one or more):
-              </Form.Label>
+              <div className="d-flex justify-content-between align-items-center mb-1.5 flex-wrap gap-2">
+                <Form.Label className="fw-semibold small mb-0">
+                  Assign to Cohorts ({selectedBatches.length} selected):
+                </Form.Label>
+                <div className="d-flex gap-2">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 text-decoration-none small text-primary"
+                    onClick={handleSelectAllBatches}
+                  >
+                    Select All
+                  </Button>
+                  <span className="text-muted small">|</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 text-decoration-none small text-secondary"
+                    onClick={handleClearBatches}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
               <div className="d-flex flex-wrap gap-3 p-3 rounded border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
-                {batchList.map((b) => (
-                  <Form.Check
-                    key={b.id}
-                    type="checkbox"
-                    id={`test-batch-${b.id}`}
-                    label={b.name}
-                    checked={selectedBatches.includes(b.id)}
-                    onChange={() => handleBatchToggle(b.id)}
-                  />
-                ))}
+                {batchList.length === 0 ? (
+                  <span className="text-muted small">No batches available to allot.</span>
+                ) : (
+                  batchList.map((b) => (
+                    <Form.Check
+                      key={b.id}
+                      type="checkbox"
+                      id={`test-batch-${b.id}`}
+                      label={b.name}
+                      checked={selectedBatches.includes(b.id)}
+                      onChange={() => handleBatchToggle(b.id)}
+                    />
+                  ))
+                )}
+              </div>
+              <div className="text-muted small mt-1" style={{ fontSize: '0.75rem' }}>
+                Select only the specific batches that should have access to this assessment test.
               </div>
             </Form.Group>
 
@@ -446,11 +568,11 @@ export default function TestManager() {
             </div>
           </Modal.Body>
           <Modal.Footer style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
-            <Button variant="secondary" size="sm" onClick={() => setShowModal(false)}>
+            <Button variant="secondary" size="sm" onClick={() => { setShowModal(false); setEditingTestId(null); }}>
               Cancel
             </Button>
             <Button variant="primary" size="sm" type="submit">
-              Save and Publish Test
+              {editingTestId ? 'Update Test' : 'Save and Publish Test'}
             </Button>
           </Modal.Footer>
         </Form>

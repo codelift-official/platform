@@ -13,7 +13,7 @@
  *    light palette when data-theme-mode='light' (handled via CSS overrides)
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useImperativeHandle } from 'react';
 import { EditorView, basicSetup } from 'codemirror';
 import { indentWithTab } from '@codemirror/commands';
 import { python } from '@codemirror/lang-python';
@@ -98,7 +98,7 @@ const builtinHighlightPlugin = ViewPlugin.fromClass(
 );
 
 // Static shared extensions (attached to each instance)
-function buildExtensions(language, onChangeRef) {
+function buildExtensions(language, onChangeRef, wrap) {
   const extensions = [
     basicSetup,
     keymap.of([indentWithTab]),
@@ -106,6 +106,8 @@ function buildExtensions(language, onChangeRef) {
     indentUnit.of(INDENT_UNIT),
     builtinHighlightPlugin,
   ];
+  if (wrap) extensions.push(EditorView.lineWrapping);
+  extensions.push(buildErrorUnderlinePlugin());
   if (language === 'python' || !language) {
     extensions.push(
       EditorView.updateListener.of((update) => {
@@ -118,22 +120,103 @@ function buildExtensions(language, onChangeRef) {
   return extensions;
 }
 
+// Detect Python syntax errors synchronously via the Lezer grammar
+function detectSyntaxErrors(view) {
+  const errors = [];
+  const tree = syntaxTree(view.state);
+  if (!tree || tree.length === 0) return errors;
+  tree.cursor().iterate((node) => {
+    if (node.type.isError && node.to > node.from) {
+      errors.push({ from: node.from, to: node.to });
+    }
+  });
+  return errors;
+}
+
+// Red squiggle under the offending line while the student types
+const syntaxErrorDecoration = Decoration.mark({
+  class: 'cl-cm-syntax-error',
+  attributes: { title: 'Syntax Error' },
+});
+
+function buildErrorUnderlinePlugin() {
+  return ViewPlugin.fromClass(
+    class {
+      constructor(view) {
+        this.decorations = Decoration.none;
+        this.recompute(view);
+      }
+
+      recompute(view) {
+        const errs = detectSyntaxErrors(view);
+        if (errs.length === 0) {
+          this.decorations = Decoration.none;
+          return;
+        }
+        const lineNumbers = Array.from(
+          new Set(errs.map((e) => view.state.doc.lineAt(e.from).number))
+        );
+        const ranges = lineNumbers.map((lineNo) => {
+          const line = view.state.doc.line(lineNo);
+          return syntaxErrorDecoration.range(line.from, line.to);
+        });
+        this.decorations = Decoration.set(ranges, true);
+      }
+
+      update(update) {
+        if (update.docChanged) this.recompute(update.view);
+      }
+    },
+    { decorations: (v) => v.decorations }
+  );
+}
+
 export default function CodeEditor({
   value = '',
   onChange,
   language = 'python',
   minRows = 15,
   fontSize = 14,
+  wrap = false,
+  editorRef = null,
 }) {
   const hostRef = useRef(null);
   const viewRef = useRef(null);
   const onChangeRef = useRef(onChange);
   const [copied, setCopied] = useState(false);
+  const [hasCompiledErrors, setHasCompiledErrors] = useState(false);
 
-  // Keep the latest onChange handler available to the editor listener
-  useEffect(() => {
-    onChangeRef.current = onChange;
+  // Expose an imperative insert API (used by the mobile quick-symbol bar)
+  useImperativeHandle(editorRef, () => ({
+    insert(text) {
+      const view = viewRef.current;
+      if (!view) return;
+      const { from, to } = view.state.selection.main;
+      view.dispatch({
+        changes: { from, to, insert: text },
+        selection: { anchor: from + text.length, head: from + text.length },
+        scrollIntoView: true,
+      });
+      view.focus();
+    },
+  }), []);
+
+  // Compile Python on every edit to surface syntax errors with red underlines
+  const handleCodeChange = useCallback((newCode) => {
+    onChange(newCode);
+    try {
+      const view = viewRef.current;
+      setHasCompiledErrors(view ? detectSyntaxErrors(view).length > 0 : false);
+    } catch (err) {
+      console.error('Inline syntax check failed:', err);
+      setHasCompiledErrors(false);
+    }
   }, [onChange]);
+
+  // Keep the latest change handler available to the editor listener
+  useEffect(() => {
+    onChangeRef.current = handleCodeChange;
+  }, [handleCodeChange]);
 
   // Create / tear down the CodeMirror instance (rebuilt when language changes)
   useEffect(() => {
@@ -141,7 +224,7 @@ export default function CodeEditor({
     const view = new EditorView({
       doc: value || '',
       parent: hostRef.current,
-      extensions: buildExtensions(language.toLowerCase(), onChangeRef),
+      extensions: buildExtensions(language.toLowerCase(), onChangeRef, wrap),
     });
     viewRef.current = view;
     return () => {
@@ -149,7 +232,7 @@ export default function CodeEditor({
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]);
+  }, [language, wrap]);
 
   // Keep the controlled value in sync with external updates (reset/problem switch)
   useEffect(() => {
@@ -160,6 +243,11 @@ export default function CodeEditor({
       view.dispatch({
         changes: { from: 0, to: current.length, insert: value || '' },
       });
+    }
+    try {
+      setHasCompiledErrors(detectSyntaxErrors(view).length > 0);
+    } catch {
+      setHasCompiledErrors(false);
     }
   }, [value, language]);
 
@@ -184,6 +272,16 @@ export default function CodeEditor({
       {/* ── Toolbar ── */}
       <div className="cl-code-editor-toolbar">
         <span className="cl-code-lang-badge">{language}</span>
+        {hasCompiledErrors && (
+          <span className="cl-code-compile-error">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            Syntax Error
+          </span>
+        )}
         <button
           type="button"
           className="cl-code-copy-btn"

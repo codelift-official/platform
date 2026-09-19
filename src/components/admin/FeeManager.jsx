@@ -26,7 +26,17 @@ import {
 } from '../../services/notificationService';
 
 export default function FeeManager() {
-  const { fees = [], students = [], batches = [], addFee, updateFee, deleteFee } = useData();
+  const {
+    fees = [],
+    students = [],
+    batches = [],
+    addFee,
+    updateFee,
+    deleteFee,
+    sendEmail,
+    sendBatchEmail,
+    platformSettings
+  } = useData();
   const recordFee = addFee; // Alias
 
   const [showRecordModal, setShowRecordModal] = useState(false);
@@ -36,8 +46,22 @@ export default function FeeManager() {
   const [deletingFee, setDeletingFee] = useState(null);
   const [activeNotification, setActiveNotification] = useState(null);
 
-  // Form state for Record Payment
+  // Batch Fee Reminder Modal State
+  const [showBatchReminderModal, setShowBatchReminderModal] = useState(false);
+  const [reminderBatchFilter, setReminderBatchFilter] = useState('');
+  const [selectedReminderStudentIds, setSelectedReminderStudentIds] = useState([]);
+  const [reminderDueDate, setReminderDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [reminderCustomNote, setReminderCustomNote] = useState('');
+  const [isSendingBatchReminders, setIsSendingBatchReminders] = useState(false);
+  const [batchReportModal, setBatchReportModal] = useState(null); // { sent: [], failed: [], skipped: [] }
+
   const [formStudentId, setFormStudentId] = useState('');
+  const [modalStudentSearch, setModalStudentSearch] = useState('');
+  const [modalBatchFilter, setModalBatchFilter] = useState('');
   const [formAmount, setFormAmount] = useState('');
   const [formStatus, setFormStatus] = useState('PAID');
   const [formMode, setFormMode] = useState('UPI');
@@ -55,6 +79,28 @@ export default function FeeManager() {
   const feeList = Array.isArray(fees) ? fees : [];
   const studentList = Array.isArray(students) ? students : [];
   const batchList = Array.isArray(batches) ? batches : [];
+
+  // Students with calculated tuition dues
+  const studentsWithDues = studentList.map((s) => {
+    const b = batchList.find((batch) => batch.id === s.batchId);
+    const totalFee = typeof b?.feeAmount === 'number' ? b.feeAmount : (Number(s.totalFee) || 0);
+    const paid = feeList
+      .filter((f) => (f.studentId === s.id || (s.legacyId && f.studentId === s.legacyId)) && f.status === 'PAID')
+      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+    const pending = Math.max(0, totalFee - paid);
+    return {
+      ...s,
+      batchName: b?.name || 'Unassigned Cohort',
+      totalFee,
+      paidFee: paid,
+      pendingFee: pending
+    };
+  });
+
+  const filteredReminderStudents = studentsWithDues.filter((s) => {
+    const matchesBatch = !reminderBatchFilter || s.batchId === reminderBatchFilter;
+    return matchesBatch && s.pendingFee > 0;
+  });
 
   // Initialize record form when modal opens
   useEffect(() => {
@@ -75,12 +121,13 @@ export default function FeeManager() {
     const std = studentList.find((s) => s.id === studentId);
     if (!std) return;
     const b = batchList.find((batch) => batch.id === std.batchId);
-    const totalCourseFee = Number(std.totalFee) || b?.feeAmount || 0;
+    // As per user architecture: Batch fee is the final fee for student view, not the course fee sum
+    const finalFee = typeof b?.feeAmount === 'number' ? b.feeAmount : (Number(std.totalFee) || 0);
     const alreadyPaid = feeList
-      .filter((f) => f.studentId === studentId && f.status === 'PAID')
+      .filter((f) => (f.studentId === studentId || (std.legacyId && f.studentId === std.legacyId)) && f.status === 'PAID')
       .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
-    const pendingBalance = Math.max(0, totalCourseFee - alreadyPaid);
-    setFormAmount(pendingBalance > 0 ? String(pendingBalance) : String(b?.feeAmount || 25000));
+    const pendingBalance = Math.max(0, finalFee - alreadyPaid);
+    setFormAmount(pendingBalance > 0 ? String(pendingBalance) : String(finalFee || 5000));
   };
 
   const handleStudentChange = (e) => {
@@ -103,6 +150,7 @@ export default function FeeManager() {
 
     const feePayload = {
       studentId: formStudentId,
+      batchId: targetStudent?.batchId || null,
       amount: numAmount,
       paidAt: formDate || new Date().toISOString().split('T')[0],
       mode: formMode,
@@ -117,33 +165,25 @@ export default function FeeManager() {
     const targetStudent = studentList.find((s) => s.id === formStudentId);
     const targetBatch = batchList.find((b) => b.id === targetStudent?.batchId);
 
-    // Call Supabase Edge Function to email fee receipt (non-blocking)
-    if (formStatus === 'PAID' && targetStudent?.email) {
-      fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-fee-receipt`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            studentEmail: targetStudent.email,
-            studentName: targetStudent.name,
-            amount: numAmount,
-            paidAt: feePayload.paidAt,
-            mode: formMode,
-            courseName: targetBatch?.name || targetStudent?.courseName || 'CodeLift Course',
-          }),
-        }
-      )
+    // Trigger EmailJS fee_collected receipt notification
+    if (formStatus === 'PAID' && targetStudent?.email && sendEmail) {
+      sendEmail('fee_collected', targetStudent, {
+        student_name: targetStudent.name,
+        student_email: targetStudent.email,
+        amount_paid: `₹${numAmount.toLocaleString('en-IN')}`,
+        receipt_no: feePayload.receiptNo,
+        payment_mode: formMode,
+        date: feePayload.paidAt,
+        batch_name: targetBatch?.name || 'CodeLift Program',
+        remaining_due: `₹${Math.max(0, selectedStudentPending - numAmount).toLocaleString('en-IN')}`
+      })
         .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          toast.success('Payment recorded and receipt emailed');
+          if (res?.success) toast.success('Payment recorded & receipt emailed to student! 📧');
+          else toast.success('Payment recorded successfully.');
         })
-        .catch((err) => {
-          console.error('Receipt email failed:', err);
-          toast.success('Payment recorded'); // Don't block the flow on email failure
-        });
+        .catch(() => toast.success('Payment recorded successfully.'));
     } else {
-      toast.success('Payment recorded');
+      toast.success('Payment recorded successfully.');
     }
   };
 
@@ -152,13 +192,23 @@ export default function FeeManager() {
   const selectedStudentBatch = batchList.find((b) => b.id === selectedStudent?.batchId);
   const selectedStudentPaid = selectedStudent
     ? feeList
-      .filter((f) => f.studentId === selectedStudent.id && f.status === 'PAID')
+      .filter((f) => (f.studentId === selectedStudent.id || (selectedStudent.legacyId && f.studentId === selectedStudent.legacyId)) && f.status === 'PAID')
       .reduce((sum, f) => sum + (Number(f.amount) || 0), 0)
     : 0;
   const selectedStudentTotal = selectedStudent
-    ? Number(selectedStudent.totalFee) || selectedStudentBatch?.feeAmount || 0
+    ? (typeof selectedStudentBatch?.feeAmount === 'number' ? selectedStudentBatch.feeAmount : (Number(selectedStudent.totalFee) || 0))
     : 0;
   const selectedStudentPending = Math.max(0, selectedStudentTotal - selectedStudentPaid);
+
+  const filteredModalStudents = studentList.filter((s) => {
+    const matchesBatch = !modalBatchFilter || s.batchId === modalBatchFilter;
+    const query = modalStudentSearch.toLowerCase().trim();
+    const matchesSearch = !query ||
+      s.name?.toLowerCase().includes(query) ||
+      s.email?.toLowerCase().includes(query) ||
+      s.id?.toLowerCase().includes(query);
+    return matchesBatch && matchesSearch;
+  });
 
   // Overview Metrics
   const totalCollected = feeList
@@ -218,6 +268,50 @@ export default function FeeManager() {
     return true;
   });
 
+  const handleToggleSelectAllReminders = () => {
+    if (selectedReminderStudentIds.length === filteredReminderStudents.length) {
+      setSelectedReminderStudentIds([]);
+    } else {
+      setSelectedReminderStudentIds(filteredReminderStudents.map((s) => s.id));
+    }
+  };
+
+  const handleToggleStudentReminder = (studentId) => {
+    setSelectedReminderStudentIds((prev) =>
+      prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
+    );
+  };
+
+  const handleSendBatchReminders = async () => {
+    const targets = filteredReminderStudents.filter((s) => selectedReminderStudentIds.includes(s.id));
+    if (targets.length === 0) {
+      toast.error('Please select at least one student with pending dues.');
+      return;
+    }
+
+    setIsSendingBatchReminders(true);
+    try {
+      const selectedBatch = batchList.find((b) => b.id === reminderBatchFilter);
+      const res = await sendBatchEmail('fee_reminder', targets, {
+        batch_name: selectedBatch?.name || 'CodeLift Program',
+        due_date: reminderDueDate || 'Immediate',
+        payment_instructions: platformSettings?.paymentInstructions || 'UPI / Bank Transfer'
+      });
+
+      setShowBatchReminderModal(false);
+      setBatchReportModal(res);
+      if (res.sent.length > 0) {
+        toast.success(`Fee reminders sent to ${res.sent.length} student(s)! 📧`);
+      } else {
+        toast.error('No emails sent. Please check EmailJS settings or monthly quota.');
+      }
+    } catch (err) {
+      toast.error(`Batch send error: ${err.message}`);
+    } finally {
+      setIsSendingBatchReminders(false);
+    }
+  };
+
   return (
     <div>
       {/* Header bar */}
@@ -228,14 +322,27 @@ export default function FeeManager() {
             <span>Tuition & Fee Management</span>
           </h4>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => setShowRecordModal(true)}
-          className="d-flex align-items-center gap-2 align-self-start align-self-sm-auto shadow-sm px-3 py-2 rounded-3"
-        >
-          <FaPlusCircle size={14} />
-          <span>Record Payment</span>
-        </Button>
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <Button
+            variant="outline-warning"
+            onClick={() => {
+              setShowBatchReminderModal(true);
+              setSelectedReminderStudentIds(filteredReminderStudents.map((s) => s.id));
+            }}
+            className="d-flex align-items-center gap-2 shadow-sm px-3 py-2 rounded-3 text-dark fw-semibold"
+          >
+            <FaBell size={14} />
+            <span>Send Fee Reminders</span>
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => setShowRecordModal(true)}
+            className="d-flex align-items-center gap-2 align-self-start align-self-sm-auto shadow-sm px-3 py-2 rounded-3"
+          >
+            <FaPlusCircle size={14} />
+            <span>Record Payment</span>
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -505,45 +612,91 @@ export default function FeeManager() {
               </div>
             )}
 
+            {/* Student Filter & Search Bar */}
+            <div className="row g-2 mb-3">
+              <div className="col-md-7">
+                <Form.Label className="small fw-semibold mb-1">Search Student</Form.Label>
+                <InputGroup size="sm">
+                  <InputGroup.Text style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+                    <FaSearch size={11} className="text-muted" />
+                  </InputGroup.Text>
+                  <Form.Control
+                    placeholder="Search by student name, email, or ID..."
+                    value={modalStudentSearch}
+                    onChange={(e) => setModalStudentSearch(e.target.value)}
+                    style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                  />
+                </InputGroup>
+              </div>
+              <div className="col-md-5">
+                <Form.Label className="small fw-semibold mb-1">Cohort Batch Filter</Form.Label>
+                <Form.Select
+                  size="sm"
+                  value={modalBatchFilter}
+                  onChange={(e) => setModalBatchFilter(e.target.value)}
+                  style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                >
+                  <option value="">All Cohorts ({batchList.length})</option>
+                  {batchList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} (₹{Number(b.feeAmount || 0).toLocaleString('en-IN')})
+                    </option>
+                  ))}
+                </Form.Select>
+              </div>
+            </div>
+
             {/* Student Dropdown */}
             <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold small">Select Enrolled Student *</Form.Label>
+              <Form.Label className="fw-semibold small">
+                Select Enrolled Student * <span className="text-muted fw-normal">({filteredModalStudents.length} match)</span>
+              </Form.Label>
               <Form.Select
                 value={formStudentId}
                 onChange={handleStudentChange}
                 required
+                style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
               >
-                {studentList.map((s) => {
-                  const b = batchList.find((batch) => batch.id === s.batchId);
-                  return (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.email}) — {b?.name || 'No Cohort'}
-                    </option>
-                  );
-                })}
+                {filteredModalStudents.length === 0 ? (
+                  <option value="">-- No matching students found --</option>
+                ) : (
+                  filteredModalStudents.map((s) => {
+                    const b = batchList.find((batch) => batch.id === s.batchId);
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.email}) — {b?.name || 'No Cohort'}
+                      </option>
+                    );
+                  })
+                )}
               </Form.Select>
             </Form.Group>
 
             {/* Selected Student Financial Snapshot Banner */}
             {selectedStudent && (
               <div className="p-3 rounded-3 mb-3 border" style={{ background: 'var(--card-bg-alt, rgba(255,255,255,0.04))', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}>
-                <div className="d-flex align-items-center gap-2 mb-2 text-primary fw-semibold small">
-                  <FaInfoCircle />
-                  <span>Student Tuition Summary</span>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <div className="d-flex align-items-center gap-2 text-primary fw-semibold small">
+                    <FaInfoCircle />
+                    <span>Student Tuition Summary</span>
+                  </div>
+                  <Badge bg="info" className="border" style={{ fontSize: '0.72rem' }}>
+                    Cohort: {selectedStudentBatch?.name || 'Unassigned'}
+                  </Badge>
                 </div>
                 <div className="row g-2 small">
                   <div className="col-sm-4">
-                    <span className="text-muted d-block">Total Course Fee:</span>
-                    <strong className="font-monospace">₹{selectedStudentTotal.toLocaleString()}</strong>
+                    <span className="text-muted d-block">Batch Final Fee:</span>
+                    <strong className="font-monospace">₹{selectedStudentTotal.toLocaleString('en-IN')}</strong>
                   </div>
                   <div className="col-sm-4">
                     <span className="text-muted d-block">Already Paid:</span>
-                    <strong className="font-monospace text-success">₹{selectedStudentPaid.toLocaleString()}</strong>
+                    <strong className="font-monospace text-success">₹{selectedStudentPaid.toLocaleString('en-IN')}</strong>
                   </div>
                   <div className="col-sm-4">
                     <span className="text-muted d-block">Pending Balance:</span>
                     <strong className={`font-monospace ${selectedStudentPending > 0 ? 'text-warning' : 'text-success'}`}>
-                      ₹{selectedStudentPending.toLocaleString()}
+                      ₹{selectedStudentPending.toLocaleString('en-IN')}
                     </strong>
                   </div>
                 </div>
@@ -758,6 +911,197 @@ export default function FeeManager() {
           </Button>
           <Button variant="danger" size="sm" onClick={confirmDeleteFee}>
             Delete Record
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Batch Fee Reminder Modal */}
+      <Modal
+        show={showBatchReminderModal}
+        onHide={() => setShowBatchReminderModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title className="fs-6 fw-bold d-flex align-items-center gap-2">
+            <FaBell className="text-warning" />
+            <span>Send Batch Fee Reminders via EmailJS</span>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <p className="text-muted small mb-3">
+            Select the cohort batch and check the individual students who should receive a tuition fee reminder email. Only students with pending fee balances are listed.
+          </p>
+
+          <div className="row g-3 mb-3">
+            <div className="col-12 col-md-6">
+              <Form.Label className="fw-semibold small">Filter by Cohort Batch</Form.Label>
+              <Form.Select
+                size="sm"
+                value={reminderBatchFilter}
+                onChange={(e) => {
+                  setReminderBatchFilter(e.target.value);
+                  const updated = studentsWithDues.filter(
+                    (s) => (!e.target.value || s.batchId === e.target.value) && s.pendingFee > 0
+                  );
+                  setSelectedReminderStudentIds(updated.map((s) => s.id));
+                }}
+              >
+                <option value="">All Cohorts / Batches</option>
+                {batchList.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+
+            <div className="col-12 col-md-6">
+              <Form.Label className="fw-semibold small">Tuition Due Date</Form.Label>
+              <Form.Control
+                type="date"
+                size="sm"
+                value={reminderDueDate}
+                onChange={(e) => setReminderDueDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="fw-bold small" style={{ color: 'var(--text-primary)' }}>
+              Eligible Students with Outstanding Balance ({filteredReminderStudents.length})
+            </div>
+            <div className="d-flex gap-2">
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 text-decoration-none fw-semibold"
+                onClick={handleToggleSelectAllReminders}
+              >
+                {selectedReminderStudentIds.length === filteredReminderStudents.length
+                  ? 'Deselect All'
+                  : 'Select All'}
+              </Button>
+            </div>
+          </div>
+
+          {filteredReminderStudents.length === 0 ? (
+            <div className="alert alert-success small mb-0">
+              No students with pending tuition balances found in this batch! 🎉
+            </div>
+          ) : (
+            <div
+              className="border rounded-3 p-2 mb-3"
+              style={{ maxHeight: 260, overflowY: 'auto', background: 'var(--card-bg-alt, rgba(0,0,0,0.02))' }}
+            >
+              {filteredReminderStudents.map((s) => {
+                const isChecked = selectedReminderStudentIds.includes(s.id);
+                return (
+                  <div
+                    key={s.id}
+                    className="d-flex justify-content-between align-items-center p-2 border-bottom last-border-0"
+                    style={{ fontSize: '0.875rem' }}
+                  >
+                    <div className="form-check d-flex align-items-center gap-2 mb-0">
+                      <input
+                        className="form-check-input mt-0"
+                        type="checkbox"
+                        id={`remind_st_${s.id}`}
+                        checked={isChecked}
+                        onChange={() => handleToggleStudentReminder(s.id)}
+                      />
+                      <label className="form-check-label ms-1" htmlFor={`remind_st_${s.id}`}>
+                        <div className="fw-semibold text-dark">{s.name}</div>
+                        <div className="text-muted small" style={{ fontSize: '0.75rem' }}>
+                          {s.email} &bull; {s.batchName}
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="text-end">
+                      <span className="badge bg-warning text-dark fw-bold">
+                        ₹{s.pendingFee.toLocaleString('en-IN')} Due
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" size="sm" onClick={() => setShowBatchReminderModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="warning"
+            size="sm"
+            className="text-dark fw-bold"
+            disabled={isSendingBatchReminders || selectedReminderStudentIds.length === 0}
+            onClick={handleSendBatchReminders}
+          >
+            {isSendingBatchReminders
+              ? 'Sending via EmailJS...'
+              : `Send Reminders to Selected (${selectedReminderStudentIds.length})`}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Batch Email Delivery Report Modal */}
+      <Modal show={Boolean(batchReportModal)} onHide={() => setBatchReportModal(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="fs-6 fw-bold">📧 Batch Email Delivery Report</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-3 small">
+          <div className="d-flex gap-3 mb-3">
+            <div className="p-2 border rounded text-center flex-fill bg-light">
+              <div className="fw-bold text-success" style={{ fontSize: '1.2rem' }}>
+                {batchReportModal?.sent?.length || 0}
+              </div>
+              <div className="text-muted small">Delivered</div>
+            </div>
+            <div className="p-2 border rounded text-center flex-fill bg-light">
+              <div className="fw-bold text-danger" style={{ fontSize: '1.2rem' }}>
+                {batchReportModal?.failed?.length || 0}
+              </div>
+              <div className="text-muted small">Failed</div>
+            </div>
+            <div className="p-2 border rounded text-center flex-fill bg-light">
+              <div className="fw-bold text-secondary" style={{ fontSize: '1.2rem' }}>
+                {batchReportModal?.skipped?.length || 0}
+              </div>
+              <div className="text-muted small">Skipped</div>
+            </div>
+          </div>
+
+          {batchReportModal?.failed?.length > 0 && (
+            <div className="mb-3">
+              <strong className="text-danger d-block mb-1">Failed Recipients:</strong>
+              <div className="border rounded p-2 bg-light font-monospace small" style={{ maxHeight: 120, overflowY: 'auto' }}>
+                {batchReportModal.failed.map((f, idx) => (
+                  <div key={idx} className="text-danger">
+                    {f.student?.name} ({f.student?.email}): {f.error}
+                  </div>
+                ))}
+              </div>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  const failedEmails = batchReportModal.failed.map((f) => f.student?.email).filter(Boolean).join(', ');
+                  navigator.clipboard.writeText(failedEmails);
+                  toast.success('Failed recipient emails copied to clipboard!');
+                }}
+              >
+                <FaCopy className="me-1" /> Copy Failed Emails
+              </Button>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" size="sm" onClick={() => setBatchReportModal(null)}>
+            Done
           </Button>
         </Modal.Footer>
       </Modal>

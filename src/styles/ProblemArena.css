@@ -612,11 +612,80 @@
 }
 
 .cl-code-cm-host .cm-cursor {
-  border-left-color: #10b981;
+  border-left: 2px solid #10b981;
+  border-right: none;
+  margin-left: 0;
 }
 
 .cl-code-cm-host .cm-selectionBackground {
   background: rgba(16, 185, 129, 0.22) !important;
+}
+
+/* ── Inline syntax-error squiggle (dark) ── */
+.cl-code-cm-host .cl-cm-syntax-error {
+  text-decoration: underline wavy #f87171 2px;
+  text-decoration-skip-ink: none;
+}
+
+.cl-code-compile-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* ── CodeMirror autocomplete & quick-info tooltips (dark) ── */
+.cl-code-cm-host .cm-tooltip {
+  background: #0e1420;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5);
+  color: #e2e8f0;
+  overflow: hidden;
+}
+
+.cl-code-cm-host .cm-tooltip.cm-tooltip-autocomplete > ul {
+  font-family: 'Fira Code', 'Cascadia Code', 'Source Code Pro', monospace;
+  max-height: 248px;
+}
+
+.cl-code-cm-host .cm-tooltip-autocomplete ul li {
+  color: #e2e8f0;
+  padding: 3px 8px;
+}
+
+.cl-code-cm-host .cm-tooltip-autocomplete ul li[aria-selected] {
+  background: rgba(16, 185, 129, 0.18);
+  color: #ffffff;
+}
+
+.cl-code-cm-host .cm-tooltip .cm-completionIcon {
+  color: #79c0ff;
+}
+
+.cl-code-cm-host .cm-tooltip .cm-completionDetail {
+  color: #94a3b8;
+}
+
+.cl-code-cm-host .cm-tooltip .cm-completionMatchedText {
+  color: #10b981;
+}
+
+.cl-code-cm-host .cm-tooltip .cm-completionInfo {
+  background: #0e1420;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #cbd5e1;
+  padding: 8px 10px;
+  font-size: 0.8rem;
 }
 
 /* ── Python syntax token colors ── */
@@ -705,11 +774,58 @@
 }
 
 [data-theme-mode='light'] .cl-code-cm-host .cm-cursor {
-  border-left-color: #059669;
+  border-left: 2px solid #059669;
+  border-right: none;
+  margin-left: 0;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cl-cm-syntax-error {
+  text-decoration: underline wavy #dc2626 2px;
+}
+
+[data-theme-mode='light'] .cl-code-compile-error {
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.35);
 }
 
 [data-theme-mode='light'] .cl-code-cm-host .cm-selectionBackground {
   background: rgba(16, 185, 129, 0.25) !important;
+}
+
+/* ── CodeMirror autocomplete & quick-info tooltips (light) ── */
+[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip-autocomplete ul li {
+  color: #0f172a;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip-autocomplete ul li[aria-selected] {
+  background: rgba(16, 185, 129, 0.18);
+  color: #064e3b;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip .cm-completionIcon {
+  color: #0550ae;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip .cm-completionDetail {
+  color: #64748b;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip .cm-completionMatchedText {
+  color: #047857;
+}
+
+[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip .cm-completionInfo {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  color: #334155;
 }
 
 /* ── Light theme Python token palette (GitHub Light inspired) ── */
@@ -1511,6 +1627,184 @@
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* ─── Arena Top Bar Polish ───────────────────────────────────────────── */
+.cl-arena-topbar {
+  background: color-mix(in srgb, var(--card-bg, #1e293b) 70%, transparent);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 14px;
+  padding: 10px 14px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.cl-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg-alt, #0f172a) 55%, transparent);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  transition: all 0.15s ease;
+}
+
+.cl-back-link:hover {
+  color: var(--bs-primary, #22c55e);
+  border-color: color-mix(in srgb, var(--bs-primary, #15803d) 60%, var(--border-color));
+}
+
+.cl-count-pill {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bs-primary, #15803d) 16%, var(--card-bg-alt, #0f172a));
+  color: var(--bs-primary, #22c55e);
+  border: 1px solid color-mix(in srgb, var(--bs-primary, #15803d) 30%, transparent);
+  white-space: nowrap;
+}
+
+.cl-font-size-label {
+  min-width: 30px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-family: 'Fira Code', monospace;
+  color: var(--text-secondary, #94a3b8);
+}
+
+/* Inline code chips inside narrative descriptions, hints & explanations */
+.cl-inline-code {
+  font-family: 'Fira Code', 'Cascadia Code', 'Source Code Pro', monospace;
+  font-size: 0.82em;
+  font-weight: 700;
+  color: #5eead4;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 6px;
+  padding: 0.5px 6px;
+  white-space: nowrap;
+}
+
+[data-theme-mode='light'] .cl-inline-code {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(4, 120, 87, 0.3);
+}
+
+.cl-arena-btn-icon.active {
+  background: color-mix(in srgb, var(--bs-primary, #15803d) 18%, var(--card-bg, #1e293b));
+  border-color: var(--bs-primary, #15803d);
+  color: var(--bs-primary, #22c55e);
+}
+
+/* Test results draw adapts to the active theme (was hardcoded dark) */
+.cl-test-results-panel {
+  background: var(--card-bg-alt, #0f172a);
+  color: var(--text-primary, #f1f5f9);
+}
+
+.cl-test-results-panel h6 {
+  color: var(--text-primary, #f1f5f9);
+}
+
+/* ── Light theme: solid background + high-contrast test rows ────────── */
+[data-theme-mode='light'] .cl-test-results-panel {
+  background: var(--card-bg-alt, #f1f5f9);
+  border-top-color: var(--border-color, rgba(15, 23, 42, 0.12));
+  color: var(--text-primary, #171717);
+}
+
+[data-theme-mode='light'] .cl-test-results-panel h6 {
+  color: var(--text-primary, #171717);
+}
+
+[data-theme-mode='light'] .cl-test-results-panel .cl-exec-mode-badge {
+  color: #6d28d9;
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+[data-theme-mode='light'] .cl-result-label.input {
+  color: var(--text-secondary, #52525b);
+  opacity: 0.8;
+}
+
+[data-theme-mode='light'] .cl-result-label.expected {
+  color: #15803d;
+}
+
+[data-theme-mode='light'] .cl-result-label.actual {
+  color: #b91c1c;
+}
+
+[data-theme-mode='light'] .cl-result-value {
+  color: var(--text-primary, #171717);
+}
+
+[data-theme-mode='light'] .cl-test-case-card .cl-result-row code.text-success {
+  color: #15803d !important;
+}
+
+[data-theme-mode='light'] .cl-test-case-card .cl-result-row code.text-danger {
+  color: #b91c1c !important;
+}
+
+[data-theme-mode='light'] .cl-result-error {
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+[data-theme-mode='light'] .cl-result-badge.pass {
+  color: #15803d;
+  background: rgba(22, 163, 74, 0.12);
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+[data-theme-mode='light'] .cl-result-badge.fail {
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+/* Light theme IDE chrome polish (keeps the terminal-window look) */
+[data-theme-mode='light'] .cl-ide-frame {
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme-mode='light'] .cl-ide-header {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* ─── Mobile view switcher & full-screen code mode ───────────────────── */
+.arena-mobile-switch-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.arena-mobile-mode-switcher {
+  border-radius: 999px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+@media (max-width: 991.98px) {
+  .cl-arena-ide-col.cl-arena-ide-fullscreen .cl-ide-frame {
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 }
 
 

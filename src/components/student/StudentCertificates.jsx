@@ -14,8 +14,8 @@ function CertificatePrintView({ cert, onClose }) {
 
   const design = getCertificateDesign(cert, certificateTemplates, platformSettings);
   const studentName = cert.studentName || 'Student';
-  const courseName = cert.courseName || cert.courseTitle || 'Full Stack Web Engineering';
-  const certId = cert.certificateId || cert.id || 'CERT-2026-0001';
+  const courseName = cert.courseName || cert.courseTitle || '—';
+  const certId = cert.certificateId || cert.id || '—';
 
   const handleDownload = async () => {
     if (!certRef.current) return;

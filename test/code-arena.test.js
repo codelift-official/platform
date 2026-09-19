@@ -714,6 +714,94 @@ describe('11. Reset Code Button', () => {
   });
 });
 
+describe('12. Mobile Arena & Editor Polish', () => {
+  test('ProblemDetail.jsx implements a mobile arena view switcher (split/read/code)', () => {
+    expect(problemDetailSrc).toContain('arenaView');
+    expect(problemDetailSrc).toContain("'split'");
+    expect(problemDetailSrc).toContain("'read'");
+    expect(problemDetailSrc).toContain("'code'");
+    expect(problemDetailSrc).toContain('arena-mobile-mode-switcher');
+  });
+
+  test('ProblemDetail.jsx hides the question for full-screen code mode on mobile', () => {
+    expect(problemDetailSrc).toContain("arenaView === 'code' ? 'd-none d-lg-block'");
+  });
+
+  test('ProblemDetail.jsx provides a mobile quick-symbol bar', () => {
+    expect(problemDetailSrc).toContain('arena-mobile-quickbar');
+    expect(problemDetailSrc).toContain('editorRef.current?.insert');
+  });
+
+  test('ProblemDetail.jsx scrolls to the top when a problem loads', () => {
+    expect(problemDetailSrc).toContain('window.scrollTo(0, 0)');
+  });
+
+  test('ProblemDetail.jsx gives the editor live font-size and word-wrap controls', () => {
+    expect(problemDetailSrc).toContain('cl-font-size-label');
+    expect(problemDetailSrc).toContain('wrapEnabled');
+  });
+
+  test('CodeEditor.jsx exposes an imperative insert API for quick keys', () => {
+    expect(codeEditorSrc).toContain('useImperativeHandle');
+    expect(codeEditorSrc).toContain('insert(text)');
+  });
+
+  test('CodeEditor.jsx supports word wrap via EditorView.lineWrapping', () => {
+    expect(codeEditorSrc).toContain('EditorView.lineWrapping');
+  });
+
+  test('ProblemArena.css themes CodeMirror autocomplete tooltips for readable suggestions', () => {
+    expect(arenaCSS).toContain('.cm-tooltip-autocomplete');
+    expect(arenaCSS).toContain(".cl-code-cm-host .cm-tooltip .cm-completionDetail");
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-code-cm-host .cm-tooltip");
+  });
+
+  test('ProblemArena.css guarantees a visible cursor in light mode', () => {
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-code-cm-host .cm-cursor");
+    expect(arenaCSS).toContain('border-left: 2px solid #059669');
+  });
+
+  test('ProblemArena.css provides the polished top bar styling', () => {
+    expect(arenaCSS).toContain('.cl-arena-topbar');
+    expect(arenaCSS).toContain('.cl-count-pill');
+    expect(arenaCSS).toContain('.cl-back-link');
+  });
+
+  test('ProblemArena.css makes the test-results panel theme-aware', () => {
+    expect(arenaCSS).toContain('.cl-test-results-panel');
+    expect(arenaCSS).toContain('var(--card-bg-alt, #0f172a)');
+  });
+
+  test('ProblemDetail.jsx renders inline code without leaking raw backticks', () => {
+    expect(problemDetailSrc).toContain('renderInlineCode');
+    expect(problemDetailSrc).toContain('part.slice(1, -1)');
+    expect(problemDetailSrc).toContain('cl-inline-code');
+  });
+
+  test('ProblemArena.css styles inline code chips in both themes', () => {
+    expect(arenaCSS).toContain('.cl-inline-code');
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-inline-code");
+  });
+
+  test('CodeEditor.jsx underlines syntax errors while typing', () => {
+    expect(codeEditorSrc).toContain('buildErrorUnderlinePlugin');
+    expect(codeEditorSrc).toContain('detectSyntaxErrors');
+    expect(codeEditorSrc).toContain('hasCompiledErrors');
+  });
+
+  test('ProblemArena.css provides the syntax-error squiggle styling', () => {
+    expect(arenaCSS).toContain('.cl-cm-syntax-error');
+    expect(arenaCSS).toContain('wavy #f87171');
+  });
+
+  test('ProblemArena.css keeps live test results readable in light theme', () => {
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-test-results-panel");
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-result-error");
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-result-badge.pass");
+    expect(arenaCSS).toContain("[data-theme-mode='light'] .cl-result-label.expected");
+  });
+});
+
 // ─── Summary ─────────────────────────────────────────────────────────────────
 
 console.log('\n' + '─'.repeat(60));

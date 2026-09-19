@@ -159,7 +159,7 @@ export async function getAllCourses() {
       course_type: c.course_type || 'elective',
       isCohort: c.course_type === 'cohort' || Boolean(c.is_cohort),
       price: Number(c.price || 0),
-      isFree: Boolean(c.is_free),
+      isFree: Number(c.price || 0) === 0 && Boolean(c.is_free),
       isPublished: Boolean(c.is_published),
       isApproved: Boolean(c.is_approved)
     }));
@@ -186,7 +186,7 @@ export async function getAllCourses() {
       course_type: 'elective',
       isCohort: false,
       price: Number(c.price || 0),
-      isFree: Boolean(c.is_free),
+      isFree: Number(c.price || 0) === 0 && Boolean(c.is_free),
       isPublished: Boolean(c.is_published),
       isApproved: Boolean(c.is_approved)
     }));
@@ -225,6 +225,7 @@ export async function fetchAllData() {
       submissionsRes,
       certificatesRes,
       templatesRes,
+      settingsRes,
       completedBatchesRes,
       problemAttemptsRes
     ] = await Promise.all([
@@ -250,6 +251,7 @@ export async function fetchAllData() {
       supabase.from('submissions').select('*').order('submitted_at', { ascending: false }),
       supabase.from('certificates').select('*').order('issued_at', { ascending: false }),
       supabase.from('certificate_templates').select('*').order('created_at', { ascending: false }),
+      supabase.from('platform_settings').select('*'),
       supabase.from('completed_batches').select('*').order('completed_at', { ascending: false }),
       supabase.from('problem_attempts').select('*').order('attempted_at', { ascending: false })
     ]);
@@ -276,6 +278,7 @@ export async function fetchAllData() {
     const rawSubmissions = submissionsRes.data || [];
     const rawCertificates = certificatesRes.data || [];
     const rawTemplates = templatesRes.data || [];
+    const rawSettings = settingsRes.data || [];
     const rawCompletedBatches = completedBatchesRes.data || [];
     const rawProblemAttempts = problemAttemptsRes.data || [];
 
@@ -333,7 +336,7 @@ export async function fetchAllData() {
         course_type: c.course_type || 'elective',
         isCohort: false,
         price: Number(c.price || 0),
-        isFree: Boolean(c.is_free),
+        isFree: Number(c.price || 0) === 0 && Boolean(c.is_free),
         isPublished: Boolean(c.is_published),
         isApproved: Boolean(c.is_approved),
         thumbnail: c.thumbnail || '',
@@ -472,14 +475,18 @@ export async function fetchAllData() {
       studentId: cert.student_id,
       studentName: cert.student_name,
       courseName: cert.course_name,
+      courseId: cert.course_id || null,
       issuedAt: cert.issued_at,
       certificateId: cert.certificate_id,
       isIssued: Boolean(cert.is_issued),
       isRevoked: Boolean(cert.is_revoked),
+      status: cert.status || (cert.is_issued ? 'issued' : 'pending'),
       instituteName: cert.institute_name || '',
       signatoryName: cert.signatory_name || '',
       signatoryTitle: cert.signatory_title || '',
       certTitle: cert.cert_title || '',
+      templateId: cert.template_id || null,
+      design: cert.design || null,
       pdfUrl: cert.pdf_url || null,
       createdAt: cert.created_at
     }));
@@ -496,6 +503,10 @@ export async function fetchAllData() {
       design: tmpl.design || {},
       createdAt: tmpl.created_at
     }));
+
+    // Reassemble Platform Settings (single-row store → value JSONB)
+    const platformSettings =
+      (rawSettings.find((r) => r.key === 'default')?.value) || null;
 
     // Reassemble Test Attempts
     const testAttempts = rawAttempts.map((att) => ({
@@ -685,6 +696,7 @@ export async function fetchAllData() {
       submissions,
       certificates,
       certificateTemplates,
+      platformSettings,
       completedBatches,
       problemAttempts,
       codingProblems,
@@ -1039,7 +1051,7 @@ export async function addCourse(courseData) {
       category_id: courseData.categoryId || null,
       course_type: courseData.courseType || 'elective',
       price: Number(courseData.price || 0),
-      is_free: Boolean(courseData.isFree),
+      is_free: Number(courseData.price || 0) === 0 && (courseData.isFree !== undefined ? Boolean(courseData.isFree) : true),
       is_published: courseData.isPublished !== false,
       is_approved: courseData.isApproved !== false,
       thumbnail: courseData.thumbnail || '',
@@ -1110,8 +1122,13 @@ export async function updateCourse(courseId, updates) {
   if (updates.description !== undefined) payload.description = updates.description;
   if (updates.categoryId !== undefined) payload.category_id = updates.categoryId;
   if (updates.courseType !== undefined) payload.course_type = updates.courseType;
-  if (updates.price !== undefined) payload.price = Number(updates.price);
-  if (updates.isFree !== undefined) payload.is_free = Boolean(updates.isFree);
+  if (updates.price !== undefined) {
+    const p = Number(updates.price);
+    payload.price = p;
+    payload.is_free = p === 0 && (updates.isFree !== undefined ? Boolean(updates.isFree) : false);
+  } else if (updates.isFree !== undefined) {
+    payload.is_free = Boolean(updates.isFree);
+  }
   if (updates.isPublished !== undefined) payload.is_published = Boolean(updates.isPublished);
   if (updates.isApproved !== undefined) payload.is_approved = Boolean(updates.isApproved);
   if (updates.thumbnail !== undefined) payload.thumbnail = updates.thumbnail;
@@ -1279,15 +1296,20 @@ export async function addTest(testData) {
   if (error) handleSupabaseError(error, 'Failed to add test');
 
   if (Array.isArray(testData.questions)) {
-    const qRows = testData.questions.map((q, idx) => ({
-      id: q.id,
-      test_id: testData.id,
-      text: q.text || q.question,
-      options: q.options || [],
-      correct_answer: Number(q.correctAnswer ?? q.correctIndex ?? 0),
-      explanation: q.explanation || '',
-      order_index: idx
-    }));
+    const qRows = testData.questions.map((q, idx) => {
+      const qId = (q.id && !q.id.match(/^q-\d+$/) && !q.id.includes('undefined'))
+        ? q.id
+        : `q-${testData.id || 'test'}-${Date.now()}-${idx + 1}-${Math.random().toString(36).slice(2, 7)}`;
+      return {
+        id: qId,
+        test_id: testData.id,
+        text: q.text || q.question || '',
+        options: Array.isArray(q.options) ? q.options : [],
+        correct_answer: Number(q.correctAnswer ?? q.correctIndex ?? 0),
+        explanation: q.explanation || '',
+        order_index: idx
+      };
+    });
     if (qRows.length > 0) {
       await supabase.from('test_questions').insert(qRows);
     }
@@ -1317,15 +1339,20 @@ export async function updateTest(testId, updates) {
 
   if (Array.isArray(updates.questions)) {
     await supabase.from('test_questions').delete().eq('test_id', testId);
-    const qRows = updates.questions.map((q, idx) => ({
-      id: q.id,
-      test_id: testId,
-      text: q.text || q.question,
-      options: q.options || [],
-      correct_answer: Number(q.correctAnswer ?? q.correctIndex ?? 0),
-      explanation: q.explanation || '',
-      order_index: idx
-    }));
+    const qRows = updates.questions.map((q, idx) => {
+      const qId = (q.id && !q.id.match(/^q-\d+$/) && !q.id.includes('undefined'))
+        ? q.id
+        : `q-${testId}-${Date.now()}-${idx + 1}-${Math.random().toString(36).slice(2, 7)}`;
+      return {
+        id: qId,
+        test_id: testId,
+        text: q.text || q.question || '',
+        options: Array.isArray(q.options) ? q.options : [],
+        correct_answer: Number(q.correctAnswer ?? q.correctIndex ?? 0),
+        explanation: q.explanation || '',
+        order_index: idx
+      };
+    });
     if (qRows.length > 0) {
       await supabase.from('test_questions').insert(qRows);
     }
@@ -1372,6 +1399,12 @@ export async function submitTestAttempt(attemptData) {
   return data;
 }
 
+export async function deleteTestAttempt(attemptId) {
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase.from('test_attempts').delete().eq('id', attemptId);
+  if (error) handleSupabaseError(error, 'Failed to delete test attempt');
+}
+
 // ==============================================================================
 // CERTIFICATES & REVIEWS
 // ==============================================================================
@@ -1383,6 +1416,7 @@ export async function issueCertificate(certData) {
       student_id: certData.studentId,
       student_name: certData.studentName,
       course_name: certData.courseName,
+      course_id: certData.courseId || null,
       issued_at: certData.issuedAt || new Date().toISOString(),
       certificate_id: certData.certificateId,
       is_issued: certData.isIssued !== false,
@@ -1391,6 +1425,8 @@ export async function issueCertificate(certData) {
       signatory_name: certData.signatoryName || '',
       signatory_title: certData.signatoryTitle || '',
       cert_title: certData.certTitle || '',
+      template_id: certData.templateId || null,
+      design: certData.design || null,
       pdf_url: certData.pdfUrl || null
     })
     .select()
@@ -1410,6 +1446,89 @@ export async function revokeCertificate(certId) {
 
   if (error) handleSupabaseError(error, 'Failed to revoke certificate');
   return data;
+}
+
+// ── Certificate Template Persistence ─────────────────────────────────────
+
+export async function upsertCertificateTemplate(template) {
+  const { data, error } = await supabase
+    .from('certificate_templates')
+    .upsert({
+      id: template.id,
+      name: template.name || 'Untitled Template',
+      is_active: Boolean(template.isActive),
+      institute_name: template.instituteName || '',
+      signatory_name: template.signatoryName || '',
+      signatory_title: template.signatoryTitle || '',
+      cert_title: template.certTitle || '',
+      design: template.design || {}
+    }, { onConflict: 'id' })
+    .select()
+    .single();
+
+  if (error) handleSupabaseError(error, 'Failed to save certificate template');
+  return data;
+}
+
+export async function setCertificateTemplateActive(templateId) {
+  const { error: clearError } = await supabase
+    .from('certificate_templates')
+    .update({ is_active: false })
+    .neq('id', templateId);
+  if (clearError) handleSupabaseError(clearError, 'Failed to reset active certificate template');
+
+  const { data, error } = await supabase
+    .from('certificate_templates')
+    .update({ is_active: true })
+    .eq('id', templateId)
+    .select()
+    .single();
+
+  if (error) handleSupabaseError(error, 'Failed to activate certificate template');
+  return data;
+}
+
+export async function deleteCertificateTemplate(templateId) {
+  const { data, error } = await supabase
+    .from('certificate_templates')
+    .delete()
+    .eq('id', templateId)
+    .select()
+    .maybeSingle();
+
+  if (error) handleSupabaseError(error, 'Failed to delete certificate template');
+  return data;
+}
+
+// ── Platform Settings Persistence ────────────────────────────────────────
+
+const PLATFORM_SETTINGS_KEY = 'default';
+
+export async function fetchPlatformSettings() {
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('platform_settings')
+    .select('*')
+    .eq('key', PLATFORM_SETTINGS_KEY)
+    .maybeSingle();
+
+  if (error) handleSupabaseError(error, 'Failed to load platform settings');
+  return data?.value || null;
+}
+
+export async function updatePlatformSettings(settings) {
+  const { data, error } = await supabase
+    .from('platform_settings')
+    .upsert({
+      key: PLATFORM_SETTINGS_KEY,
+      value: settings || {},
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'key' })
+    .select()
+    .single();
+
+  if (error) handleSupabaseError(error, 'Failed to save platform settings');
+  return data?.value || settings;
 }
 
 // ==============================================================================

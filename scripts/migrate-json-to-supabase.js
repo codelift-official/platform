@@ -596,9 +596,9 @@ export async function runJsonSeedMigration(existingClient = null, options = {}) 
           tmpl.id,
           tmpl.name,
           Boolean(tmpl.isActive),
-          tmpl.instituteName || 'CodeLift Engineering Academy',
-          tmpl.signatoryName || 'Director',
-          tmpl.signatoryTitle || 'Academic Affairs',
+          tmpl.instituteName || '',
+          tmpl.signatoryName || '',
+          tmpl.signatoryTitle || '',
           tmpl.certTitle || 'CERTIFICATE OF COMPLETION',
           JSON.stringify(tmpl.design || {})
         ]
@@ -609,14 +609,15 @@ export async function runJsonSeedMigration(existingClient = null, options = {}) 
       const sUuid = getStudentUUID(cert.studentId);
       if (!sUuid) continue;
       await client.query(
-        `INSERT INTO public.certificates (id, student_id, student_name, course_name, issued_at, certificate_id, is_issued, is_revoked, institute_name, signatory_name, signatory_title, cert_title, pdf_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `INSERT INTO public.certificates (id, student_id, student_name, course_name, course_id, issued_at, certificate_id, is_issued, is_revoked, institute_name, signatory_name, signatory_title, cert_title, template_id, design, pdf_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          ON CONFLICT (id) DO NOTHING;`,
         [
           cert.id,
           sUuid,
           cert.studentName,
           cert.courseName,
+          cert.courseId || null,
           cert.issuedAt || new Date().toISOString(),
           cert.certificateId,
           cert.isIssued !== false,
@@ -625,11 +626,38 @@ export async function runJsonSeedMigration(existingClient = null, options = {}) 
           cert.signatoryName || '',
           cert.signatoryTitle || '',
           cert.certTitle || '',
+          cert.templateId || null,
+          JSON.stringify(cert.design || null),
           cert.pdfUrl || null
         ]
       );
     }
     console.log(`  ✓ Inserted ${certificateTemplates.length} templates and ${certificates.length} certificates.`);
+
+    // Seed Platform Settings (institute + certificate credentials, admin-provisioned)
+    console.log('\n🔵 STEP 13b: Seeding Platform Settings...');
+    await client.query(
+      `INSERT INTO public.platform_settings (key, value, updated_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at;`,
+      [
+        'default',
+        JSON.stringify({
+          revenueSplit: 100,
+          paymentInstructions: 'UPI: codelift@upi | Bank Transfer: HDFC Bank A/C 98765432101, IFSC: HDFC0001234',
+          instituteName: '',
+          signatoryName: '',
+          signatoryTitle: '',
+          featureFlags: {
+            marketplaceEnabled: true,
+            problemSolvingEnabled: true,
+            autoCertificates: false
+          }
+        }),
+        new Date().toISOString()
+      ]
+    );
+    console.log('  ✓ Platform settings seeded.');
 
     // Step 14: Problem Attempts & Completed Batches
     console.log('\n🔵 STEP 14: Migrating Problem Attempts & Completed Batches...');

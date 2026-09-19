@@ -75,11 +75,12 @@ export default function StudentFees() {
     .sort((a, b) => new Date(b.paidAt || 0) - new Date(a.paidAt || 0));
 
   const totalPaid = myFees.filter(f => f.status === 'PAID').reduce((s, f) => s + (Number(f.amount) || 0), 0);
-  const totalFee = (student?.totalFee !== undefined && student?.totalFee !== null)
-    ? Number(student.totalFee)
-    : (batch?.feeAmount !== undefined && batch?.feeAmount !== null)
-      ? Number(batch.feeAmount)
-      : (student ? 0 : 0);
+  // As per architecture: Batch fee is the final fee for the student view
+  const totalFee = (batch?.feeAmount !== undefined && batch?.feeAmount !== null)
+    ? Number(batch.feeAmount)
+    : ((student?.totalFee !== undefined && student?.totalFee !== null)
+      ? Number(student.totalFee)
+      : (student ? 0 : 0));
   const pendingBalance = Math.max(0, totalFee - totalPaid);
 
   const formatAmount = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
@@ -200,7 +201,7 @@ export default function StudentFees() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['Amount', 'Mode', 'Date', 'Status'].map(h => (
+                    {['Amount', 'Cohort / Program', 'Mode', 'Date', 'Status'].map(h => (
                       <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '2px solid var(--border-color)' }}>
                         {h}
                       </th>
@@ -208,14 +209,21 @@ export default function StudentFees() {
                   </tr>
                 </thead>
                 <tbody>
-                  {myFees.map(fee => (
-                    <tr key={fee.id}>
-                      <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {formatAmount(fee.amount)}
-                      </td>
-                      <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                        {fee.mode}
-                      </td>
+                  {myFees.map(fee => {
+                    const feeCohort = batches.find(b => b.id === fee.batchId) || batch;
+                    return (
+                      <tr key={fee.id}>
+                        <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {formatAmount(fee.amount)}
+                        </td>
+                        <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                          <span className="badge border" style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)', fontSize: '0.75rem', fontWeight: 600 }}>
+                            {feeCohort?.name || 'Cohort Tuition'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                          {fee.mode}
+                        </td>
                       <td style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                         {fee.paidAt ? new Date(fee.paidAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                       </td>
@@ -232,8 +240,9 @@ export default function StudentFees() {
                           {fee.status}
                         </span>
                       </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

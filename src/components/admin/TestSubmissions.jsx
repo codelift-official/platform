@@ -7,7 +7,7 @@ import {
   FaClipboardList, FaFilter, FaDownload, FaEye, FaCheckCircle,
   FaTimesCircle, FaTrophy, FaUsers, FaPercentage, FaSearch
 } from 'react-icons/fa';
-import { FiAlertCircle } from 'react-icons/fi';
+import { FiAlertCircle, FiRotateCcw } from 'react-icons/fi';
 
 /* ── Score circle badge ─────────────────────────────────────────────────── */
 function ScoreBadge({ score, total }) {
@@ -42,7 +42,7 @@ function StatCard({ icon, label, value, color }) {
 }
 
 /* ── Answer review modal ────────────────────────────────────────────────── */
-function AnswerModal({ show, onHide, attempt, test, student }) {
+function AnswerModal({ show, onHide, attempt, test, student, onAllowRetake }) {
   if (!attempt || !test) return null;
   const questions = test.questions || [];
   const correct = questions.filter((q, i) => attempt.answers?.[i] === q.correctAnswer).length;
@@ -131,6 +131,20 @@ function AnswerModal({ show, onHide, attempt, test, student }) {
         })}
       </Modal.Body>
       <Modal.Footer style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+        {onAllowRetake && (
+          <Button
+            variant="outline-warning"
+            size="sm"
+            className="d-inline-flex align-items-center gap-1.5"
+            onClick={() => {
+              if (window.confirm(`Allow ${student?.name || 'this student'} to retake "${test?.title || 'this test'}"? Previous attempt will be cleared and student will receive an email notification.`)) {
+                onAllowRetake(attempt);
+              }
+            }}
+          >
+            <FiRotateCcw size={12} /> Allow Retake Attempt
+          </Button>
+        )}
         <Button variant="secondary" size="sm" onClick={onHide}>Close</Button>
       </Modal.Footer>
     </Modal>
@@ -139,7 +153,7 @@ function AnswerModal({ show, onHide, attempt, test, student }) {
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
 export default function TestSubmissions() {
-  const { tests = [], testAttempts = [], students = [], batches = [], getTestAttempts } = useData();
+  const { tests = [], testAttempts = [], students = [], batches = [], allowTestRetake } = useData();
 
   /* Filter state */
   const [filterTestId, setFilterTestId] = useState('');
@@ -371,16 +385,31 @@ export default function TestSubmissions() {
                         {new Date(attempt.submittedAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="px-3 py-2 text-end">
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          className="d-inline-flex align-items-center gap-1 rounded-2"
-                          onClick={() => handleViewAnswers(attempt)}
-                          disabled={!test}
-                          title={!test ? 'Test data not available' : 'View detailed answers'}
-                        >
-                          <FaEye size={11} /> View Answers
-                        </Button>
+                        <div className="d-inline-flex align-items-center gap-1.5">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            className="d-inline-flex align-items-center gap-1 rounded-2"
+                            onClick={() => handleViewAnswers(attempt)}
+                            disabled={!test}
+                            title={!test ? 'Test data not available' : 'View detailed answers'}
+                          >
+                            <FaEye size={11} /> View Answers
+                          </Button>
+                          <Button
+                            variant="outline-warning"
+                            size="sm"
+                            className="d-inline-flex align-items-center gap-1 rounded-2"
+                            onClick={() => {
+                              if (window.confirm(`Allow ${st?.name || 'this student'} to retake "${test?.title || 'this test'}"? This clears their attempt and sends an email notification.`)) {
+                                allowTestRetake(attempt.id);
+                              }
+                            }}
+                            title="Clear attempt and send email allowing student to retake"
+                          >
+                            <FiRotateCcw size={11} /> Retake
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -398,6 +427,10 @@ export default function TestSubmissions() {
         attempt={reviewAttempt}
         test={reviewTest}
         student={reviewStudent}
+        onAllowRetake={(att) => {
+          allowTestRetake(att.id);
+          setShowModal(false);
+        }}
       />
     </div>
   );

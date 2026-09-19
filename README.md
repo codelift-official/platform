@@ -134,3 +134,51 @@ The repository includes an automated GitHub Actions deployment workflow (`.githu
 - **SPA Routing**: `npm run build` automatically generates `dist/404.html` so client-side routes (e.g. `/admin/dashboard`) work seamlessly on GitHub Pages.
 - **Repository Secrets**: Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are added under **Settings → Secrets and variables → Actions**.
 
+---
+
+## 7. EmailJS Event Notification Engine & Quota Architecture
+
+CodeLift includes a built-in event-driven email notification engine powered by `@emailjs/browser` with zero backend server overhead.
+
+### 7.1 Key Features & Safeguards
+- **Universal Template Pattern**: Free tier EmailJS permits up to 2 templates. CodeLift solves this by utilizing **1 Universal Template** with dynamic variables (`{{subject}}`, `{{heading}}`, `{{message}}`, `{{action_url}}`, `{{action_text}}`, `{{platform_name}}`, `{{support_email}}`) to dispatch all 16 platform event types.
+- **Monthly Quota Enforcement (200 Emails/Month)**: Dispatches are tracked in Supabase `email_quota_log`. The Admin Platform Settings displays a live progress counter (`X / 200 emails used`), shows an 80% warning at 160 emails, and enforces a hard block at 190 emails (95%) for bulk events.
+- **Categorization**:
+  - **Transactional (Default ON)**: Account creation, test submissions, assignment evaluations, fee receipts, certificate issuance, password updates.
+  - **Bulk Events (Default OFF)**: Batch course/test/assignment allotment, fee reminders. Admin can enable selectively when ready to avoid burning monthly quota.
+- **Selective Fee Reminders**: Filter pending student balances by cohort batch, select individual students via checkboxes, and send reminders only to chosen recipients with a comprehensive post-send delivery report.
+- **Partial Failure Handling**: Batches stagger requests with 500ms intervals, skip empty emails, continue on individual rejections, and present a summary modal with a "Copy Failed Emails" button.
+- **Non-Blocking Fail-Safe**: All email triggers run as non-blocking promises wrapped in exception handlers. Email service errors or quota exhaustion will never disrupt primary operations (e.g. submitting tests or recording fees).
+
+### 7.2 Security & Domain Restriction
+The EmailJS `publicKey` runs in client browsers by design. To prevent unauthorized usage:
+1. Log in to [EmailJS Dashboard](https://dashboard.emailjs.com/) → **Account** → **Security**.
+2. Under **Allowed Origins**, add:
+   ```
+   https://rishabhsanjaychoudhari.github.io
+   http://localhost:5173
+   ```
+3. Enable **"Restrict to allowed origins"**.
+
+### 7.3 Setup Instructions
+1. **Create Account**: Register at [emailjs.com](https://www.emailjs.com/).
+2. **Add Service**: Add an Email Service (e.g., Gmail) → Note your **Service ID** (`service_xxx`).
+3. **Create Universal Template**: Add 1 template with:
+   - **Subject**: `{{subject}}`
+   - **Content (HTML)**:
+     ```html
+     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+       <h2 style="color: #4f46e5; margin-top: 0;">{{heading}}</h2>
+       <p>Hi <strong>{{to_name}}</strong>,</p>
+       <div style="white-space: pre-line; line-height: 1.6; color: #334155;">{{message}}</div>
+       <div style="margin: 28px 0; text-align: center;">
+         <a href="{{action_url}}" style="background: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">{{action_text}}</a>
+       </div>
+       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+       <p style="font-size: 12px; color: #94a3b8; margin: 0;">— {{platform_name}} · Questions? Contact <a href="mailto:{{support_email}}">{{support_email}}</a></p>
+     </div>
+     ```
+   - Note your **Template ID** (`template_xxx`).
+4. **Copy Public Key**: Account → General → API Keys → **Public Key**.
+5. **Configure CodeLift**: In `/admin/settings` under **EmailJS Engine & Quota**, enter the Service ID, Template ID, and Public Key, click **Save Settings**, and send a live Test Email.
+

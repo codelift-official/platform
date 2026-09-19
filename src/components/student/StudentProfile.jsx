@@ -25,7 +25,7 @@ import {
 
 export default function StudentProfile() {
   const { auth, updateAuthUser } = useAuth();
-  const { students, batches, courses, assignments, submissions, certificates, updateStudent, refreshData } = useData();
+  const { students, batches, courses, assignments, submissions, certificates, updateStudent, refreshData, sendEmail } = useData();
   const navigate = useNavigate();
 
   const student = Array.isArray(students)
@@ -191,6 +191,21 @@ export default function StudentProfile() {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+
+        try {
+          if (typeof sendEmail === 'function' && emailLower) {
+            sendEmail(
+              'password_reset',
+              { name: student?.name || 'Student', email: emailLower },
+              {
+                student_name: student?.name || 'Student',
+                updated_at: new Date().toLocaleString('en-IN')
+              }
+            ).catch((err) => console.warn('[EmailJS] password_reset email failed:', err));
+          }
+        } catch (emailErr) {
+          console.warn('[EmailJS] password_reset exception:', emailErr);
+        }
       } else {
         // Offline/local dev fallback: persist through the app's data layer (no localStorage)
         if (targetStudentId && typeof updateStudent === 'function') {
@@ -204,6 +219,22 @@ export default function StudentProfile() {
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
+
+            try {
+              if (typeof sendEmail === 'function' && emailLower) {
+                sendEmail(
+                  'password_reset',
+                  { name: student?.name || 'Student', email: emailLower },
+                  {
+                    student_name: student?.name || 'Student',
+                    updated_at: new Date().toLocaleString('en-IN')
+                  }
+                ).catch((err) => console.warn('[EmailJS] password_reset email failed:', err));
+              }
+            } catch (emailErr) {
+              console.warn('[EmailJS] password_reset exception:', emailErr);
+            }
+
             return;
           } catch (updateErr) {
             console.warn('[StudentProfile] Note on updateStudent:', updateErr?.message);

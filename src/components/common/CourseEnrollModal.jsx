@@ -10,10 +10,12 @@ import {
   FaArrowRight
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
+import { useData } from '../../contexts/DataContext';
 import './CourseEnrollModal.css';
 
 export default function CourseEnrollModal({ course, show, onClose, onPortalEnroll }) {
   const { currentUser } = useAuth();
+  const { sendEmail } = useData();
 
   const [name, setName] = useState(currentUser?.name || '');
   const [phone, setPhone] = useState(currentUser?.phone || '');
@@ -50,6 +52,23 @@ Thank you.`;
 
     // Open WhatsApp in new tab
     window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+    try {
+      if (typeof sendEmail === 'function' && (currentUser?.email || currentUser?.username)) {
+        sendEmail(
+          'signup_request',
+          { name: learnerName, email: currentUser?.email || '' },
+          {
+            student_name: learnerName,
+            course_title: course?.title || 'Program',
+            phone: phone.trim() || 'WhatsApp Inquiry'
+          }
+        ).catch((err) => console.warn('[EmailJS] signup_request email failed:', err));
+      }
+    } catch (err) {
+      console.warn('[EmailJS] course enrollment notification failed:', err);
+    }
+
     setSubmitted(true);
   };
 

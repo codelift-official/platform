@@ -52,11 +52,12 @@ export default function FeeStatus() {
   const studentFees = fees.filter((f) => f.studentId === student?.id || (student?.legacyId && f.studentId === student.legacyId));
   const studentBatch = batches.find((b) => b.id === student?.batchId) || batches[0];
 
-  const totalFee = (student?.totalFee !== undefined && student?.totalFee !== null)
-    ? Number(student.totalFee)
-    : (studentBatch?.feeAmount !== undefined && studentBatch?.feeAmount !== null)
-      ? Number(studentBatch.feeAmount)
-      : (student ? 0 : 0);
+  // As per architecture: Batch fee is the final fee for the student view
+  const totalFee = (studentBatch?.feeAmount !== undefined && studentBatch?.feeAmount !== null)
+    ? Number(studentBatch.feeAmount)
+    : ((student?.totalFee !== undefined && student?.totalFee !== null)
+      ? Number(student.totalFee)
+      : (student ? 0 : 0));
   const paidTotal = studentFees
     .filter((f) => f.status === 'PAID')
     .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);

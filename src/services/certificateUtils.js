@@ -130,7 +130,7 @@ export const DEFAULT_CERTIFICATE_ELEMENTS = {
     visible: true,
   },
   signatureName: {
-    content: 'Ashish Kumar',
+    content: '{{signatoryName}}',
     fontFamily: "'Great Vibes', cursive",
     fontSize: 24,
     fontWeight: 600,
@@ -143,7 +143,7 @@ export const DEFAULT_CERTIFICATE_ELEMENTS = {
     visible: true,
   },
   signatureTitle: {
-    content: 'Director of Academic Affairs',
+    content: '{{signatoryTitle}}',
     fontFamily: 'Inter, system-ui, sans-serif',
     fontSize: 12,
     fontWeight: 500,
@@ -180,9 +180,9 @@ export function getCertificateDesign(cert, certificateTemplates = [], platformSe
   const gradientEnd = rawDesign.gradientEnd || '#ffffff';
   const gradientAngle = rawDesign.gradientAngle !== undefined ? Number(rawDesign.gradientAngle) : 135;
 
-  const resolvedInstitute = cert?.instituteName || platformSettings?.instituteName || templateForCert?.instituteName || 'CodeLift Engineering Academy';
-  const resolvedSignatory = cert?.signatoryName || platformSettings?.signatoryName || templateForCert?.signatoryName || 'Ashish Kumar';
-  const resolvedSignatoryTitle = cert?.signatoryTitle || platformSettings?.signatoryTitle || templateForCert?.signatoryTitle || 'Director of Academic Affairs';
+  const resolvedInstitute = cert?.instituteName || platformSettings?.instituteName || templateForCert?.instituteName || '';
+  const resolvedSignatory = cert?.signatoryName || platformSettings?.signatoryName || templateForCert?.signatoryName || '';
+  const resolvedSignatoryTitle = cert?.signatoryTitle || platformSettings?.signatoryTitle || templateForCert?.signatoryTitle || '';
 
   return {
     accentColor,

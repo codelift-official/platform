@@ -8,8 +8,11 @@ import {
   FaClipboardCheck,
   FaPlus,
   FaPen,
+  FaEye,
   FaExternalLinkAlt,
   FaFileCode,
+  FaGithub,
+  FaGoogleDrive,
   FaWhatsapp,
   FaPaperPlane,
   FaTrash
@@ -33,6 +36,9 @@ export default function GradingPanel() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedBatches, setSelectedBatches] = useState([]);
+
+  // Submission Viewer State
+  const [viewingSub, setViewingSub] = useState(null);
 
   // Grading Modal State
   const [gradingSub, setGradingSub] = useState(null);
@@ -65,7 +71,7 @@ export default function GradingPanel() {
       title: '',
       description: '',
       deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      maxMarks: 10
+      maxMarks: 100
     }
   });
 
@@ -144,8 +150,12 @@ export default function GradingPanel() {
                   </tr>
                 ) : (
                   submissions.map((sub) => {
-                    const student = students.find((s) => s.id === sub.studentId);
-                    const asgn = assignments.find((a) => a.id === sub.assignmentId);
+                    const student = students.find((s) => s.id === sub.studentId || (s.legacyId && s.legacyId === sub.studentId));
+                    const asgn = assignments.find((a) => a.id === sub.assignmentId || a.id === sub.assignment_id || (a.legacyId && a.legacyId === sub.assignmentId));
+                    const maxMarks = Number(asgn?.maxMarks || asgn?.max_marks || asgn?.maxScore || 100);
+                    const firstUrl = sub.fileUrls?.[0] || '';
+                    const isGithub = firstUrl.toLowerCase().includes('github.com');
+                    const isDrive = firstUrl.toLowerCase().includes('drive.google.com');
 
                     return (
                       <tr key={sub.id}>
@@ -156,20 +166,52 @@ export default function GradingPanel() {
                         <td>
                           <div className="small fw-semibold">{asgn?.title || sub.assignmentId}</div>
                           <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                            Max Marks: {asgn?.maxMarks || 10}
+                            Max Marks: {maxMarks}
                           </div>
                         </td>
                         <td>
-                          <div className="d-flex align-items-center gap-1.5 text-primary small">
-                            <FaFileCode />
-                            <span>{sub.fileUrls?.[0]?.split('/').pop() || 'submission.js'}</span>
+                          <div className="d-flex flex-column gap-1">
+                            {firstUrl ? (
+                              <a
+                                href={firstUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="d-inline-flex align-items-center gap-1.5 text-primary small text-decoration-none fw-semibold"
+                                title={`Open: ${firstUrl}`}
+                              >
+                                {isGithub ? (
+                                  <FaGithub size={13} className="text-dark flex-shrink-0" />
+                                ) : isDrive ? (
+                                  <FaGoogleDrive size={13} className="text-warning flex-shrink-0" />
+                                ) : (
+                                  <FaExternalLinkAlt size={11} className="flex-shrink-0" />
+                                )}
+                                <span className="text-truncate" style={{ maxWidth: 160 }}>
+                                  {isGithub ? 'GitHub Repo' : isDrive ? 'Google Drive' : (firstUrl.split('/').pop() || 'Open Link')}
+                                </span>
+                              </a>
+                            ) : (
+                              <div className="d-flex align-items-center gap-1.5 text-muted small">
+                                <FaFileCode />
+                                <span>No link attached</span>
+                              </div>
+                            )}
+                            {sub.notes && (
+                              <span
+                                className="badge bg-secondary bg-opacity-10 text-secondary border px-1.5 py-0.5 rounded text-truncate text-start"
+                                style={{ maxWidth: 180, fontSize: '0.7rem' }}
+                                title={sub.notes}
+                              >
+                                📝 {sub.notes}
+                              </span>
+                            )}
                           </div>
                         </td>
-                        <td className="small text-muted">{sub.submittedAt}</td>
+                        <td className="small text-muted">{sub.submittedAt || sub.createdAt || 'Recent'}</td>
                         <td>
-                          {sub.grade !== null ? (
+                          {sub.grade !== null && sub.grade !== undefined ? (
                             <Badge bg="success" className="px-2 py-1">
-                              Graded: {sub.grade}/{asgn?.maxMarks || 10}
+                              Graded: {sub.grade}/{maxMarks}
                             </Badge>
                           ) : (
                             <Badge bg="warning" text="dark" className="px-2 py-1">
@@ -179,7 +221,18 @@ export default function GradingPanel() {
                         </td>
                         <td className="text-end">
                           <div className="d-inline-flex align-items-center gap-1">
-                            {sub.grade !== null && (
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => setViewingSub(sub)}
+                              className="d-inline-flex align-items-center gap-1"
+                              title="View full submission notes and asset links"
+                            >
+                              <FaEye size={12} />
+                              <span className="d-none d-lg-inline">View</span>
+                            </Button>
+
+                            {sub.grade !== null && sub.grade !== undefined && (
                               <Button
                                 variant="outline-success"
                                 size="sm"
@@ -200,17 +253,17 @@ export default function GradingPanel() {
                             )}
 
                             <Button
-                              variant={sub.grade !== null ? 'outline-secondary' : 'primary'}
+                              variant={sub.grade !== null && sub.grade !== undefined ? 'outline-secondary' : 'primary'}
                               size="sm"
                               onClick={() => {
                                 setGradingSub(sub);
-                                setGradeInput(sub.grade !== null ? sub.grade : '');
+                                setGradeInput(sub.grade !== null && sub.grade !== undefined ? sub.grade : '');
                                 setFeedbackInput(sub.feedback || '');
                               }}
                               className="d-inline-flex align-items-center gap-1"
                             >
                               <FaPen size={11} />
-                              <span>{sub.grade !== null ? 'Edit Grade' : 'Grade'}</span>
+                              <span>{sub.grade !== null && sub.grade !== undefined ? 'Edit Grade' : 'Grade'}</span>
                             </Button>
                           </div>
                         </td>
@@ -393,59 +446,250 @@ export default function GradingPanel() {
       </Modal>
 
       {/* Grade Submission Modal */}
-      <Modal show={Boolean(gradingSub)} onHide={() => setGradingSub(null)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title className="fs-5 fw-bold">Grade Student Submission</Modal.Title>
+      <Modal show={Boolean(gradingSub)} onHide={() => setGradingSub(null)} centered size="lg">
+        <Modal.Header closeButton style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+          <Modal.Title className="fs-5 fw-bold" style={{ color: 'var(--text-primary)' }}>Grade Student Submission</Modal.Title>
         </Modal.Header>
-        <Form onSubmit={onPublishGrade}>
-          <Modal.Body className="space-y-3">
-            <div className="p-3 rounded mb-3 small border" style={{ background: 'var(--card-bg-alt, rgba(255,255,255,0.04))', borderColor: 'var(--border-color)' }}>
-              <div>
-                <strong>Student:</strong>{' '}
-                {students.find((s) => s.id === gradingSub?.studentId)?.name || gradingSub?.studentId}
-              </div>
-              <div>
-                <strong>Assignment:</strong>{' '}
-                {assignments.find((a) => a.id === gradingSub?.assignmentId)?.title}
-              </div>
-            </div>
+        {(() => {
+          const activeStudent = students.find((s) => s.id === gradingSub?.studentId || (s.legacyId && s.legacyId === gradingSub?.studentId));
+          const activeAsgn = assignments.find((a) => a.id === gradingSub?.assignmentId || a.id === gradingSub?.assignment_id || (a.legacyId && a.legacyId === gradingSub?.assignmentId));
+          const activeMaxMarks = Number(activeAsgn?.maxMarks || activeAsgn?.max_marks || activeAsgn?.maxScore || 100);
+          const firstUrl = gradingSub?.fileUrls?.[0] || '';
+          const isGithub = firstUrl.toLowerCase().includes('github.com');
+          const isDrive = firstUrl.toLowerCase().includes('drive.google.com');
 
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold small">
-                Marks Awarded (out of {assignments.find((a) => a.id === gradingSub?.assignmentId)?.maxMarks || 10})
-              </Form.Label>
-              <Form.Control
-                type="number"
-                min="0"
-                max={assignments.find((a) => a.id === gradingSub?.assignmentId)?.maxMarks || 10}
-                required
-                value={gradeInput}
-                onChange={(e) => setGradeInput(e.target.value)}
-                placeholder="e.g. 9"
-              />
-            </Form.Group>
+          return (
+            <Form onSubmit={onPublishGrade}>
+              <Modal.Body className="space-y-3" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+                {/* Meta details */}
+                <div className="p-3 rounded mb-3 small border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                  <div className="d-flex justify-content-between flex-wrap gap-2 mb-2 pb-2 border-bottom" style={{ borderColor: 'var(--border-color)' }}>
+                    <div>
+                      <strong>Student:</strong> {activeStudent?.name || gradingSub?.studentId}{' '}
+                      <span className="text-muted">({activeStudent?.email || 'No email'})</span>
+                    </div>
+                    <div>
+                      <Badge bg="secondary" className="font-monospace">Max Marks: {activeMaxMarks}</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <strong>Assignment:</strong> {activeAsgn?.title || gradingSub?.assignmentId}
+                  </div>
+                </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold small">Qualitative Feedback</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                required
-                value={feedbackInput}
-                onChange={(e) => setFeedbackInput(e.target.value)}
-                placeholder="Provide constructive feedback regarding code structure, edge cases, and performance..."
-              />
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" size="sm" onClick={() => setGradingSub(null)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" type="submit">
-              Publish Grade
-            </Button>
-          </Modal.Footer>
-        </Form>
+                {/* Submission Links & Notes */}
+                <div className="p-3 rounded mb-3 border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                  <div className="fw-semibold small mb-2 d-flex align-items-center gap-1.5">
+                    <FaFileCode className="text-primary" />
+                    <span>Submitted Project Asset / Links</span>
+                  </div>
+                  {firstUrl ? (
+                    <div className="d-flex flex-wrap gap-2 mb-2">
+                      <a
+                        href={firstUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2 rounded-2"
+                      >
+                        {isGithub ? <FaGithub size={14} /> : isDrive ? <FaGoogleDrive size={14} className="text-warning" /> : <FaExternalLinkAlt size={12} />}
+                        <span>Open {isGithub ? 'GitHub Repository' : isDrive ? 'Google Drive Link' : 'Submitted Link'}</span>
+                        <FaExternalLinkAlt size={10} />
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="small text-muted mb-2">No external project link provided.</p>
+                  )}
+
+                  {gradingSub?.notes && (
+                    <div className="mt-2 pt-2 border-top" style={{ borderColor: 'var(--border-color)' }}>
+                      <span className="fw-semibold small text-muted d-block mb-1">Student Notes / Comments:</span>
+                      <div className="p-2.5 rounded bg-dark bg-opacity-10 small font-monospace" style={{ whiteSpace: 'pre-wrap' }}>
+                        {gradingSub.notes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Grade Input */}
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold small">
+                    Marks Awarded (out of {activeMaxMarks})
+                  </Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    max={activeMaxMarks}
+                    step="any"
+                    required
+                    value={gradeInput}
+                    onChange={(e) => setGradeInput(e.target.value)}
+                    placeholder={`Enter marks between 0 and ${activeMaxMarks}`}
+                    style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                  />
+                  <div className="small text-muted mt-1">
+                    Grading is dynamic up to the assignment maximum of {activeMaxMarks} marks.
+                  </div>
+                </Form.Group>
+
+                {/* Feedback Input */}
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-semibold small">Qualitative Feedback</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    required
+                    value={feedbackInput}
+                    onChange={(e) => setFeedbackInput(e.target.value)}
+                    placeholder="Provide constructive feedback regarding code structure, edge cases, and performance..."
+                    style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                  />
+                </Form.Group>
+              </Modal.Body>
+              <Modal.Footer style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+                <Button variant="secondary" size="sm" onClick={() => setGradingSub(null)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" size="sm" type="submit">
+                  Publish Grade
+                </Button>
+              </Modal.Footer>
+            </Form>
+          );
+        })()}
+      </Modal>
+
+      {/* View Submission Details Modal (Bug #5) */}
+      <Modal show={Boolean(viewingSub)} onHide={() => setViewingSub(null)} centered size="lg">
+        <Modal.Header closeButton style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+          <Modal.Title className="fs-5 fw-bold d-flex align-items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <FaEye className="text-primary" />
+            <span>Student Submission Details</span>
+          </Modal.Title>
+        </Modal.Header>
+        {(() => {
+          const student = students.find((s) => s.id === viewingSub?.studentId || (s.legacyId && s.legacyId === viewingSub?.studentId));
+          const asgn = assignments.find((a) => a.id === viewingSub?.assignmentId || a.id === viewingSub?.assignment_id || (a.legacyId && a.legacyId === viewingSub?.assignmentId));
+          const batch = batches.find((b) => b.id === student?.batchId);
+          const maxMarks = Number(asgn?.maxMarks || asgn?.max_marks || asgn?.maxScore || 100);
+          const firstUrl = viewingSub?.fileUrls?.[0] || '';
+          const isGithub = firstUrl.toLowerCase().includes('github.com');
+          const isDrive = firstUrl.toLowerCase().includes('drive.google.com');
+
+          return (
+            <Modal.Body className="space-y-4" style={{ background: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+              {/* Top Overview Grid */}
+              <div className="row g-3">
+                <div className="col-sm-6">
+                  <div className="p-3 rounded border h-100" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                    <span className="text-muted small d-block mb-1">Student Details</span>
+                    <h6 className="fw-bold mb-0">{student?.name || viewingSub?.studentId}</h6>
+                    <div className="small text-muted">{student?.email || 'No email'}</div>
+                    <div className="small mt-1">
+                      <Badge bg="info" text="dark">{batch?.name || 'Assigned Cohort'}</Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-sm-6">
+                  <div className="p-3 rounded border h-100" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                    <span className="text-muted small d-block mb-1">Assignment Details</span>
+                    <h6 className="fw-bold mb-0">{asgn?.title || viewingSub?.assignmentId}</h6>
+                    <div className="small text-muted">Max Marks: {maxMarks} pts</div>
+                    <div className="small text-muted">Deadline: {asgn?.deadline || 'Flexible'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submitted Links */}
+              <div className="p-3 rounded border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                <h6 className="fw-bold mb-2 small d-flex align-items-center gap-2">
+                  <FaFileCode className="text-primary" />
+                  <span>Submitted Asset & Repository Links</span>
+                </h6>
+                {Array.isArray(viewingSub?.fileUrls) && viewingSub.fileUrls.length > 0 ? (
+                  <div className="d-flex flex-column gap-2">
+                    {viewingSub.fileUrls.map((url, idx) => {
+                      const isGh = url.toLowerCase().includes('github.com');
+                      const isDr = url.toLowerCase().includes('drive.google.com');
+                      return (
+                        <div key={idx} className="d-flex align-items-center justify-content-between p-2 rounded border gap-2" style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+                          <div className="d-flex align-items-center gap-2 text-truncate">
+                            {isGh ? <FaGithub size={16} /> : isDr ? <FaGoogleDrive size={16} className="text-warning" /> : <FaExternalLinkAlt size={14} />}
+                            <span className="small text-truncate font-monospace">{url}</span>
+                          </div>
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-primary d-inline-flex align-items-center gap-1.5 flex-shrink-0"
+                          >
+                            <span>Open</span>
+                            <FaExternalLinkAlt size={10} />
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="small text-muted mb-0">No links were attached to this submission.</p>
+                )}
+              </div>
+
+              {/* Notes & Comments */}
+              <div className="p-3 rounded border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                <h6 className="fw-bold mb-2 small">Student Notes & Comments</h6>
+                {viewingSub?.notes ? (
+                  <div className="p-3 rounded font-monospace small" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', whiteSpace: 'pre-wrap' }}>
+                    {viewingSub.notes}
+                  </div>
+                ) : (
+                  <p className="small text-muted mb-0 fst-italic">No additional notes or comments provided by student.</p>
+                )}
+              </div>
+
+              {/* Current Grade & Status */}
+              <div className="p-3 rounded border d-flex justify-content-between align-items-center flex-wrap gap-2" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                <div>
+                  <span className="small text-muted d-block">Submission Status</span>
+                  {viewingSub?.grade !== null && viewingSub?.grade !== undefined ? (
+                    <div className="d-flex align-items-center gap-2 mt-1">
+                      <Badge bg="success" className="px-2.5 py-1.5 fs-6">
+                        Grade: {viewingSub.grade} / {maxMarks}
+                      </Badge>
+                      {viewingSub.feedback && (
+                        <span className="small text-muted">Feedback: "{viewingSub.feedback}"</span>
+                      )}
+                    </div>
+                  ) : (
+                    <Badge bg="warning" text="dark" className="px-2.5 py-1.5 mt-1">
+                      Needs Review / Ungraded
+                    </Badge>
+                  )}
+                </div>
+                <div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      setGradingSub(viewingSub);
+                      setGradeInput(viewingSub?.grade !== null && viewingSub?.grade !== undefined ? viewingSub.grade : '');
+                      setFeedbackInput(viewingSub?.feedback || '');
+                      setViewingSub(null);
+                    }}
+                    className="d-inline-flex align-items-center gap-1.5"
+                  >
+                    <FaPen size={11} />
+                    <span>{viewingSub?.grade !== null && viewingSub?.grade !== undefined ? 'Edit Grade' : 'Grade Submission'}</span>
+                  </Button>
+                </div>
+              </div>
+            </Modal.Body>
+          );
+        })()}
+        <Modal.Footer style={{ background: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
+          <Button variant="secondary" size="sm" onClick={() => setViewingSub(null)}>
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
 
       {/* Notification Preview & Dispatch Modal */}

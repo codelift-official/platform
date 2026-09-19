@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import toast from 'react-hot-toast';
 import { SEED_PROBLEMS } from '../data/problemsSeed';
 import { getProblemDetails } from '../data/problemSolutions';
 import { useData } from '../contexts/DataContext';
@@ -9,7 +10,6 @@ import Navbar from '../components/common/Navbar';
 import SEO from '../components/common/SEO';
 import CodeEditor from '../components/common/CodeEditor';
 import { runCode, warmupPyodide, isPythonCategory } from '../utils/codeRunner';
-import toast from 'react-hot-toast';
 import {
   FaPlay,
   FaCheckCircle,
@@ -30,6 +30,8 @@ import {
   FaChevronLeft,
   FaChevronDown,
   FaRocket,
+  FaColumns,
+  FaTextWidth,
 } from 'react-icons/fa';
 import '../styles/ProblemArena.css';
 
@@ -41,6 +43,23 @@ const LEGACY_ARENA_MAP = {
     SEED_PROBLEMS.map((problem, index) => [`arena-q${index + 1}`, problem.id])
   )
 };
+
+// Renders `` `inline code` `` segments in problem descriptions as styled chips
+// instead of leaking raw backticks into the question text.
+function renderInlineCode(text) {
+  if (!text) return text;
+  const parts = String(text).split(/(`[^`]+`)/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, index) =>
+    part.length > 2 && part.startsWith('`') && part.endsWith('`')
+      ? (
+        <code key={index} className="cl-inline-code">
+          {part.slice(1, -1)}
+        </code>
+      )
+      : <Fragment key={index}>{part}</Fragment>
+  );
+}
 
 export default function ProblemDetail() {
   const { id, problemId } = useParams();
@@ -137,6 +156,14 @@ export default function ProblemDetail() {
   const [executionMode, setExecutionMode] = useState(null);
   const [pyodideStatus, setPyodideStatus] = useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'
   const pyodideToastRef = useRef(null);
+  const editorRef = useRef(null);
+  const [arenaView, setArenaView] = useState('split'); // 'split' | 'read' | 'code' (mobile focus modes)
+  const [wrapEnabled, setWrapEnabled] = useState(false);
+
+  // When a new problem loads, always start scrolled to the top of the page
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentId]);
 
   // Update code and reset tabs when problem or student changes
   useEffect(() => {
@@ -147,6 +174,7 @@ export default function ProblemDetail() {
       setRevealedSolution(false);
       setRevealedHints({});
       setActiveTab('description');
+      setArenaView('split');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -450,11 +478,12 @@ export default function ProblemDetail() {
 
       <main className="container-fluid max-w-7xl py-4 px-3 px-md-4">
         {/* Navigation Breadcrumb & Controls */}
-        <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-          <div className="d-flex align-items-center gap-3">
+        <div className="cl-arena-topbar d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
             <Link
               to={arenaHomeUrl}
-              className="text-decoration-none text-secondary small fw-bold d-flex align-items-center gap-2"
+              className="cl-back-link"
+              title="Back to Problem Arena"
             >
               <FaArrowLeft /> Problem Arena
             </Link>
@@ -468,7 +497,7 @@ export default function ProblemDetail() {
               >
                 <FaChevronLeft size={10} /> Prev
               </Link>
-              <span className="text-secondary small font-monospace px-1">
+              <span className="cl-count-pill font-monospace" title={`Problem ${currentIndex + 1} of ${activeProblemList.length}`}>
                 {currentIndex + 1} / {activeProblemList.length}
               </span>
               <Link
@@ -481,7 +510,7 @@ export default function ProblemDetail() {
             </div>
           </div>
 
-          <div className="d-flex align-items-center gap-2 flex-wrap">
+          <div className="d-flex align-items-center gap-2 flex-wrap cl-arena-topbar-pills">
             <span className="cl-problem-category-tag">{problem.category}</span>
             <span className={`cl-diff-badge ${getDifficultyClass(problem.difficulty)}`}>
               {problem.difficulty}
@@ -541,9 +570,56 @@ export default function ProblemDetail() {
           </div>
         </div>
 
+        {/* Mobile Arena View Switcher — hide question or go full-screen IDE */}
+        <div className="arena-mobile-switch-wrap d-lg-none">
+          <div className="arena-mobile-mode-switcher" role="group" aria-label="Arena view mode">
+            <button
+              type="button"
+              className={`arena-mobile-mode-btn ${arenaView === 'split' ? 'active' : ''}`}
+              onClick={() => setArenaView('split')}
+              title="Split view: question + editor"
+            >
+              <FaColumns size={11} /> Split
+            </button>
+            <button
+              type="button"
+              className={`arena-mobile-mode-btn ${arenaView === 'read' ? 'active' : ''}`}
+              onClick={() => setArenaView('read')}
+              title="Focus on the question text only"
+            >
+              <FaBookOpen size={11} /> Question
+            </button>
+            <button
+              type="button"
+              className={`arena-mobile-mode-btn ${arenaView === 'code' ? 'active' : ''}`}
+              onClick={() => setArenaView('code')}
+              title="Full-screen coding editor"
+            >
+              <FaCode size={11} /> Code
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile quick-symbol bar while in full-screen code mode */}
+        {arenaView === 'code' && (
+          <div className="arena-mobile-quickbar d-lg-none" aria-label="Quick code symbols">
+            {['(', ')', '[', ']', '{', '}', '=', '==', '!=', ':', ',', "'", '"', '_'].map((key) => (
+              <button
+                key={key}
+                type="button"
+                className="arena-mobile-quick-key"
+                onClick={() => editorRef.current?.insert(key)}
+                aria-label={`Insert ${key}`}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="row g-4 align-items-start">
           {/* ── Left Panel: Problem Statement, Solution, Hints & Tests ── */}
-          <div className="col-lg-5 cl-arena-left-col">
+          <div className={`col-lg-5 cl-arena-left-col ${arenaView === 'code' ? 'd-none d-lg-block' : ''}`}>
             <div className="cl-arena-filters-card cl-arena-detail-card d-flex flex-column mb-0">
               {/* Tab Navigation Header */}
               <div className="cl-arena-tabs-header">
@@ -624,7 +700,7 @@ export default function ProblemDetail() {
                     className="text-secondary mb-4"
                     style={{ lineHeight: '1.75', fontSize: '0.95rem' }}
                   >
-                    {detail.description}
+                    {renderInlineCode(detail.description)}
                   </p>
 
                   {/* Input / Output Format Specifications */}
@@ -667,7 +743,7 @@ export default function ProblemDetail() {
                         {ex.explanation && (
                           <div className="cl-example-explanation">
                             <div className="cl-example-explanation-title">Explanation</div>
-                            <div>{ex.explanation}</div>
+                            <div>{renderInlineCode(ex.explanation)}</div>
                           </div>
                         )}
                       </div>
@@ -886,7 +962,9 @@ export default function ProblemDetail() {
                             </span>
                           </button>
                           {isRevealed && (
-                            <div className="cl-progressive-hint-body">{hint}</div>
+                            <div className="cl-progressive-hint-body">
+                              {renderInlineCode(hint)}
+                            </div>
                           )}
                         </div>
                       );
@@ -1034,7 +1112,7 @@ export default function ProblemDetail() {
           </div>
 
           {/* ── Right Panel: Interactive Code Playground ── */}
-          <div className="col-lg-7 cl-arena-ide-col">
+          <div className={`col-lg-7 cl-arena-ide-col ${arenaView === 'read' ? 'd-none d-lg-block' : ''} ${arenaView === 'code' ? 'cl-arena-ide-fullscreen' : ''}`}>
             <div className="cl-ide-frame">
               {/* macOS Terminal Window Chrome Header */}
               <div className="cl-ide-header">
@@ -1048,8 +1126,8 @@ export default function ProblemDetail() {
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
-                  {/* Font Size controls */}
-                  <div className="d-none d-sm-flex align-items-center gap-1 me-2">
+                  {/* Font Size & Word Wrap controls (visible on all screens) */}
+                  <div className="d-flex align-items-center gap-1 me-2">
                     <button
                       type="button"
                       className="cl-arena-btn-icon"
@@ -1058,6 +1136,7 @@ export default function ProblemDetail() {
                     >
                       A-
                     </button>
+                    <span className="cl-font-size-label" aria-live="polite">{fontSize}</span>
                     <button
                       type="button"
                       className="cl-arena-btn-icon"
@@ -1065,6 +1144,14 @@ export default function ProblemDetail() {
                       title="Increase Editor Font Size"
                     >
                       A+
+                    </button>
+                    <button
+                      type="button"
+                      className={`cl-arena-btn-icon ${wrapEnabled ? 'active' : ''}`}
+                      onClick={() => setWrapEnabled((w) => !w)}
+                      title={wrapEnabled ? 'Disable word wrap' : 'Enable word wrap'}
+                    >
+                      <FaTextWidth size={12} />
                     </button>
                   </div>
 
@@ -1110,11 +1197,13 @@ export default function ProblemDetail() {
               {/* ── Smart Code Editor ── */}
               <div className="cl-ide-editor-area" style={{ padding: 0 }}>
                 <CodeEditor
+                  editorRef={editorRef}
                   value={code}
                   onChange={handleCodeChange}
                   language={language}
                   minRows={16}
                   fontSize={fontSize}
+                  wrap={wrapEnabled}
                 />
               </div>
 
@@ -1122,13 +1211,9 @@ export default function ProblemDetail() {
               {testResults && (
                 <div
                   className="cl-test-results-panel"
-                  style={{
-                    background: '#070a10',
-                    borderTop: '1px solid rgba(255,255,255,0.1)',
-                  }}
                 >
                   <div className="d-flex align-items-center justify-content-between mb-3 px-4 pt-4">
-                    <h6 className="fw-bold text-light mb-0 d-flex align-items-center gap-2">
+                    <h6 className="fw-bold mb-0 d-flex align-items-center gap-2">
                       <FaTerminal className="text-success" /> Live Test Results
                       {executionMode && executionMode !== 'pyodide' && (
                         <span

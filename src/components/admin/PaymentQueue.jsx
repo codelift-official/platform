@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { FaCheckCircle, FaTimesCircle, FaEye, FaReceipt } from 'react-icons/fa';
 
 export default function PaymentQueue() {
-  const { payments, verifyPayment } = useData();
+  const { payments, verifyPayment, sendEmail } = useData();
   const [filterStatus, setFilterStatus] = useState('PENDING'); // PENDING, PAID, FAILED, ALL
   const [selectedPayment, setSelectedPayment] = useState(null);
 
@@ -14,9 +14,23 @@ export default function PaymentQueue() {
   });
 
   const handleApprove = (paymentId) => {
+    const pay = payments.find((p) => p.id === paymentId);
     verifyPayment(paymentId, true, 'Approved by admin');
     toast.success('Payment verified & student enrolled!');
     setSelectedPayment(null);
+
+    if (pay && pay.studentEmail && sendEmail) {
+      sendEmail('fee_collected', { email: pay.studentEmail, name: pay.studentName }, {
+        student_name: pay.studentName,
+        student_email: pay.studentEmail,
+        amount_paid: `₹${Number(pay.amount).toLocaleString('en-IN')}`,
+        receipt_no: pay.id,
+        payment_mode: pay.paymentMethod || 'UPI / Manual Transfer',
+        date: new Date().toISOString().split('T')[0],
+        batch_name: pay.courseTitle || 'CodeLift Program',
+        remaining_due: '₹0'
+      }).catch((e) => console.warn('[PaymentQueue] fee_collected email skipped:', e));
+    }
   };
 
   const handleReject = (paymentId) => {

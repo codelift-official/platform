@@ -48,7 +48,8 @@ export default function StudentManager() {
     addFee,
     passwordResetRequests = [],
     resolvePasswordResetRequest,
-    dismissPasswordResetRequest
+    dismissPasswordResetRequest,
+    sendEmail
   } = useData();
 
   const [selectedBatchFilter, setSelectedBatchFilter] = useState('ALL');
@@ -116,6 +117,26 @@ export default function StudentManager() {
       resetAdd();
       setShowAddModal(false);
 
+      // Trigger EmailJS student_welcome & batch_allotment
+      if (data.email && sendEmail) {
+        const assignedBatch = batchList.find((b) => b.id === data.batchId);
+        const batchName = assignedBatch?.name || 'CodeLift Specialized Cohort';
+        sendEmail('student_welcome', { email: data.email, name: data.name }, {
+          student_name: data.name,
+          student_email: data.email,
+          batch_name: batchName,
+          login_url: `${window.location.origin}/platform/login`
+        }).catch((e) => console.warn('[StudentManager] Welcome email skipped:', e));
+
+        if (data.batchId) {
+          sendEmail('batch_allotment', { email: data.email, name: data.name }, {
+            student_name: data.name,
+            batch_name: batchName,
+            start_date: assignedBatch?.startDate || 'Immediate'
+          }).catch((e) => console.warn('[StudentManager] Batch allotment email skipped:', e));
+        }
+      }
+
       toast((t) => (
         <div className="d-flex align-items-center justify-content-between gap-3">
           <span>Student <strong>{data.name}</strong> added!</span>
@@ -154,12 +175,23 @@ export default function StudentManager() {
   const onEditSubmit = async (data) => {
     if (editingStudent) {
       try {
+        const previousBatchId = editingStudent.batchId;
         await updateStudent(editingStudent.id, {
           name: data.name,
           phone: data.phone,
           batchId: data.batchId
         });
         toast.success(`Updated profile for ${data.name}!`);
+
+        // Trigger batch_allotment email if batch changed
+        if (data.batchId && data.batchId !== previousBatchId && editingStudent.email && sendEmail) {
+          const assignedBatch = batchList.find((b) => b.id === data.batchId);
+          sendEmail('batch_allotment', { email: editingStudent.email, name: data.name }, {
+            student_name: data.name,
+            batch_name: assignedBatch?.name || 'CodeLift Program',
+            start_date: assignedBatch?.startDate || 'Immediate'
+          }).catch((e) => console.warn('[StudentManager] Batch transfer email skipped:', e));
+        }
         setEditingStudent(null);
       } catch (err) {
         toast.error(err.message || 'Failed to update student.');
@@ -284,6 +316,15 @@ export default function StudentManager() {
     }
 
     toast.success(`New password updated for ${passwordEditStudent.name}!`);
+
+    // Trigger EmailJS password_reset security receipt
+    if (passwordEditStudent.email && sendEmail) {
+      sendEmail('password_reset', { email: passwordEditStudent.email, name: passwordEditStudent.name }, {
+        student_name: passwordEditStudent.name,
+        student_email: passwordEditStudent.email,
+        updated_at: new Date().toLocaleString('en-IN')
+      }).catch((e) => console.warn('[StudentManager] password_reset email skipped:', e));
+    }
 
     if (passwordEditStudent.phone) {
       const waText = `Hello ${passwordEditStudent.name},\n\nYour CodeLift Student Portal password has been updated by Administration.\n\nEmail: ${passwordEditStudent.email}\nPassword: *${newPwd}*\n\nLogin URL: ${window.location.origin}/platform/login\n\nHappy learning!`;

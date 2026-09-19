@@ -624,9 +624,9 @@ export const DEFAULT_CERTIFICATE_TEMPLATES = [
     id: 'classic-emerald',
     name: 'Classic Academy (Emerald)',
     isActive: true,
-    instituteName: 'CodeLift Engineering Academy',
-    signatoryName: 'Vikram Nair',
-    signatoryTitle: 'Director of Academic Affairs',
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
     certTitle: 'CERTIFICATE OF COMPLETION',
     design: {
       accentColor: '#15803D',
@@ -636,16 +636,20 @@ export const DEFAULT_CERTIFICATE_TEMPLATES = [
       borderWidth: 4,
       borderColor: '#15803D',
       badgeText: 'ACADEMIC EXCELLENCE',
-      isDark: false
+      isDark: false,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
     }
   },
   {
     id: 'modern-dark',
     name: 'Modern Executive (Obsidian & Mint)',
     isActive: false,
-    instituteName: 'CodeLift Engineering Academy',
-    signatoryName: 'Vikram Nair',
-    signatoryTitle: 'Director of Academic Affairs',
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
     certTitle: 'CERTIFICATE OF ACHIEVEMENT',
     design: {
       accentColor: '#10B981',
@@ -655,16 +659,20 @@ export const DEFAULT_CERTIFICATE_TEMPLATES = [
       borderWidth: 2,
       borderColor: '#334155',
       badgeText: 'INDUSTRY CERTIFIED',
-      isDark: true
+      isDark: true,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
     }
   },
   {
     id: 'regal-purple',
     name: 'Honorary Distinction (Royal Purple)',
     isActive: false,
-    instituteName: 'CodeLift Engineering Academy',
-    signatoryName: 'Vikram Nair',
-    signatoryTitle: 'Director of Academic Affairs',
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
     certTitle: 'CERTIFICATE OF EXCELLENCE',
     design: {
       accentColor: '#7C3AED',
@@ -674,7 +682,126 @@ export const DEFAULT_CERTIFICATE_TEMPLATES = [
       borderWidth: 3,
       borderColor: '#A855F7',
       badgeText: 'GOLD MEDAL HONORS',
-      isDark: false
+      isDark: false,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
+    }
+  },
+  {
+    id: 'sky-horizon',
+    name: 'Horizon Diploma (Sky & Slate)',
+    isActive: false,
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
+    certTitle: 'CERTIFICATE OF COMPLETION',
+    design: {
+      accentColor: '#0284C7',
+      bgStyle: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #e0f2fe 100%)',
+      fontFamily: "'Playfair Display', Georgia, serif",
+      borderStyle: 'double',
+      borderWidth: 4,
+      borderColor: '#0284C7',
+      badgeText: 'ACADEMIC EXCELLENCE',
+      isDark: false,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
+    }
+  },
+  {
+    id: 'gold-laureate',
+    name: 'Laureate Honors (Gold & Ivory)',
+    isActive: false,
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
+    certTitle: 'CERTIFICATE OF DISTINCTION',
+    design: {
+      accentColor: '#CA8A04',
+      bgStyle: 'linear-gradient(135deg, #fefce8 0%, #ffffff 50%, #fef3c7 100%)',
+      fontFamily: 'Georgia, serif',
+      borderStyle: 'solid',
+      borderWidth: 5,
+      borderColor: '#EAB308',
+      badgeText: 'GOLD LAUREATE',
+      isDark: false,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
+    }
+  },
+  {
+    id: 'minimal-slate',
+    name: 'Minimalist Professional (Slate)',
+    isActive: false,
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
+    certTitle: 'CERTIFICATE OF COMPLETION',
+    design: {
+      accentColor: '#64748B',
+      bgStyle: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%)',
+      fontFamily: 'Inter, sans-serif',
+      borderStyle: 'solid',
+      borderWidth: 1,
+      borderColor: '#CBD5E1',
+      badgeText: 'PROFESSIONAL SKILLS',
+      isDark: false,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
+    }
+  },
+  {
+    id: 'rose-distinction',
+    name: 'Distinction Accolade (Rose & Blush)',
+    isActive: false,
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
+    certTitle: 'CERTIFICATE OF DISTINCTION',
+    design: {
+      accentColor: '#BE185D',
+      bgStyle: 'linear-gradient(135deg, #fdf2f8 0%, #ffffff 50%, #fce7f3 100%)',
+      fontFamily: "'Playfair Display', Georgia, serif",
+      borderStyle: 'solid',
+      borderWidth: 3,
+      borderColor: '#EC4899',
+      badgeText: 'SPECIAL DISTINCTION',
+      isDark: false,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
+    }
+  },
+  {
+    id: 'charcoal-premium',
+    name: 'Premier Certificate (Charcoal & Gold)',
+    isActive: false,
+    instituteName: '',
+    signatoryName: '',
+    signatoryTitle: '',
+    certTitle: 'CERTIFICATE OF EXCELLENCE',
+    design: {
+      accentColor: '#F5C518',
+      bgStyle: 'linear-gradient(135deg, #0c0a09 0%, #1c1917 50%, #292524 100%)',
+      fontFamily: 'Georgia, serif',
+      borderStyle: 'double',
+      borderWidth: 4,
+      borderColor: '#F5C518',
+      badgeText: 'PREMIER CREDENTIAL',
+      isDark: true,
+      elements: {
+        signatureName: { content: '{{signatoryName}}' },
+        signatureTitle: { content: '{{signatoryTitle}}' }
+      }
     }
   }
 ];

@@ -187,7 +187,22 @@ export default function BatchManager() {
   // Edit Batch Submit
   const onSubmitEdit = (formData) => {
     if (!currentBatch) return;
-    updateBatch(currentBatch.id, formData);
+    const newFee = Number(formData.feeAmount);
+    updateBatch(currentBatch.id, {
+      ...formData,
+      feeAmount: newFee
+    });
+    // Dynamic batch fee sync: when batch fee is edited, update all active students enrolled in this batch
+    const batchStudents = (students || []).filter((s) => s.batchId === currentBatch.id && s.isActive !== false);
+    batchStudents.forEach((st) => {
+      updateStudent(st.id, {
+        totalFee: newFee,
+        feeAmount: newFee
+      });
+    });
+    if (batchStudents.length > 0) {
+      toast.info(`Updated batch fee (₹${newFee.toLocaleString('en-IN')}) for ${batchStudents.length} student(s) in this cohort.`);
+    }
     toast.success('Batch details updated successfully.');
   };
 
@@ -235,7 +250,8 @@ export default function BatchManager() {
         email: newStudentData.email.trim().toLowerCase(),
         phone: newStudentData.phone?.trim() || '',
         batchId: currentBatch.id,
-        feeAmount: currentBatch.feeAmount || 0,
+        totalFee: Number(currentBatch.feeAmount || 0),
+        feeAmount: Number(currentBatch.feeAmount || 0),
         paidFee: 0,
         feeStatus: 'Pending',
         enrolledDate: new Date().toISOString().split('T')[0],
@@ -1239,12 +1255,62 @@ export default function BatchManager() {
               {/* ────────────────────────────────────────────────────────────── */}
               {/* TAB 4: BATCH SETTINGS & EDIT                                  */}
               {/* ────────────────────────────────────────────────────────────── */}
-              {hubActiveTab === 'settings' && (
-                <div style={{ maxWidth: '650px' }}>
-                  <h6 className="fw-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-                    Edit Cohort Configuration & Pricing
-                  </h6>
-                  <Form onSubmit={handleSubmitEdit(onSubmitEdit)}>
+              {hubActiveTab === 'settings' && (() => {
+                const currentBatchCourses = getBatchCourses(currentBatch);
+                const sumCourseFees = currentBatchCourses.reduce(
+                  (sum, c) => sum + Number(c.price !== undefined ? c.price : (c.fee !== undefined ? c.fee : 0)),
+                  0
+                );
+
+                return (
+                  <div style={{ maxWidth: '650px' }}>
+                    <h6 className="fw-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+                      Edit Cohort Configuration & Pricing
+                    </h6>
+
+                    {/* Dynamic Batch Fee Intelligence Banner */}
+                    <div className="p-3 mb-4 rounded-3 border" style={{ background: 'var(--bg-body)', borderColor: 'var(--border-color)' }}>
+                      <div className="d-flex justify-content-between align-items-center mb-1.5">
+                        <span className="small text-muted">
+                          Catalog Sum of Attached Courses ({currentBatchCourses.length} courses):
+                        </span>
+                        <span className="fw-bold font-monospace">₹{sumCourseFees.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <span className="small fw-semibold text-primary">
+                          Cohort Batch Fee (Final tuition for enrolled students):
+                        </span>
+                        <span className="fw-bold text-success fs-6 font-monospace">
+                          ₹{Number(currentBatch.feeAmount || 0).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <p className="small text-muted mb-2" style={{ fontSize: '0.78rem' }}>
+                        CodeLift Architecture: You can freely override the batch fee to any discounted or custom bundle price (e.g. ₹3,000 or ₹5,000). The batch fee is the <strong>final fee</strong> for student portals, while individual course catalog prices are preserved in the marketplace. Updating this fee dynamically synchronizes all students in this cohort.
+                      </p>
+                      {sumCourseFees > 0 && sumCourseFees !== Number(currentBatch.feeAmount) && (
+                        <Button
+                          type="button"
+                          variant="outline-secondary"
+                          size="sm"
+                          className="py-1 px-2.5 rounded-pill"
+                          style={{ fontSize: '0.75rem' }}
+                          onClick={() => {
+                            resetEdit({
+                              name: currentBatch.name || '',
+                              description: currentBatch.description || '',
+                              capacity: currentBatch.capacity || 30,
+                              feeAmount: sumCourseFees,
+                              startDate: currentBatch.startDate || new Date().toISOString().split('T')[0]
+                            });
+                            toast.success(`Fee set to sum of courses: ₹${sumCourseFees.toLocaleString('en-IN')}`);
+                          }}
+                        >
+                          Apply Catalog Sum (₹{sumCourseFees.toLocaleString('en-IN')})
+                        </Button>
+                      )}
+                    </div>
+
+                    <Form onSubmit={handleSubmitEdit(onSubmitEdit)}>
                     <Form.Group className="mb-3">
                       <Form.Label className="small fw-semibold">Cohort / Batch Name *</Form.Label>
                       <Form.Control
@@ -1333,7 +1399,8 @@ export default function BatchManager() {
                     </div>
                   </Form>
                 </div>
-              )}
+              );
+            })()}
             </div>
           </Modal.Body>
 

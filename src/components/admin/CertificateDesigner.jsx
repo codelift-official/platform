@@ -167,9 +167,9 @@ export default function CertificateDesigner() {
   useEffect(() => {
     if (currentTemplate) {
       setTemplateName(currentTemplate.name || '');
-      setInstituteName(currentTemplate.instituteName || 'CodeLift Engineering Academy');
-      setSignatoryName(currentTemplate.signatoryName || 'Vikram Nair');
-      setSignatoryTitle(currentTemplate.signatoryTitle || 'Director of Academic Affairs');
+      setInstituteName(currentTemplate.instituteName || '');
+      setSignatoryName(currentTemplate.signatoryName || '');
+      setSignatoryTitle(currentTemplate.signatoryTitle || '');
       setCertTitle(currentTemplate.certTitle || 'CERTIFICATE OF COMPLETION');
 
       const d = currentTemplate.design || {};
@@ -243,16 +243,22 @@ export default function CertificateDesigner() {
         signatureName: {
           ...DEFAULT_CERTIFICATE_ELEMENTS.signatureName,
           ...(d.elements?.signatureName || {}),
-          content: d.elements?.signatureName?.content || currentTemplate.signatoryName || 'Vikram Nair'
+          content: d.elements?.signatureName?.content || currentTemplate.signatoryName || '{{signatoryName}}'
         },
         signatureTitle: {
           ...DEFAULT_CERTIFICATE_ELEMENTS.signatureTitle,
           ...(d.elements?.signatureTitle || {}),
-          content: d.elements?.signatureTitle?.content || currentTemplate.signatoryTitle || 'Director of Academic Affairs'
+          content: d.elements?.signatureTitle?.content || currentTemplate.signatoryTitle || '{{signatoryTitle}}'
         }
       });
     }
   }, [activeTemplateId, currentTemplate?.id]);
+
+  // Resolve an element's literal text, falling through to the form value when
+  // the element content is only a {{placeholder}} (which gets substituted at
+  // render time by CertificateDocument).
+  const resolveElemText = (content, fallback) =>
+    typeof content === 'string' && !content.includes('{{') ? content : (fallback || '');
 
   // Construct current live design object
   const liveDesign = {
@@ -278,8 +284,8 @@ export default function CertificateDesigner() {
     showWatermark,
     signatureStyle,
     instituteName,
-    signatoryName: elements.signatureName?.content || signatoryName,
-    signatoryTitle: elements.signatureTitle?.content || signatoryTitle,
+    signatoryName: resolveElemText(elements.signatureName?.content, signatoryName),
+    signatoryTitle: resolveElemText(elements.signatureTitle?.content, signatoryTitle),
     certTitle: elements.title?.content || certTitle,
     innerBorder: {
       enabled: innerBorderEnabled,
@@ -363,9 +369,9 @@ export default function CertificateDesigner() {
     updateCertificateTemplate(currentTemplate.id, {
       name: templateName,
       instituteName,
-      signatoryName: elements.signatureName?.content || signatoryName,
-      signatoryTitle: elements.signatureTitle?.content || signatoryTitle,
-      certTitle: elements.title?.content || certTitle,
+      signatoryName: resolveElemText(elements.signatureName?.content, signatoryName),
+      signatoryTitle: resolveElemText(elements.signatureTitle?.content, signatoryTitle),
+      certTitle: resolveElemText(elements.title?.content, certTitle),
       emblemType: 'cap',
       signatureStyle,
       showWatermark,
@@ -385,9 +391,9 @@ export default function CertificateDesigner() {
     const created = addCertificateTemplate({
       name: saveAsName.trim(),
       instituteName,
-      signatoryName: elements.signatureName?.content || signatoryName,
-      signatoryTitle: elements.signatureTitle?.content || signatoryTitle,
-      certTitle: elements.title?.content || certTitle,
+      signatoryName: resolveElemText(elements.signatureName?.content, signatoryName),
+      signatoryTitle: resolveElemText(elements.signatureTitle?.content, signatoryTitle),
+      certTitle: resolveElemText(elements.title?.content, certTitle),
       isActive: false,
       design: {
         ...liveDesign
@@ -427,8 +433,8 @@ export default function CertificateDesigner() {
   const previewCourse = previewStudent ? (courses.find(c => c.batchId === previewStudent.batchId) || courses[0]) : null;
   const previewCert = previewStudent ? certificates.find(c => c.studentId === previewStudent.id && !c.isRevoked) : null;
 
-  const previewStudentName = previewStudent?.name || 'Rahul Sharma';
-  const previewCourseName = previewCert?.courseName || previewCourse?.title || 'Modern Full Stack Web Engineering';
+  const previewStudentName = previewStudent?.name || 'Sample Student';
+  const previewCourseName = previewCert?.courseName || previewCourse?.title || 'Course Name';
   const previewCertId = previewCert?.certificateId || 'CERT-2026-0001';
   const previewIssuedAt = previewCert?.issuedAt || new Date().toISOString();
 
@@ -504,11 +510,16 @@ export default function CertificateDesigner() {
   // Eligible students evaluation
   const eligibleRecords = students.map(st => {
     const studentBatch = batches.find(b => b.id === st.batchId);
-    const course = courses.find(c => c.batchId === st.batchId) || courses[0];
+    const course = courses.find(c => c.batchId === st.batchId || (Array.isArray(studentBatch?.courseIds) && studentBatch.courseIds.includes(c.id))) || courses[0];
     const allTopics = Array.isArray(course?.modules) ? course.modules.flatMap(m => Array.isArray(m.topics) ? m.topics : []) : [];
     const completedTopics = allTopics.filter(t => st?.progress?.[t.id] === 'completed' || st?.progress?.[t.id] === true || st?.quizAttempts?.[t.id]?.passed);
     const progressPct = allTopics.length ? Math.round((completedTopics.length / allTopics.length) * 100) : 0;
-    const existingCert = certificates.find(c => (c.studentId === st.id || (st.legacyId && c.studentId === st.legacyId)) && c.courseName === course?.title && !c.isRevoked && (c.status === 'issued' || c.status === 'approved'));
+    const existingCert = certificates.find(c => 
+      (c.studentId === st.id || (st.legacyId && c.studentId === st.legacyId) || (st.student_id && c.studentId === st.student_id)) && 
+      (!course?.title || c.courseName === course?.title || c.courseName === studentBatch?.name) && 
+      !c.isRevoked && 
+      (c.isIssued || c.status === 'issued' || c.status === 'approved')
+    );
     const isEligible = progressPct === 100 && !existingCert;
 
     return {
@@ -1492,7 +1503,7 @@ export default function CertificateDesigner() {
                   value={previewStudentId}
                   onChange={(e) => setPreviewStudentId(e.target.value)}
                 >
-                  <option value="sample">Rahul Sharma (Sample)</option>
+                  <option value="sample">Sample Student (Preview)</option>
                   {students.map(s => (
                     <option key={s.id} value={s.id}>{s.name} ({s.id})</option>
                   ))}
@@ -1666,7 +1677,8 @@ export default function CertificateDesigner() {
                             size="sm"
                             variant="success"
                             onClick={() => {
-                              issueCertificate(rec.student.id, rec.course.title, currentTemplate.id);
+                              const courseTitle = rec.course?.title || rec.batch?.name || 'Full-Stack Web Development';
+                              issueCertificate(rec.student.id, courseTitle, currentTemplate.id);
                               toast.success(`Issued certificate to ${rec.student.name}`);
                             }}
                           >
@@ -1788,7 +1800,7 @@ export default function CertificateDesigner() {
         </Modal.Body>
         <Modal.Footer className="d-flex justify-content-between">
           <span className="small text-muted">
-            Snapshotted template: {viewCertModal?.instituteName || 'CodeLift Academy'}
+            Snapshotted template: {viewCertModal?.instituteName || '—'}
           </span>
           <div className="d-flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setViewCertModal(null)}>

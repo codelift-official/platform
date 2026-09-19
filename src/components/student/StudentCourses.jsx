@@ -472,13 +472,15 @@ export default function StudentCourses() {
   const isLastTopicInModule = currentTopicIndex === topics.length - 1;
   const isLastLecture = isLastModule && isLastTopicInModule;
 
-  const handleCompleteCourse = () => {
+  const handleCompleteCourse = (bypassQuizCheck = false) => {
     if (!currentTopic || !student || !activeCourse) return;
-    if (currentHasQuiz && !isCurrentTopicCompleted) {
+    const isTopicActuallyPassed = bypassQuizCheck || isCurrentTopicCompleted || Boolean(student?.quizAttempts?.[currentTopic.id]?.passed);
+    if (currentHasQuiz && !isTopicActuallyPassed) {
       toast.error('Please complete and pass the quiz assessment to finish this course.');
       document.getElementById('topic-assessment-section')?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
+    toast.dismiss();
     markTopicComplete(student.id, currentTopic.id, activeCourse.id);
 
     // Multi-burst party popper celebration!
@@ -510,6 +512,17 @@ export default function StudentCourses() {
     } catch (_) {}
 
     toast.success('🎉 Congratulations! You have completed the course!');
+
+    // Trigger EmailJS course_completion notification
+    if (student?.email && sendEmail) {
+      sendEmail('course_completion', student, {
+        student_name: student.name,
+        student_email: student.email,
+        course_title: activeCourse.title,
+        completion_date: new Date().toLocaleDateString('en-IN')
+      }).catch((e) => console.warn('[StudentCourses] course_completion email skipped:', e));
+    }
+
     setTimeout(() => {
       navigate('/student/courses');
     }, 1400);
@@ -731,7 +744,7 @@ export default function StudentCourses() {
                           if (attemptData.passed && currentTopic?.id && markTopicComplete && student?.id && activeCourse?.id) {
                             markTopicComplete(student.id, currentTopic.id, activeCourse.id);
                             if (isLastLecture) {
-                              handleCompleteCourse();
+                              handleCompleteCourse(true);
                             }
                           }
                         }}

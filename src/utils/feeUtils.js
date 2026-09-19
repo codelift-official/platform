@@ -16,13 +16,40 @@ export function resolveCourseFee(course, batches = []) {
     return { isFree: true, price: 0, feeAmount: 0, feeFormatted: 'Free', originalPrice: null };
   }
 
-  // 1. If explicitly free and has no linked batch, it's free
+  // 1. Direct course fee or price takes precedence for individual course / marketplace view
+  const directPrice = Number(
+    course.price !== undefined && course.price !== null
+      ? course.price
+      : (course.fee !== undefined && course.fee !== null ? course.fee : 0)
+  );
+
+  // If a direct price > 0 is configured, the course has that fee regardless of any legacy isFree flags
+  if (directPrice > 0) {
+    return {
+      isFree: false,
+      price: directPrice,
+      feeAmount: directPrice,
+      feeFormatted: `₹${directPrice.toLocaleString('en-IN')}`,
+      originalPrice: course.originalPrice || Math.round(directPrice * 1.3)
+    };
+  }
+
+  if (course.isFree || directPrice === 0) {
+    return {
+      isFree: true,
+      price: 0,
+      feeAmount: 0,
+      feeFormatted: 'Free',
+      originalPrice: null
+    };
+  }
+
+  // 2. Query attached institutional batches if direct course price is not set
   const courseBatchIds = [
     ...(Array.isArray(course.batchIds) ? course.batchIds : []),
     ...(course.batchId ? [course.batchId] : [])
   ];
 
-  // 2. Query attached institutional batches
   const matchingBatch = (batches || []).find((b) => {
     if (courseBatchIds.length > 0 && courseBatchIds.includes(b.id)) {
       return true;
@@ -45,34 +72,33 @@ export function resolveCourseFee(course, batches = []) {
     };
   }
 
-  // 3. Direct course fee or price if positive and not marked free
-  const directPrice = Number(course.fee || course.price || 0);
-  if (directPrice > 0 && course.isFree !== true) {
-    return {
-      isFree: false,
-      price: directPrice,
-      feeAmount: directPrice,
-      feeFormatted: `₹${directPrice.toLocaleString('en-IN')}`,
-      originalPrice: course.originalPrice || Math.round(directPrice * 1.3)
-    };
-  }
-
-  // 4. Default to Free if marked free or price is 0
-  if (course.isFree || directPrice === 0) {
-    return {
-      isFree: true,
-      price: 0,
-      feeAmount: 0,
-      feeFormatted: 'Free',
-      originalPrice: null
-    };
-  }
-
+  // 3. Default to Free if price is 0
   return {
-    isFree: false,
-    price: directPrice,
-    feeAmount: directPrice,
-    feeFormatted: `₹${directPrice.toLocaleString('en-IN')}`,
-    originalPrice: course.originalPrice || null
+    isFree: true,
+    price: 0,
+    feeAmount: 0,
+    feeFormatted: 'Free',
+    originalPrice: null
   };
+}
+
+/**
+ * Resolves final tuition fee for a student in a cohort/batch.
+ * As per architecture: Batch fee is the final fee for student view, regardless of sum of course fees.
+ */
+export function resolveStudentFinalFee(student, batch, courses = []) {
+  if (batch && typeof batch.feeAmount === 'number') {
+    return batch.feeAmount;
+  }
+  if (student && typeof student.totalFee === 'number') {
+    return student.totalFee;
+  }
+  // Fallback to sum of batch courses
+  if (batch && Array.isArray(batch.courseIds)) {
+    return batch.courseIds.reduce((sum, cid) => {
+      const c = courses.find((crs) => crs.id === cid);
+      return sum + (c?.price || c?.fee || 0);
+    }, 0);
+  }
+  return 0;
 }

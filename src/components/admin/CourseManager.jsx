@@ -78,6 +78,7 @@ export default function CourseManager() {
   // Form State for Manual Course Creation
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('1500');
   const [batchId, setBatchId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
@@ -88,6 +89,7 @@ export default function CourseManager() {
   const resetForm = () => {
     setTitle('');
     setDescription('');
+    setPrice('1500');
     setBatchId('');
     setCategoryId(categories[0]?.id || 'cat-web');
     setIsCreatingCategory(false);
@@ -106,6 +108,7 @@ export default function CourseManager() {
     setEditingCourse(course);
     setTitle(course.title);
     setDescription(course.description || '');
+    setPrice(String(course.price !== undefined ? course.price : (course.fee !== undefined ? course.fee : 1500)));
     setBatchId(course.batchId || '');
     setCategoryId(course.categoryId || categories[0]?.id || 'cat-web');
     setIsCreatingCategory(false);
@@ -121,6 +124,11 @@ export default function CourseManager() {
       toast.error('Course title is required');
       return;
     }
+    if (price === '' || isNaN(Number(price)) || Number(price) < 0) {
+      toast.error('A valid course fee (₹) is mandatory for marketplace enrollment');
+      return;
+    }
+    const coursePrice = Math.max(0, Number(price));
 
     try {
       let finalCategoryId = categoryId;
@@ -143,6 +151,9 @@ export default function CourseManager() {
         await updateCourse(editingCourse.id, {
           title,
           description,
+          price: coursePrice,
+          fee: coursePrice,
+          isFree: coursePrice === 0,
           batchId,
           categoryId: finalCategoryId,
           courseType: editingCourse.courseType || (editingCourse.isCohort ? 'cohort' : 'elective'),
@@ -153,6 +164,9 @@ export default function CourseManager() {
         await addCourse({
           title,
           description,
+          price: coursePrice,
+          fee: coursePrice,
+          isFree: coursePrice === 0,
           batchId,
           categoryId: finalCategoryId,
           courseType: 'elective',
@@ -324,6 +338,9 @@ export default function CourseManager() {
                               ) : (
                                 <Badge bg="secondary" className="border" style={{ fontSize: '0.68rem', fontWeight: 500 }}>Elective</Badge>
                               )}
+                              <Badge bg="success" className="border" style={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                                ₹{(course.price !== undefined ? course.price : (course.fee !== undefined ? course.fee : 1500)).toLocaleString('en-IN')}
+                              </Badge>
                               {(() => {
                                 const courseCat = categories.find((cat) => cat.id === course.categoryId);
                                 if (courseCat) {
@@ -530,6 +547,26 @@ export default function CourseManager() {
                 placeholder="Overview of the program, prerequisites, and learning objectives..."
                 style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
               />
+            </Form.Group>
+
+            {/* Mandatory Course Fee for Marketplace */}
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-semibold small">
+                Individual Course Fee (₹) <span className="text-danger">* Mandatory</span>
+              </Form.Label>
+              <Form.Control
+                type="number"
+                min="0"
+                step="1"
+                required
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="e.g. 1500"
+                style={{ background: 'var(--bg-body)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+              />
+              <Form.Text className="text-muted small">
+                This individual course fee is respected directly on the marketplace and standalone catalog. Cohorts bundling this course can set an independent batch fee.
+              </Form.Text>
             </Form.Group>
 
             {/* Category Selector with Inline Category Creator */}

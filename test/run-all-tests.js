@@ -27,6 +27,8 @@ import { runCertificateAndCompletionTests } from './certificate-and-completion-f
 import { runUnifiedCodeArenaTests } from './unified-code-arena.test.js';
 import { runStudentPasswordPersistenceTests } from './student-password-persistence.test.js';
 import { runCrossDevicePasswordAndCertAllotmentTests } from './cross-device-password-and-cert-allotment.test.js';
+import { runBugFixesAndFeeArchitectureTests } from './bug-fixes-and-fee-architecture.test.js';
+import { runEmailNotificationEngineTests } from './emailjs-notification-engine.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -225,6 +227,24 @@ async function runAll() {
     suiteResults.push({ name: 'Cross-Device Password Synchronization & Batch Course Certificate Gating', passed: r21.passedCount, total: r21.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Cross-Device Password Synchronization & Batch Course Certificate Gating', error: err.message, ok: false });
+  }
+
+  try {
+    const r22 = await runBugFixesAndFeeArchitectureTests();
+    totalPassed += r22.passedCount;
+    totalTests += r22.totalCount;
+    suiteResults.push({ name: 'Bug Fixes & Dynamic Fee Architecture', passed: r22.passedCount, total: r22.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Bug Fixes & Dynamic Fee Architecture', error: err.message, ok: false });
+  }
+
+  try {
+    const r23 = await runEmailNotificationEngineTests();
+    totalPassed += r23.passedCount;
+    totalTests += r23.totalCount;
+    suiteResults.push({ name: 'EmailJS Notification Engine & Quota Architecture', passed: r23.passedCount, total: r23.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'EmailJS Notification Engine & Quota Architecture', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

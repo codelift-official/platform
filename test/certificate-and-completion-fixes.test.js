@@ -111,6 +111,106 @@ export function runCertificateAndCompletionTests() {
     assert(docCode.includes('instituteName'), 'Must render instituteName dynamically');
   });
 
+  // 9. Admin-provisioned certificate credentials persist end-to-end
+  test('Migration 016 persists certificate snapshots + platform_settings with admin-only writes', () => {
+    const migrationPath = path.join(rootDir, 'supabase', 'migrations', '016_certificate_persistence.sql');
+    assert(fs.existsSync(migrationPath), 'supabase/migrations/016_certificate_persistence.sql must exist');
+    const migration = fs.readFileSync(migrationPath, 'utf8');
+
+    assert(migration.includes('template_id'), 'certificates table must gain a template_id column');
+    assert(migration.includes('design jsonb'), 'certificates table must gain a design jsonb column');
+    assert(migration.includes('course_id'), 'certificates table must gain a course_id column');
+    assert(migration.includes('create table if not exists public.platform_settings'), 'platform_settings table must be created');
+    assert(migration.includes('select using (auth.role() = \'authenticated\' or is_admin())'), 'authenticated users may read settings');
+    assert(migration.includes('platform_settings_admin_all'), 'only admins may write platform_settings');
+  });
+
+  test('supabaseDataService persists snapshot columns on issue and loads them back', () => {
+    const serviceCode = fs.readFileSync(path.join(rootDir, 'src', 'services', 'supabaseDataService.js'), 'utf8');
+    const issueMatch = serviceCode.match(/export async function issueCertificate[\s\S]*?\n\}/);
+
+    assert(issueMatch, 'issueCertificate must be defined in supabaseDataService');
+    assert(issueMatch[0].includes('template_id: certData.templateId'), 'issueCertificate must persist template_id');
+    assert(issueMatch[0].includes('design: certData.design'), 'issueCertificate must persist design snapshot');
+    assert(issueMatch[0].includes('course_id: certData.courseId'), 'issueCertificate must persist course_id');
+
+    assert(serviceCode.includes("templateId: cert.template_id || null"), 'fetchAllData must reassemble templateId');
+    assert(serviceCode.includes('design: cert.design || null'), 'fetchAllData must reassemble design');
+    assert(serviceCode.includes("courseId: cert.course_id || null"), 'fetchAllData must reassemble courseId');
+    assert(serviceCode.includes("from('platform_settings')"), 'fetchAllData must load platform_settings');
+    assert(serviceCode.includes('platformSettings,'), 'fetchAllData must return platformSettings');
+
+    for (const fn of ['upsertCertificateTemplate', 'setCertificateTemplateActive', 'deleteCertificateTemplate', 'fetchPlatformSettings', 'updatePlatformSettings']) {
+      assert(serviceCode.includes(`export async function ${fn}`), `${fn} must be exported from supabaseDataService`);
+    }
+  });
+
+  test('DataContext persists template CRUD + settings and drops mock certificate fallbacks', () => {
+    const dataContextCode = fs.readFileSync(path.join(rootDir, 'src', 'contexts', 'DataContext.jsx'), 'utf8');
+
+    assert(dataContextCode.includes('supabaseDataService.upsertCertificateTemplate(newTemplate)'), 'addCertificateTemplate must persist to Supabase');
+    assert(dataContextCode.includes('supabaseDataService.upsertCertificateTemplate(merged)'), 'updateCertificateTemplate must persist to Supabase');
+    assert(dataContextCode.includes('supabaseDataService.setCertificateTemplateActive(templateId)'), 'setActiveCertificateTemplate must persist');
+    assert(dataContextCode.includes('supabaseDataService.deleteCertificateTemplate(templateId)'), 'deleteCertificateTemplate must persist');
+    assert(dataContextCode.includes('supabaseDataService.updatePlatformSettings(next)'), 'updatePlatformSettings must persist');
+
+    assert(!dataContextCode.includes("|| 'CodeLift Engineering Academy'"), 'No mock institute fallback in DataContext');
+    assert(!dataContextCode.includes("|| 'Ashish Kumar'"), 'No mock signatory fallback in DataContext');
+    assert(!dataContextCode.includes("|| 'Vikram Nair'"), 'No mock signatory fallback in DataContext');
+    assert(dataContextCode.includes("signatoryName: certData.signatoryName || platformSettings?.signatoryName"), 'issueCertificate resolves from admin settings');
+  });
+
+  test('certificateUtils + CertificateDocument render only admin-provisioned credentials', () => {
+    const utilsCode = fs.readFileSync(path.join(rootDir, 'src', 'services', 'certificateUtils.js'), 'utf8');
+    const docCode = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'CertificateDocument.jsx'), 'utf8');
+
+    assert(!utilsCode.includes("|| 'Ashish Kumar'"), 'certificateUtils must not fall back to a mock signatory');
+    assert(!utilsCode.includes("|| 'CodeLift Engineering Academy'"), 'certificateUtils must not fall back to a mock institute');
+    assert(utilsCode.includes("content: '{{signatoryName}}'"), 'signature element must use the {{signatoryName}} placeholder');
+    assert(utilsCode.includes("content: '{{signatoryTitle}}'"), 'signature title element must use the {{signatoryTitle}} placeholder');
+    assert(utilsCode.includes('templateForCert?.signatoryName || \'\''), 'resolved signatory chains settings then template, never a mock');
+
+    assert(!docCode.includes("instituteName = 'CodeLift Engineering Academy'"), 'CertificateDocument must not default institute to a mock');
+    assert(!docCode.includes("signatoryName = 'Ashish Kumar'"), 'CertificateDocument must not default signatory to a mock');
+    assert(!docCode.includes("signatoryTitle = 'Director of Academic Affairs'"), 'CertificateDocument must not default title to a mock');
+    assert(docCode.includes('design.signatoryName'), 'CertificateDocument must resolve signatory from the design snapshot');
+    assert(docCode.includes('\\{\\{signatoryName\\}\\}'), 'CertificateDocument must interpolate the signatory placeholder');
+  });
+
+  test('Template seeds are admin-provisioned (8 templates, placeholder signatories, no mock names)', () => {
+    const templatesJsonPath = path.join(rootDir, 'data', 'certificateTemplates.json');
+    assert(fs.existsSync(templatesJsonPath), 'data/certificateTemplates.json must exist');
+    const templates = JSON.parse(fs.readFileSync(templatesJsonPath, 'utf8'));
+
+    assert(templates.length >= 6, `Expected at least 6 templates, found ${templates.length}`);
+    for (const t of templates) {
+      assert(t.signatoryName === '', 'Templates must not ship a hardcoded signatory name');
+      assert(t.signatoryTitle === '', 'Templates must not ship a hardcoded signatory title');
+      assert(t.instituteName === '', 'Templates must not ship a hardcoded institute name');
+      assert(JSON.stringify(t.design || {}).includes('{{signatoryName}}'), 'Template design must bind the signatory placeholder');
+    }
+
+    const dataJs = fs.readFileSync(path.join(rootDir, 'src', 'data', 'data.js'), 'utf8');
+    assert(dataJs.includes("signatoryName: ''"), 'data.js DEFAULT_CERTIFICATE_TEMPLATES must ship empty signatory names');
+    assert(dataJs.includes("id: 'sky-horizon'"), 'data.js must ship the expanded 8-template catalog');
+
+    const designerCode = fs.readFileSync(path.join(rootDir, 'src', 'components', 'admin', 'CertificateDesigner.jsx'), 'utf8');
+    assert(!designerCode.includes('Vikram Nair'), 'CertificateDesigner must not default signatory to a mock person');
+    assert(!designerCode.includes("'Rahul Sharma'"), 'CertificateDesigner must not default preview to a mock person');
+    assert(designerCode.includes("'{{signatoryName}}'"), 'CertificateDesigner must bind the signatory placeholder for new templates');
+  });
+
+  test('Migrate script writes snapshot columns + seeds platform_settings', () => {
+    const migrateCode = fs.readFileSync(path.join(rootDir, 'scripts', 'migrate-json-to-supabase.js'), 'utf8');
+
+    assert(migrateCode.includes('template_id, design, pdf_url'), 'Certificate insert must include snapshot columns');
+    assert(migrateCode.includes("cert.templateId || null"), 'Certificate insert must persist templateId');
+    assert(migrateCode.includes("cert.courseId || null"), 'Certificate insert must persist courseId');
+    assert(migrateCode.includes('Seeding Platform Settings'), 'Migrate script must seed platform_settings');
+    assert(migrateCode.includes('ON CONFLICT (key) DO UPDATE'), 'platform_settings upsert must target the single default row');
+    assert(!migrateCode.includes("tmpl.signatoryName || 'Director'"), 'Migrate script must not fall back to mock signatory data');
+  });
+
   console.log(`✨ All ${passCount}/${totalCount} Certificate Pipeline & Completion Polish tests PASSED!`);
   return { passedCount: passCount, totalCount };
 }

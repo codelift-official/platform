@@ -1,7 +1,7 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { DataProvider } from './contexts/DataContext';
+import { DataProvider, useData } from './contexts/DataContext';
 import { AuthProvider } from './contexts/AuthContext';
 import CustomToaster from './components/common/CustomToast';
 
@@ -118,6 +118,24 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+function RouteDataSyncer() {
+  const location = useLocation();
+  const { syncFromSupabase, refreshData } = useData();
+  const lastPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    if (lastPathRef.current !== location.pathname) {
+      lastPathRef.current = location.pathname;
+      const fn = syncFromSupabase || refreshData;
+      if (typeof fn === 'function') {
+        fn().catch(() => {});
+      }
+    }
+  }, [location.pathname, syncFromSupabase, refreshData]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -125,6 +143,7 @@ export default function App() {
         <DataProvider>
           <AuthProvider>
             <BrowserRouter basename={import.meta.env.BASE_URL}>
+              <RouteDataSyncer />
               <Routes>
                 {/* Public Landing & Marketplace Pages */}
                 <Route path="/" element={<Home />} />

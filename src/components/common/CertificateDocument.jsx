@@ -11,7 +11,7 @@ const CertificateDocument = forwardRef(function CertificateDocument(
   {
     design = {},
     studentName = 'Student',
-    courseName = 'Full Stack Web Engineering',
+    courseName = '',
     certId = 'CERT-2026-0001',
     issuedAt = new Date().toISOString(),
     isInteractive = false,
@@ -42,9 +42,9 @@ const CertificateDocument = forwardRef(function CertificateDocument(
     showCorners = true,
     showBadge = true,
     badgeText = 'ACADEMIC EXCELLENCE',
-    instituteName = 'CodeLift Engineering Academy',
-    signatoryName = 'Ashish Kumar',
-    signatoryTitle = 'Director of Academic Affairs',
+    instituteName = '',
+    signatoryName = '',
+    signatoryTitle = '',
     certTitle = 'CERTIFICATE OF COMPLETION',
     emblemType = 'cap',
     signatureStyle = 'cursive',
@@ -83,6 +83,17 @@ const CertificateDocument = forwardRef(function CertificateDocument(
     ? new Date(issuedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
     : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
+  // Resolve display values: explicit props win, else pull from the design
+  // snapshot, but never display a bare {{placeholder}} literally.
+  const resolveName = (propVal, designVal) => {
+    const v = propVal || designVal || '';
+    return typeof v === 'string' && v.includes('{{') ? '' : v;
+  };
+  const liveSignatoryName = resolveName(signatoryName, design.signatoryName);
+  const liveSignatoryTitle = resolveName(signatoryTitle, design.signatoryTitle);
+  const liveInstituteName = resolveName(instituteName, design.instituteName);
+  const liveCertTitle = resolveName(certTitle, design.certTitle);
+
   // Placeholder interpolation helper
   const interpolate = (text) => {
     if (typeof text !== 'string') return '';
@@ -90,7 +101,9 @@ const CertificateDocument = forwardRef(function CertificateDocument(
       .replace(/\{\{studentName\}\}/g, studentName)
       .replace(/\{\{courseName\}\}/g, courseName)
       .replace(/\{\{date\}\}/g, formattedDate)
-      .replace(/\{\{certificateId\}\}/g, certId);
+      .replace(/\{\{certificateId\}\}/g, certId)
+      .replace(/\{\{signatoryName\}\}/g, liveSignatoryName)
+      .replace(/\{\{signatoryTitle\}\}/g, liveSignatoryTitle);
   };
 
   // Helper to resolve element styles with fallbacks
@@ -359,7 +372,7 @@ const CertificateDocument = forwardRef(function CertificateDocument(
             fontFamily: 'Inter, system-ui, sans-serif',
           }}
         >
-          {instituteName}
+          {liveInstituteName}
         </div>
 
         <div style={{ fontSize: '2.2rem', lineHeight: 1, marginBottom: 6, textAlign: elements?.title?.textAlign || 'center' }}>
@@ -381,7 +394,7 @@ const CertificateDocument = forwardRef(function CertificateDocument(
             })
           }}
         >
-          {interpolate(elements?.title?.content || certTitle)}
+          {interpolate(elements?.title?.content || liveCertTitle)}
         </h1>
 
         <div
@@ -593,7 +606,7 @@ const CertificateDocument = forwardRef(function CertificateDocument(
               })
             }}
           >
-            {interpolate(elements?.signatureName?.content || signatoryName)}
+            {interpolate(elements?.signatureName?.content || liveSignatoryName)}
           </div>
           <div
             style={{
@@ -615,7 +628,7 @@ const CertificateDocument = forwardRef(function CertificateDocument(
               })
             }}
           >
-            {interpolate(elements?.signatureTitle?.content || signatoryTitle)}
+            {interpolate(elements?.signatureTitle?.content || liveSignatoryTitle)}
           </div>
         </div>
       </div>

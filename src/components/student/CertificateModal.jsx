@@ -22,8 +22,8 @@ export default function CertificateModal({ show, onHide }) {
 
   const design = getCertificateDesign(existingCert, certificateTemplates, platformSettings);
   const studentName = existingCert?.studentName || currentStudent?.name || 'Student';
-  const courseName = existingCert?.courseName || existingCert?.courseTitle || 'Modern Full Stack Web Engineering';
-  const certId = existingCert?.certificateId || existingCert?.id || 'CERT-2026-0001';
+  const courseName = existingCert?.courseName || existingCert?.courseTitle || '—';
+  const certId = existingCert?.certificateId || existingCert?.id || '—';
 
   const handleDownloadPDF = async () => {
     if (!certRef.current) return;
