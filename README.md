@@ -155,7 +155,7 @@ The EmailJS `publicKey` runs in client browsers by design. To prevent unauthoriz
 1. Log in to [EmailJS Dashboard](https://dashboard.emailjs.com/) → **Account** → **Security**.
 2. Under **Allowed Origins**, add:
    ```
-   https://rishabhsanjaychoudhari.github.io
+   https://codelift-official.github.io
    http://localhost:5173
    ```
 3. Enable **"Restrict to allowed origins"**.

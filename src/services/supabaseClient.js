@@ -35,7 +35,25 @@ if (!isSupabaseConfigured) {
   );
 }
 
+// Ensure legacy localStorage auth tokens are cleared so sessions do not persist across tab closures
+if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  try {
+    Object.keys(localStorage).forEach((k) => {
+      if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+        localStorage.removeItem(k);
+      }
+    });
+    localStorage.removeItem('codelift_auth');
+  } catch (_) {}
+}
+
 const supabaseUrl = isSupabaseConfigured ? rawUrl : 'https://placeholder.supabase.co';
 const supabaseAnonKey = isSupabaseConfigured ? rawAnonKey : 'placeholder-anon-key';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});

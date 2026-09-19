@@ -448,7 +448,7 @@ export default function PlatformSettings() {
               <ol className="mb-1 mt-1 ps-3">
                 <li>Log in to <strong>emailjs.com</strong> → <strong>Account</strong> → <strong>Security</strong></li>
                 <li>Under <strong>Allowed Origins</strong>, add:
-                  <code className="mx-1 bg-white px-1 py-0.5 border rounded">https://rishabhsanjaychoudhari.github.io</code> and
+                  <code className="mx-1 bg-white px-1 py-0.5 border rounded">https://codelift-official.github.io</code> and
                   <code className="mx-1 bg-white px-1 py-0.5 border rounded">http://localhost:5173</code>
                 </li>
                 <li>Enable <strong>"Restrict to allowed origins"</strong> and click <strong>Save</strong>.</li>

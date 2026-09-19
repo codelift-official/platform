@@ -2261,6 +2261,7 @@ export function DataProvider({ children }) {
         updateTest,
         deleteTest,
         submitTestAttempt,
+        getTestAttempts: (filters = {}) => testAttempts,
         allowTestRetake,
         attachCourseToBatch,
         detachCourseFromBatch,

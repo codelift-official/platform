@@ -9,7 +9,10 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [auth, setAuth] = useState(() => {
     try {
-      const saved = localStorage.getItem('codelift_auth');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('codelift_auth');
+      }
+      const saved = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('codelift_auth') : null;
       return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
@@ -17,13 +20,20 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(true);
 
-  // Sync auth state to localStorage
+  // Sync auth state to sessionStorage (session-scoped: tab close terminates login)
   const saveAuth = (authData) => {
     setAuth(authData);
     try {
       if (authData) {
-        localStorage.setItem('codelift_auth', JSON.stringify(authData));
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('codelift_auth', JSON.stringify(authData));
+        }
       } else {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('codelift_auth');
+        }
+      }
+      if (typeof localStorage !== 'undefined') {
         localStorage.removeItem('codelift_auth');
       }
     } catch (_) {}
@@ -420,7 +430,9 @@ export function AuthProvider({ children }) {
         phone: updates.phone ?? prev.phone
       };
       try {
-        localStorage.setItem('codelift_auth', JSON.stringify(updated));
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('codelift_auth', JSON.stringify(updated));
+        }
       } catch (_) {}
       return updated;
     });
@@ -433,6 +445,12 @@ export function AuthProvider({ children }) {
       }
     } catch (_) {}
     try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('codelift_auth');
+      }
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('codelift_auth');
+      }
       Object.keys(localStorage).forEach((key) => {
         if (
           key.startsWith('codelift_student_progress_') ||

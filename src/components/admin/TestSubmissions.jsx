@@ -170,24 +170,37 @@ export default function TestSubmissions() {
 
   /* Derive filtered attempts */
   const filtered = useMemo(() => {
-    const filters = {
-      testId: filterTestId || undefined,
-      batchId: filterBatchId || undefined,
-      dateFrom: filterDateFrom || undefined,
-      dateTo: filterDateTo || undefined,
-    };
-    let result = getTestAttempts ? getTestAttempts(filters) : [...testAttempts];
+    let result = Array.isArray(testAttempts) ? [...testAttempts] : [];
+
+    if (filterTestId) {
+      result = result.filter(a => a.testId === filterTestId);
+    }
+    if (filterBatchId) {
+      result = result.filter(a => {
+        if (a.batchId === filterBatchId) return true;
+        const s = students.find(st => st.id === a.studentId);
+        return s?.batchId === filterBatchId || (Array.isArray(s?.batchIds) && s.batchIds.includes(filterBatchId));
+      });
+    }
+    if (filterDateFrom) {
+      const fromTime = new Date(filterDateFrom).getTime();
+      result = result.filter(a => new Date(a.submittedAt).getTime() >= fromTime);
+    }
+    if (filterDateTo) {
+      const toTime = new Date(filterDateTo + 'T23:59:59.999').getTime();
+      result = result.filter(a => new Date(a.submittedAt).getTime() <= toTime);
+    }
 
     // Student name search (client side)
     if (filterStudentSearch.trim()) {
       const q = filterStudentSearch.toLowerCase();
       result = result.filter(a => {
-        const s = students.find(s => s.id === a.studentId);
+        const s = students.find(st => st.id === a.studentId);
         return s?.name?.toLowerCase().includes(q) || s?.email?.toLowerCase().includes(q);
       });
     }
     return result.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-  }, [filterTestId, filterBatchId, filterStudentSearch, filterDateFrom, filterDateTo, testAttempts, students, getTestAttempts]);
+  }, [filterTestId, filterBatchId, filterStudentSearch, filterDateFrom, filterDateTo, testAttempts, students]);
 
   /* Stats */
   const totalPassed = filtered.filter(a => a.totalQuestions && (a.score / a.totalQuestions) >= 0.6).length;
