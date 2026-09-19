@@ -8,16 +8,20 @@ import { getCertificateDesign, generateCertificatePDF } from '../../services/cer
 import toast from 'react-hot-toast';
 
 export default function CertificateModal({ show, onHide }) {
-  const { certificates = [], courses = [], certificateTemplates = [] } = useData();
+  const { certificates = [], courses = [], certificateTemplates = [], platformSettings = {} } = useData();
   const { auth, currentStudent } = useAuth();
   const certRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const studentId = currentStudent?.id || auth?.studentId;
-  const existingCert = certificates.find((c) => c.studentId === studentId && !c.isRevoked);
+  const existingCert = certificates.find((c) =>
+    (c.studentId === studentId || (currentStudent?.legacyId && c.studentId === currentStudent.legacyId)) &&
+    !c.isRevoked &&
+    (c.status === 'issued' || c.status === 'approved' || (c.isIssued && c.status !== 'pending' && c.status !== 'pending_approval'))
+  );
 
-  const design = getCertificateDesign(existingCert, certificateTemplates);
-  const studentName = existingCert?.studentName || currentStudent?.name || 'Rahul Sharma';
+  const design = getCertificateDesign(existingCert, certificateTemplates, platformSettings);
+  const studentName = existingCert?.studentName || currentStudent?.name || 'Student';
   const courseName = existingCert?.courseName || existingCert?.courseTitle || 'Modern Full Stack Web Engineering';
   const certId = existingCert?.certificateId || existingCert?.id || 'CERT-2026-0001';
 

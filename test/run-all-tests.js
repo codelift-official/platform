@@ -23,6 +23,7 @@ import { runArenaCurriculumTests } from './code-arena-curriculum.test.js';
 import { runStudentCreationAndQuizAttemptsTests } from './student-creation-and-quiz-attempts.test.js';
 import { runPageLoaderHydrationTests } from './page-loader-hydration.test.js';
 import { runStudentPasswordAndAuthTests } from './student-password-and-auth.test.js';
+import { runCertificateAndCompletionTests } from './certificate-and-completion-fixes.test.js';
 
 async function runAll() {
   console.log('===============================================================');
@@ -185,6 +186,15 @@ async function runAll() {
     suiteResults.push({ name: 'Student Password Synchronization & Auth Integrity', passed: r17.passedCount, total: r17.totalCount, ok: true });
   } catch (err) {
     suiteResults.push({ name: 'Student Password Synchronization & Auth Integrity', error: err.message, ok: false });
+  }
+
+  try {
+    const r18 = runCertificateAndCompletionTests();
+    totalPassed += r18.passedCount;
+    totalTests += r18.totalCount;
+    suiteResults.push({ name: 'Certificate Pipeline, Admin Gating & 100% Completion Polish', passed: r18.passedCount, total: r18.totalCount, ok: true });
+  } catch (err) {
+    suiteResults.push({ name: 'Certificate Pipeline, Admin Gating & 100% Completion Polish', error: err.message, ok: false });
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);

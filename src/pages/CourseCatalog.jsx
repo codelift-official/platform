@@ -126,119 +126,12 @@ export default function CourseCatalog() {
               </span>
             </div>
 
-            {/* Quick Filter Chips */}
-            <div className="cl-marketplace-quick-chips">
-              <span className="cl-quick-chip-label">Popular:</span>
-              {[
-                { label: 'Flagship Cohorts', action: () => { setSelectedCourseType('cohort'); setSearchQuery(''); } },
-                { label: 'Modular Electives', action: () => { setSelectedCourseType('elective'); setSearchQuery(''); } },
-                { label: 'Python', action: () => setSearchQuery('Python') },
-                { label: 'React', action: () => setSearchQuery('React') },
-                { label: 'Data Analytics', action: () => setSearchQuery('Data') },
-                { label: 'Free Modules', action: () => setSelectedType('free') },
-              ].map((chip, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  className="cl-quick-chip-btn"
-                  onClick={chip.action}
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
       {/* Main Filter Toolbar & Course Grid */}
       <main className="container max-w-7xl py-3">
-        <div className="cl-marketplace-toolbar mb-4">
-          <div className="row g-3 align-items-center justify-content-between">
-            {/* Segmented Pill Tabs for Cohorts vs Electives */}
-            <div className="col-12 col-lg-auto">
-              <div className="cl-segmented-pills">
-                <button
-                  type="button"
-                  className={`cl-segment-pill ${selectedCourseType === 'all' ? 'active' : ''}`}
-                  onClick={() => setSelectedCourseType('all')}
-                >
-                  All Courses ({allPublished.length})
-                </button>
-                <button
-                  type="button"
-                  className={`cl-segment-pill ${selectedCourseType === 'cohort' ? 'active' : ''}`}
-                  onClick={() => setSelectedCourseType('cohort')}
-                >
-                  Cohorts ({cohortCount})
-                </button>
-                <button
-                  type="button"
-                  className={`cl-segment-pill ${selectedCourseType === 'elective' ? 'active' : ''}`}
-                  onClick={() => setSelectedCourseType('elective')}
-                >
-                  Electives ({electiveCount})
-                </button>
-              </div>
-            </div>
-
-            {/* Dropdown Filters */}
-            <div className="col-12 col-lg-auto d-flex gap-2 flex-wrap align-items-center justify-content-lg-end">
-              <select
-                className="form-select form-select-sm cl-filter-select"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                style={{ width: 'auto', minWidth: '130px' }}
-              >
-                <option value="all">All Categories</option>
-                {categories && categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-
-              <select
-                className="form-select form-select-sm cl-filter-select"
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                style={{ width: 'auto', minWidth: '110px' }}
-              >
-                <option value="all">All Pricing</option>
-                <option value="free">Free</option>
-                <option value="paid">Tuition</option>
-              </select>
-
-              <select
-                className="form-select form-select-sm cl-filter-select"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                style={{ width: 'auto', minWidth: '130px' }}
-              >
-                <option value="popular">Most Popular</option>
-                <option value="rating">Highest Rated</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="newest">Newest</option>
-              </select>
-
-              {(searchQuery || selectedCategory !== 'all' || selectedType !== 'all' || selectedCourseType !== 'all') && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary rounded-pill px-3 d-flex align-items-center gap-1"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('all');
-                    setSelectedType('all');
-                    setSelectedCourseType('all');
-                  }}
-                  title="Reset all filters"
-                >
-                  <FaTimes size={11} /> Reset
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Course Cards Grid */}
         {isDataLoading ? (
           <PageLoader

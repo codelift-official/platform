@@ -130,7 +130,7 @@ export const DEFAULT_CERTIFICATE_ELEMENTS = {
     visible: true,
   },
   signatureName: {
-    content: 'Vikram Nair',
+    content: 'Ashish Kumar',
     fontFamily: "'Great Vibes', cursive",
     fontSize: 24,
     fontWeight: 600,
@@ -162,7 +162,7 @@ export const DEFAULT_CERTIFICATE_ELEMENTS = {
  * dynamically inheriting active template settings so admin customizations
  * are directly and instantly respected in student certificates.
  */
-export function getCertificateDesign(cert, certificateTemplates = []) {
+export function getCertificateDesign(cert, certificateTemplates = [], platformSettings = {}) {
   const activeTemplate = certificateTemplates.find(t => t.isActive) || certificateTemplates[0] || {};
   const templateForCert = cert?.templateId
     ? certificateTemplates.find(t => t.id === cert.templateId) || activeTemplate
@@ -180,10 +180,14 @@ export function getCertificateDesign(cert, certificateTemplates = []) {
   const gradientEnd = rawDesign.gradientEnd || '#ffffff';
   const gradientAngle = rawDesign.gradientAngle !== undefined ? Number(rawDesign.gradientAngle) : 135;
 
+  const resolvedInstitute = cert?.instituteName || platformSettings?.instituteName || templateForCert?.instituteName || 'CodeLift Engineering Academy';
+  const resolvedSignatory = cert?.signatoryName || platformSettings?.signatoryName || templateForCert?.signatoryName || 'Ashish Kumar';
+  const resolvedSignatoryTitle = cert?.signatoryTitle || platformSettings?.signatoryTitle || templateForCert?.signatoryTitle || 'Director of Academic Affairs';
+
   return {
     accentColor,
     paperSize: rawDesign.paperSize || 'a4-landscape',
-    padding: rawDesign.padding !== undefined ? Number(rawDesign.padding) : 36,
+    padding: rawDesign.padding !== undefined ? Number(rawDesign.padding) : 32,
     bgType: rawDesign.bgType || (rawDesign.bgStyle?.includes('linear-gradient') ? 'gradient' : 'solid'),
     backgroundColor: rawDesign.backgroundColor || '#ffffff',
     gradientStart,
@@ -262,13 +266,13 @@ export function getCertificateDesign(cert, certificateTemplates = []) {
       signatureName: {
         ...DEFAULT_CERTIFICATE_ELEMENTS.signatureName,
         ...(rawDesign.elements?.signatureName || {}),
-        content: rawDesign.elements?.signatureName?.content || templateForCert?.signatoryName || cert?.signatoryName || DEFAULT_CERTIFICATE_ELEMENTS.signatureName.content,
+        content: rawDesign.elements?.signatureName?.content || resolvedSignatory,
         color: rawDesign.elements?.signatureName?.color || accentColor,
       },
       signatureTitle: {
         ...DEFAULT_CERTIFICATE_ELEMENTS.signatureTitle,
         ...(rawDesign.elements?.signatureTitle || {}),
-        content: rawDesign.elements?.signatureTitle?.content || templateForCert?.signatoryTitle || cert?.signatoryTitle || DEFAULT_CERTIFICATE_ELEMENTS.signatureTitle.content,
+        content: rawDesign.elements?.signatureTitle?.content || resolvedSignatoryTitle,
       }
     },
 
@@ -290,20 +294,17 @@ export function getCertificateDesign(cert, certificateTemplates = []) {
     showWatermark: rawDesign.showWatermark !== undefined ? Boolean(rawDesign.showWatermark) : true,
 
     // Template properties take precedence so admin modifications propagate immediately to student certificates
-    instituteName: templateForCert?.instituteName || cert?.instituteName || 'CodeLift Engineering Academy',
-    signatoryName: templateForCert?.signatoryName || cert?.signatoryName || 'Vikram Nair',
-    signatoryTitle: templateForCert?.signatoryTitle || cert?.signatoryTitle || 'Director of Academic Affairs',
+    instituteName: resolvedInstitute,
+    signatoryName: resolvedSignatory,
+    signatoryTitle: resolvedSignatoryTitle,
     certTitle: templateForCert?.certTitle || cert?.certTitle || 'CERTIFICATE OF COMPLETION',
   };
 }
 
 /**
  * Generates and downloads a full-bleed A4 landscape PDF with zero margins.
- * Renders into an isolated, clean offscreen sandbox container (1123px x 794px, A4 1.414 ratio)
- * to guarantee that sticky panels, scroll offsets, or responsive parents NEVER distort or clip the output.
- *
- * @param {HTMLElement} element - The DOM node of the certificate
- * @param {Object} options - Metadata for naming and fallback styling
+ * Captures directly from the rendered certificate element at 300 DPI high resolution
+ * to guarantee an exact 1:1 WYSIWYG match with on-screen preview without bloated padding.
  */
 export async function generateCertificatePDF(element, options = {}) {
   if (!element) {
@@ -318,92 +319,84 @@ export async function generateCertificatePDF(element, options = {}) {
     paperSize = 'a4-landscape'
   } = options;
 
-  let widthPx = 1123;
-  let heightPx = 794;
   let pdfWidth = 297;
   let pdfHeight = 210;
   let orientation = 'landscape';
   let format = 'a4';
 
   if (paperSize === 'a4-portrait') {
-    widthPx = 794;
-    heightPx = 1123;
     pdfWidth = 210;
     pdfHeight = 297;
     orientation = 'portrait';
     format = 'a4';
   } else if (paperSize === 'letter') {
-    widthPx = 1100;
-    heightPx = 850;
     pdfWidth = 279.4;
     pdfHeight = 215.9;
     orientation = 'landscape';
     format = 'letter';
   }
 
-  // Build clean offscreen sandbox container
-  const sandbox = document.createElement('div');
-  sandbox.style.position = 'fixed';
-  sandbox.style.left = '-9999px';
-  sandbox.style.top = '0';
-  sandbox.style.width = `${widthPx}px`;
-  sandbox.style.height = `${heightPx}px`;
-  sandbox.style.zIndex = '-9999';
-  sandbox.style.overflow = 'hidden';
-  sandbox.style.backgroundColor = backgroundColor || '#ffffff';
+  const canvas = await html2canvas(element, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    backgroundColor: backgroundColor || '#ffffff',
+    scrollX: 0,
+    scrollY: 0,
+  });
 
-  // Deep clone certificate element into sandbox
-  const clone = element.cloneNode(true);
-  clone.style.width = `${widthPx}px`;
-  clone.style.height = `${heightPx}px`;
-  clone.style.maxWidth = `${widthPx}px`;
-  clone.style.maxHeight = `${heightPx}px`;
-  clone.style.boxShadow = 'none';
-  clone.style.transform = 'none';
-  clone.style.margin = '0';
+  const imgData = canvas.toDataURL('image/png', 1.0);
 
-  sandbox.appendChild(clone);
-  document.body.appendChild(sandbox);
+  const pdf = new jsPDF({
+    orientation,
+    unit: 'mm',
+    format,
+    compress: true
+  });
 
-  try {
-    const canvas = await html2canvas(clone, {
-      scale: 2.5,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: backgroundColor || '#ffffff',
-      width: widthPx,
-      height: heightPx,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: widthPx,
-      windowHeight: heightPx,
-    });
+  // Full-bleed A4 placement with zero margins
+  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
-    const imgData = canvas.toDataURL('image/png', 1.0);
+  const safeStudent = (studentName || 'Student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const safeCourse = (courseName || 'Course').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const fileName = `Certificate_${safeStudent}_${safeCourse}.pdf`;
 
-    const pdf = new jsPDF({
-      orientation,
-      unit: 'mm',
-      format,
-      compress: true
-    });
+  pdf.save(fileName);
+  return fileName;
+}
 
-    // Full-bleed: top-left (0,0) to bottom-right (pdfWidth, pdfHeight), zero margins
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-
-    // Clean sanitized filename
-    const safeStudent = (studentName || 'Student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeCourse = (courseName || 'Course').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-    const fileName = `Certificate_${safeStudent}_${safeCourse}.pdf`;
-
-    pdf.save(fileName);
-    return fileName;
-  } finally {
-    // Always clean up sandbox
-    if (document.body.contains(sandbox)) {
-      document.body.removeChild(sandbox);
-    }
+/**
+ * Generates and downloads a high-resolution PNG image directly from the certificate canvas.
+ */
+export async function generateCertificatePNG(element, options = {}) {
+  if (!element) {
+    throw new Error('Certificate DOM element is required for image generation.');
   }
+
+  const {
+    studentName = 'Student',
+    courseName = 'Course',
+    backgroundColor = '#ffffff'
+  } = options;
+
+  const canvas = await html2canvas(element, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    backgroundColor: backgroundColor || '#ffffff',
+    scrollX: 0,
+    scrollY: 0,
+  });
+
+  const link = document.createElement('a');
+  const safeStudent = (studentName || 'Student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const safeCourse = (courseName || 'Course').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const fileName = `Certificate_${safeStudent}_${safeCourse}.png`;
+  link.download = fileName;
+  link.href = canvas.toDataURL('image/png', 1.0);
+  link.click();
+  return fileName;
 }
 

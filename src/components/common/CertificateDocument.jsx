@@ -10,8 +10,8 @@ import { FaShieldAlt, FaAward } from 'react-icons/fa';
 const CertificateDocument = forwardRef(function CertificateDocument(
   {
     design = {},
-    studentName = 'Rahul Sharma',
-    courseName = 'Full Stack Web Development',
+    studentName = 'Student',
+    courseName = 'Full Stack Web Engineering',
     certId = 'CERT-2026-0001',
     issuedAt = new Date().toISOString(),
     isInteractive = false,
@@ -23,7 +23,7 @@ const CertificateDocument = forwardRef(function CertificateDocument(
   const {
     accentColor = '#15803D',
     paperSize = 'a4-landscape',
-    padding = 36,
+    padding = 28,
     bgType = 'gradient',
     backgroundColor = '#ffffff',
     gradientStart = '#f0fdf4',
@@ -43,7 +43,7 @@ const CertificateDocument = forwardRef(function CertificateDocument(
     showBadge = true,
     badgeText = 'ACADEMIC EXCELLENCE',
     instituteName = 'CodeLift Engineering Academy',
-    signatoryName = 'Vikram Nair',
+    signatoryName = 'Ashish Kumar',
     signatoryTitle = 'Director of Academic Affairs',
     certTitle = 'CERTIFICATE OF COMPLETION',
     emblemType = 'cap',

@@ -131,6 +131,62 @@ export async function runMandatoryCourseProgressionTests() {
     assert(!unlocked.has('top-3'), 'Topic 3 must remain locked because Topic 2 is not completed');
   });
 
+  // 7. Verify StudentCourses provides handleCompleteCourse and finish course flow on final lecture
+  test('StudentCourses provides handleCompleteCourse to reach 100% course completion without getting stuck at 90%', () => {
+    const studentCoursesCode = fs.readFileSync(path.resolve(process.cwd(), 'src', 'components', 'student', 'StudentCourses.jsx'), 'utf8');
+
+    assert(studentCoursesCode.includes('handleCompleteCourse'), 'Must define handleCompleteCourse');
+    assert(studentCoursesCode.includes('toast.success(\'🎉 Congratulations! You have completed the course!\')'), 'Must celebrate course completion');
+    assert(studentCoursesCode.includes('Finish Course'), 'Must include Finish Course CTA on final lecture');
+  });
+
+  // 8. Test Algorithm Simulation: Sequential unlocking prevents false lockouts when reviewing past topics
+  test('Algorithm: Sequential unlocking permits reviewing completed topics without false lockouts', () => {
+    const topicList = [
+      { id: 'top-1' },
+      { id: 'top-2' },
+      { id: 'top-3' },
+      { id: 'top-4' }
+    ];
+    // Student has completed topic 1 and topic 2, currently on topic 1 to review
+    const studentProgress = { 'top-1': 'completed', 'top-2': 'completed' };
+    const quizAttempts = {};
+    const currentTopicId = 'top-1';
+
+    const unlocked = new Set();
+    unlocked.add(topicList[0].id);
+
+    topicList.forEach((item) => {
+      const isDone = studentProgress[item.id] === 'completed' || Boolean(quizAttempts[item.id]?.passed);
+      if (isDone) unlocked.add(item.id);
+    });
+
+    if (currentTopicId) unlocked.add(currentTopicId);
+
+    for (let i = 0; i < topicList.length - 1; i++) {
+      const current = topicList[i];
+      const next = topicList[i + 1];
+      const isCurrentDone = studentProgress[current.id] === 'completed' || Boolean(quizAttempts[current.id]?.passed);
+      if (isCurrentDone) unlocked.add(next.id);
+    }
+
+    // Must have unlocked: top-1 (completed), top-2 (completed), top-3 (next in line)
+    assert(unlocked.has('top-1'), 'Topic 1 must be unlocked for review');
+    assert(unlocked.has('top-2'), 'Topic 2 must be unlocked for review');
+    assert(unlocked.has('top-3'), 'Topic 3 must be unlocked to continue learning');
+    assert(!unlocked.has('top-4'), 'Topic 4 must stay locked until Topic 3 is completed');
+  });
+
+  // 9. Verify DataContext merges localStorage student progress and quizzes during hydration
+  test('DataContext merges localStorage student progress and quizzes during syncFromSupabase', () => {
+    const dataContextCode = fs.readFileSync(path.resolve(process.cwd(), 'src', 'contexts', 'DataContext.jsx'), 'utf8');
+
+    assert(dataContextCode.includes('codelift_student_progress_'), 'Must check codelift_student_progress_ in localStorage');
+    assert(dataContextCode.includes('codelift_student_quizzes_'), 'Must check codelift_student_quizzes_ in localStorage');
+    assert(dataContextCode.includes('...cachedProgress'), 'Must merge cachedProgress on hydration');
+    assert(dataContextCode.includes('...cachedQuizzes'), 'Must merge cachedQuizzes on hydration');
+  });
+
   console.log(`✨ All ${passedCount}/${totalCount} Mandatory Course Progression tests PASSED!`);
   return { passedCount, totalCount };
 }

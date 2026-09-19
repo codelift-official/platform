@@ -50,10 +50,13 @@ function genId(prefix = '') {
 const DEFAULT_PLATFORM_SETTINGS = {
   revenueSplit: 100,
   paymentInstructions: 'UPI: codelift@upi | Bank Transfer: HDFC Bank A/C 98765432101, IFSC: HDFC0001234',
+  instituteName: 'CodeLift Engineering Academy',
+  signatoryName: 'Ashish Kumar',
+  signatoryTitle: 'Director of Academic Affairs',
   featureFlags: {
     marketplaceEnabled: true,
     problemSolvingEnabled: true,
-    autoCertificates: true
+    autoCertificates: false
   }
 };
 
@@ -137,11 +140,26 @@ export function DataProvider({ children }) {
 
       if (data.users?.length) setUsers(data.users);
       if (Array.isArray(data.students)) {
-        const hydratedStudents = data.students.map((s) => ({
-          ...s,
-          progress: s.progress || {},
-          quizAttempts: s.quizAttempts || {}
-        }));
+        const hydratedStudents = data.students.map((s) => {
+          let cachedProgress = {};
+          let cachedQuizzes = {};
+          try {
+            const rawP = localStorage.getItem(`codelift_student_progress_${s.id}`) ||
+              (s.legacyId ? localStorage.getItem(`codelift_student_progress_${s.legacyId}`) : null);
+            if (rawP) cachedProgress = JSON.parse(rawP);
+          } catch (_) {}
+          try {
+            const rawQ = localStorage.getItem(`codelift_student_quizzes_${s.id}`) ||
+              (s.legacyId ? localStorage.getItem(`codelift_student_quizzes_${s.legacyId}`) : null);
+            if (rawQ) cachedQuizzes = JSON.parse(rawQ);
+          } catch (_) {}
+
+          return {
+            ...s,
+            progress: { ...(s.progress || {}), ...cachedProgress },
+            quizAttempts: { ...(s.quiz_attempts || s.quizAttempts || {}), ...cachedQuizzes }
+          };
+        });
         setStudents(hydratedStudents);
       }
       if (data.categories?.length) setCategories(data.categories);
@@ -1146,31 +1164,6 @@ export function DataProvider({ children }) {
       progress: updatedProgress
     });
 
-    // Auto-certificate verification if all topics completed
-    if (courseId && platformSettings?.featureFlags?.autoCertificates && isPassed) {
-      const course = courses.find((c) => c.id === courseId);
-      if (course) {
-        const allTopics = course.modules?.flatMap((m) => m.topics || []) || [];
-        const completedCount = allTopics.filter(
-          (t) => updatedProgress[t.id] === 'completed' || updatedProgress[t.id] === true
-        ).length;
-
-        if (allTopics.length > 0 && completedCount === allTopics.length) {
-          const existingCert = certificates.find(
-            (cert) => cert.studentId === student.id && cert.courseName === course.title
-          );
-          if (!existingCert) {
-            issueCertificate({
-              studentId: student.id,
-              studentName: student.name || 'Student',
-              courseName: course.title,
-              certificateId: `CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
-            });
-          }
-        }
-      }
-    }
-
     return attemptRecord;
   };
 
@@ -1185,31 +1178,14 @@ export function DataProvider({ children }) {
 
     try {
       localStorage.setItem(`codelift_student_progress_${student.id}`, JSON.stringify(updatedProgress));
+      if (student.legacyId) {
+        localStorage.setItem(`codelift_student_progress_${student.legacyId}`, JSON.stringify(updatedProgress));
+      }
     } catch (_) { }
 
     updateStudent(student.id, {
       progress: updatedProgress
     });
-
-    if (courseId && platformSettings?.featureFlags?.autoCertificates) {
-      const course = courses.find((c) => c.id === courseId);
-      if (course) {
-        const allTopics = course.modules?.flatMap((m) => m.topics || []) || [];
-        const completedCount = allTopics.filter((t) => updatedProgress[t.id] === 'completed' || updatedProgress[t.id] === true).length;
-
-        if (allTopics.length > 0 && completedCount === allTopics.length) {
-          const existingCert = certificates.find((cert) => cert.studentId === student.id && cert.courseName === course.title);
-          if (!existingCert) {
-            issueCertificate({
-              studentId: student.id,
-              studentName: student?.name || 'Student',
-              courseName: course.title,
-              certificateId: `CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
-            });
-          }
-        }
-      }
-    }
   };
 
   // ── CERTIFICATES ────────────────────────────────────────────────────────────
@@ -1240,11 +1216,12 @@ export function DataProvider({ children }) {
       certificateId: certData.certificateId || `CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       issuedAt: new Date().toISOString(),
       isIssued: true,
+      status: certData.status || 'issued',
       isRevoked: false,
       templateId: targetTpl?.id,
-      instituteName: targetTpl?.instituteName || 'CodeLift Engineering Academy',
-      signatoryName: targetTpl?.signatoryName || 'Vikram Nair',
-      signatoryTitle: targetTpl?.signatoryTitle || 'Director of Academic Affairs',
+      instituteName: certData.instituteName || platformSettings?.instituteName || targetTpl?.instituteName || 'CodeLift Engineering Academy',
+      signatoryName: certData.signatoryName || platformSettings?.signatoryName || targetTpl?.signatoryName || 'Ashish Kumar',
+      signatoryTitle: certData.signatoryTitle || platformSettings?.signatoryTitle || targetTpl?.signatoryTitle || 'Director of Academic Affairs',
       certTitle: targetTpl?.certTitle || 'CERTIFICATE OF COMPLETION',
       design: targetTpl?.design ? { ...targetTpl.design } : undefined,
       ...certData

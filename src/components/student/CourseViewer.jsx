@@ -20,18 +20,13 @@ export default function CourseViewer() {
 
   const progress = student?.progress || currentStudent?.progress || {};
 
+  const isCompleted = (topicId) => progress[topicId] === 'completed' || progress[topicId] === true || Boolean(student?.quizAttempts?.[topicId]?.passed);
+
   // Compute overall course progress
-  let totalTopics = 0;
-  courses.forEach((c) => {
-    c.modules?.forEach((m) => {
-      totalTopics += m.topics?.length || 0;
-    });
-  });
-
-  const completedCount = Object.keys(progress).length;
+  const allTopics = courses.flatMap((c) => (c.modules || []).flatMap((m) => m.topics || []));
+  const totalTopics = allTopics.length;
+  const completedCount = allTopics.filter((t) => isCompleted(t.id)).length;
   const percentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
-
-  const isCompleted = (topicId) => progress[topicId] === 'completed' || progress[topicId] === true;
 
   return (
     <div className="space-y-4">

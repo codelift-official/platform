@@ -10,6 +10,7 @@ import {
   FaChevronRight, FaTimes, FaBookOpen, FaClipboard, FaLock
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
 import CurriculumNavigator from './CurriculumNavigator';
 import TopicQuiz from '../common/TopicQuiz';
 import CourseTechThumbnail from '../common/CourseTechThumbnail';
@@ -389,14 +390,46 @@ export default function StudentCourses() {
     return hasQuiz ? isQuizPassed : (isProgressMarked || isQuizPassed);
   }, [student]);
 
-  // All topics accessible - unlock every topic in topicList
+  // Sequential unlocking: completed topics, active topic, and immediate next topic are unlocked
   const unlockedTopicIds = useMemo(() => {
     const unlocked = new Set();
-    for (let i = 0; i < topicList.length; i++) {
-      unlocked.add(topicList[i].id);
+    if (!Array.isArray(topicList) || topicList.length === 0) return unlocked;
+
+    // First topic is always unlocked
+    unlocked.add(topicList[0].id);
+
+    // Any topic that is completed is always unlocked for free review
+    topicList.forEach((item) => {
+      const isDone =
+        student?.progress?.[item.id] === 'completed' ||
+        student?.progress?.[item.id] === true ||
+        Boolean(student?.quizAttempts?.[item.id]?.passed);
+      if (isDone) {
+        unlocked.add(item.id);
+      }
+    });
+
+    // Active lecture should never be locked
+    if (currentTopic?.id) {
+      unlocked.add(currentTopic.id);
     }
+
+    // Linear sequential unlocking: completing topic i unlocks topic i + 1
+    for (let i = 0; i < topicList.length - 1; i++) {
+      const current = topicList[i];
+      const next = topicList[i + 1];
+      const isCurrentDone =
+        student?.progress?.[current.id] === 'completed' ||
+        student?.progress?.[current.id] === true ||
+        Boolean(student?.quizAttempts?.[current.id]?.passed);
+
+      if (isCurrentDone) {
+        unlocked.add(next.id);
+      }
+    }
+
     return unlocked;
-  }, [topicList]);
+  }, [topicList, student?.progress, student?.quizAttempts, currentTopic?.id]);
 
   const currentHasQuiz = (Array.isArray(currentTopic?.quizQuestions) && currentTopic.quizQuestions.length > 0) ||
     (currentTopicIndex === (topics.length - 1) && Array.isArray(currentModule?.quizQuestions) && currentModule.quizQuestions.length > 0);
@@ -439,11 +472,62 @@ export default function StudentCourses() {
   const isLastTopicInModule = currentTopicIndex === topics.length - 1;
   const isLastLecture = isLastModule && isLastTopicInModule;
 
-  const handleNextLecture = () => {
-    if (isLastLecture) return;
+  const handleCompleteCourse = () => {
+    if (!currentTopic || !student || !activeCourse) return;
+    if (currentHasQuiz && !isCurrentTopicCompleted) {
+      toast.error('Please complete and pass the quiz assessment to finish this course.');
+      document.getElementById('topic-assessment-section')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    markTopicComplete(student.id, currentTopic.id, activeCourse.id);
 
-    // Auto-complete topic when user clicks Next without blocking
+    // Multi-burst party popper celebration!
+    try {
+      confetti({
+        particleCount: 85,
+        angle: 60,
+        spread: 65,
+        origin: { x: 0.05, y: 0.7 },
+        colors: ['#22c55e', '#eab308', '#3b82f6', '#ec4899', '#f97316']
+      });
+      confetti({
+        particleCount: 85,
+        angle: 120,
+        spread: 65,
+        origin: { x: 0.95, y: 0.7 },
+        colors: ['#22c55e', '#eab308', '#3b82f6', '#ec4899', '#f97316']
+      });
+      setTimeout(() => {
+        try {
+          confetti({
+            particleCount: 120,
+            spread: 100,
+            origin: { y: 0.5 },
+            colors: ['#22c55e', '#10b981', '#f59e0b', '#6366f1', '#ec4899']
+          });
+        } catch (_) {}
+      }, 220);
+    } catch (_) {}
+
+    toast.success('🎉 Congratulations! You have completed the course!');
+    setTimeout(() => {
+      navigate('/student/courses');
+    }, 1400);
+  };
+
+  const handleNextLecture = () => {
+    if (isLastLecture) {
+      handleCompleteCourse();
+      return;
+    }
+
+    // Gated progression: If current topic has an assessment quiz and is not completed, block advancing
     if (!isCurrentTopicCompleted) {
+      if (currentHasQuiz) {
+        toast.error('Please complete and pass the quiz assessment before proceeding to the next lecture.');
+        document.getElementById('topic-assessment-section')?.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
       if (student && activeCourse && currentTopic) {
         markTopicComplete(student.id, currentTopic.id, activeCourse.id);
       }
@@ -629,7 +713,7 @@ export default function StudentCourses() {
                   if (activeQuizQuestions.length === 0) return null;
 
                   return (
-                    <div className="mt-4 pt-3 border-top" style={{ borderColor: 'var(--border-color)' }}>
+                    <div id="topic-assessment-section" className="mt-4 pt-3 border-top" style={{ borderColor: 'var(--border-color)' }}>
                       <TopicQuiz
                         questions={activeQuizQuestions}
                         topicTitle={currentTopic.title}
@@ -646,6 +730,9 @@ export default function StudentCourses() {
                           }
                           if (attemptData.passed && currentTopic?.id && markTopicComplete && student?.id && activeCourse?.id) {
                             markTopicComplete(student.id, currentTopic.id, activeCourse.id);
+                            if (isLastLecture) {
+                              handleCompleteCourse();
+                            }
                           }
                         }}
                       />
@@ -706,14 +793,41 @@ export default function StudentCourses() {
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 rounded-3"
-                    onClick={handleNextLecture}
-                    disabled={isLastLecture}
-                  >
-                    Next <FaArrowRight size={12} />
-                  </button>
+                  {isLastLecture ? (
+                    isCurrentTopicCompleted ? (
+                      <button
+                        type="button"
+                        className="btn btn-success d-flex align-items-center gap-2 px-4 py-2 rounded-3"
+                        onClick={() => navigate('/student/certificates')}
+                      >
+                        <FaAward size={13} /> View Certificate
+                      </button>
+                    ) : currentHasQuiz ? (
+                      <button
+                        type="button"
+                        className="btn btn-warning text-dark fw-semibold d-flex align-items-center gap-2 px-4 py-2 rounded-3"
+                        onClick={() => document.getElementById('topic-assessment-section')?.scrollIntoView({ behavior: 'smooth' })}
+                      >
+                        Complete Quiz Below <FaArrowRight size={12} />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-success d-flex align-items-center gap-2 px-4 py-2 rounded-3 fw-bold"
+                        onClick={handleCompleteCourse}
+                      >
+                        Finish Course <FaCheckCircle size={13} />
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 rounded-3"
+                      onClick={handleNextLecture}
+                    >
+                      Next <FaArrowRight size={12} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -795,16 +909,49 @@ export default function StudentCourses() {
             <span>{isCurrentTopicCompleted ? 'Completed' : 'In Progress'}</span>
           </div>
 
-          <button
-            type="button"
-            className="cv-dock-nav-btn"
-            onClick={handleNextLecture}
-            disabled={isLastLecture}
-            aria-label="Next lecture"
-          >
-            <span>Next</span>
-            <FaArrowRight size={12} />
-          </button>
+          {isLastLecture ? (
+            isCurrentTopicCompleted ? (
+              <button
+                type="button"
+                className="cv-dock-nav-btn text-success fw-bold"
+                onClick={() => navigate('/student/certificates')}
+                aria-label="View Certificate"
+              >
+                <span>Cert</span>
+                <FaAward size={12} />
+              </button>
+            ) : currentHasQuiz ? (
+              <button
+                type="button"
+                className="cv-dock-nav-btn text-warning fw-bold"
+                onClick={() => document.getElementById('topic-assessment-section')?.scrollIntoView({ behavior: 'smooth' })}
+                aria-label="Complete Quiz"
+              >
+                <span>Quiz</span>
+                <FaLock size={12} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="cv-dock-nav-btn text-success fw-bold"
+                onClick={handleCompleteCourse}
+                aria-label="Finish Course"
+              >
+                <span>Finish</span>
+                <FaCheckCircle size={12} />
+              </button>
+            )
+          ) : (
+            <button
+              type="button"
+              className="cv-dock-nav-btn"
+              onClick={handleNextLecture}
+              aria-label="Next lecture"
+            >
+              <span>Next</span>
+              <FaArrowRight size={12} />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -888,7 +1035,7 @@ export default function StudentCourses() {
                       onClick={() => handleSelectCourse(course.id)}
                     >
                       <FaPlay size={11} />
-                      <span>{hasStarted ? 'Continue Learning' : 'Start Course'}</span>
+                      <span>{isCompleted ? 'Review Course' : hasStarted ? 'Continue Learning' : 'Start Course'}</span>
                     </button>
                   </div>
                 </div>

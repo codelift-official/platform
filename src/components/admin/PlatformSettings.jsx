@@ -10,11 +10,14 @@ export default function PlatformSettings() {
   const [paymentInstructions, setPaymentInstructions] = useState(
     platformSettings?.paymentInstructions || 'UPI: codelift@upi | Bank Transfer: HDFC Bank A/C 98765432101, IFSC: HDFC0001234'
   );
+  const [instituteName, setInstituteName] = useState(platformSettings?.instituteName || 'CodeLift Engineering Academy');
+  const [signatoryName, setSignatoryName] = useState(platformSettings?.signatoryName || 'Ashish Kumar');
+  const [signatoryTitle, setSignatoryTitle] = useState(platformSettings?.signatoryTitle || 'Director of Academic Affairs');
   const [featureFlags, setFeatureFlags] = useState(
     platformSettings?.featureFlags || {
       marketplaceEnabled: true,
       problemSolvingEnabled: true,
-      autoCertificates: true
+      autoCertificates: false
     }
   );
 
@@ -23,6 +26,9 @@ export default function PlatformSettings() {
     updatePlatformSettings({
       revenueSplit: Number(revenueSplit),
       paymentInstructions,
+      instituteName,
+      signatoryName,
+      signatoryTitle,
       featureFlags
     });
     toast.success('Platform settings & configurations updated!');
@@ -47,6 +53,46 @@ export default function PlatformSettings() {
             value={paymentInstructions}
             onChange={(e) => setPaymentInstructions(e.target.value)}
           ></textarea>
+        </div>
+
+        {/* Institute & Certificate Signatory Settings */}
+        <div className="mb-4 p-3 rounded-3 border" style={{ background: 'var(--card-bg-alt, rgba(255,255,255,0.04))', borderColor: 'var(--border-color)' }}>
+          <h6 className="fw-bold mb-2 d-flex align-items-center gap-2">
+            🎓 Academy & Certificate Credentials
+          </h6>
+          <p className="text-muted small">These values are dynamically rendered on official student certificates upon issuance.</p>
+          <div className="row g-3">
+            <div className="col-12 col-md-6">
+              <label className="form-label small fw-semibold text-muted">Academy / Institute Name</label>
+              <input
+                type="text"
+                className="form-control"
+                value={instituteName}
+                onChange={(e) => setInstituteName(e.target.value)}
+                placeholder="CodeLift Engineering Academy"
+              />
+            </div>
+            <div className="col-12 col-md-3">
+              <label className="form-label small fw-semibold text-muted">Lead Instructor / Signatory</label>
+              <input
+                type="text"
+                className="form-control"
+                value={signatoryName}
+                onChange={(e) => setSignatoryName(e.target.value)}
+                placeholder="Ashish Kumar"
+              />
+            </div>
+            <div className="col-12 col-md-3">
+              <label className="form-label small fw-semibold text-muted">Signatory Title</label>
+              <input
+                type="text"
+                className="form-control"
+                value={signatoryTitle}
+                onChange={(e) => setSignatoryTitle(e.target.value)}
+                placeholder="Director of Academic Affairs"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Feature Flags */}

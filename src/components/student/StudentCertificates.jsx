@@ -5,15 +5,15 @@ import toast from 'react-hot-toast';
 import { FaCertificate, FaDownload, FaPrint, FaTimes, FaAward, FaShieldAlt } from 'react-icons/fa';
 import { FiAward } from 'react-icons/fi';
 import CertificateDocument from '../common/CertificateDocument';
-import { getCertificateDesign, generateCertificatePDF } from '../../services/certificateUtils';
+import { getCertificateDesign, generateCertificatePDF, generateCertificatePNG } from '../../services/certificateUtils';
 
 function CertificatePrintView({ cert, onClose }) {
-  const { certificateTemplates = [] } = useData();
+  const { certificateTemplates = [], platformSettings = {} } = useData();
   const certRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const design = getCertificateDesign(cert, certificateTemplates);
-  const studentName = cert.studentName || 'Rahul Sharma';
+  const design = getCertificateDesign(cert, certificateTemplates, platformSettings);
+  const studentName = cert.studentName || 'Student';
   const courseName = cert.courseName || cert.courseTitle || 'Full Stack Web Engineering';
   const certId = cert.certificateId || cert.id || 'CERT-2026-0001';
 
@@ -31,6 +31,24 @@ function CertificatePrintView({ cert, onClose }) {
     } catch (err) {
       console.error('Download error:', err);
       toast.error('Failed to generate PDF: ' + err.message);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadPNG = async () => {
+    if (!certRef.current) return;
+    setIsDownloading(true);
+    try {
+      await generateCertificatePNG(certRef.current, {
+        studentName,
+        courseName,
+        backgroundColor: design.bgType === 'solid' ? design.backgroundColor : design.gradientStart,
+      });
+      toast.success('Certificate image (PNG) downloaded in ultra high resolution!');
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Failed to generate image: ' + err.message);
     } finally {
       setIsDownloading(false);
     }
@@ -102,7 +120,7 @@ function CertificatePrintView({ cert, onClose }) {
               onClick={handleDownload}
               disabled={isDownloading}
               style={{
-                padding: '8px 20px',
+                padding: '8px 18px',
                 background: design.accentColor || 'var(--bs-primary)',
                 color: '#fff',
                 border: 'none',
@@ -117,7 +135,16 @@ function CertificatePrintView({ cert, onClose }) {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
               }}
             >
-              <FaDownload /> {isDownloading ? 'Generating PDF...' : 'Download Full-Bleed A4 PDF'}
+              <FaDownload /> {isDownloading ? 'Generating...' : 'Download PDF'}
+            </button>
+
+            <button
+              onClick={handleDownloadPNG}
+              disabled={isDownloading}
+              className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5 fw-semibold"
+              title="Download high-resolution image"
+            >
+              <FaDownload /> PNG
             </button>
 
             <button
@@ -174,8 +201,12 @@ export default function StudentCertificates() {
   const { auth } = useAuth();
   const { students = [], certificates = [], courses = [], certificateTemplates = [], batches = [] } = useData();
 
-  const student = students.find(s => s.id === auth?.studentId);
-  const myCerts = certificates.filter(c => c.studentId === student?.id && !c.isRevoked);
+  const student = students.find(s => s.id === auth?.studentId || s.legacyId === auth?.studentId);
+  const myCerts = certificates.filter(c =>
+    (c.studentId === student?.id || (student?.legacyId && c.studentId === student?.legacyId)) &&
+    !c.isRevoked &&
+    (c.status === 'issued' || c.status === 'approved' || (c.isIssued && c.status !== 'pending' && c.status !== 'pending_approval'))
+  );
   const [viewCert, setViewCert] = useState(null);
 
   // Fix: use the same batch-aware lookup as StudentDashboard
@@ -186,13 +217,13 @@ export default function StudentCertificates() {
     return c.batchId === student.batchId || c.batchIds?.includes(student.batchId);
   });
   // Use first enrolled course as primary for backwards compatibility
-  const myCourse = myCourses[0] || null;
+  const myCourse = myCourses[0] || courses[0] || null;
 
   const allTopics = myCourses.flatMap(c =>
     Array.isArray(c.modules) ? c.modules.flatMap(m => Array.isArray(m.topics) ? m.topics : []) : []
   );
   const completedTopics = allTopics.filter(t =>
-    student?.progress?.[t.id] === 'completed' || student?.progress?.[t.id] === true
+    student?.progress?.[t.id] === 'completed' || student?.progress?.[t.id] === true || student?.quizAttempts?.[t.id]?.passed
   );
   const progress = allTopics.length ? Math.round((completedTopics.length / allTopics.length) * 100) : 0;
   const alreadyCertified = myCerts.some(c =>

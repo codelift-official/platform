@@ -8,14 +8,15 @@ import toast from 'react-hot-toast';
 function progressPercent(student, courses, batch) {
   if (!courses || !courses.length) return 0;
   const batchCourses = courses.filter(c => {
-    if (!student?.batchId) return false;
-    if (Array.isArray(batch?.courseIds)) {
-      return batch.courseIds.includes(c.id);
+    if (c.isPublished === false) return false;
+    if (student?.batchId) {
+      if (Array.isArray(batch?.courseIds) && batch.courseIds.includes(c.id)) return true;
+      return c.batchId === student.batchId || c.batchIds?.includes(student.batchId);
     }
-    return c.batchId === student.batchId || c.batchIds?.includes(student.batchId);
+    return false;
   });
-  if (!batchCourses.length) return 0;
-  const allTopics = batchCourses.flatMap(c => Array.isArray(c.modules) ? c.modules.flatMap(m => m.topics || []) : []);
+  const targetCourses = batchCourses.length > 0 ? batchCourses : courses.slice(0, 1);
+  const allTopics = targetCourses.flatMap(c => Array.isArray(c.modules) ? c.modules.flatMap(m => m.topics || []) : []);
   if (!allTopics.length) return 0;
   const done = allTopics.filter(t => t?.id && (student?.progress?.[t.id] === 'completed' || student?.progress?.[t.id] === true || student?.quizAttempts?.[t.id]?.passed)).length;
   return Math.round((done / allTopics.length) * 100);
@@ -119,7 +120,9 @@ export default function StudentDashboard() {
     : [];
   const solvedCodingProblems = (codingProblems || []).filter(p => myCodingAttempts.some(a => a.problemId === p.id && a.passed));
 
-  const progress = progressPercent(student, courses, batch);
+  const progress = allTopics.length > 0
+    ? Math.round((completedTopics.length / allTopics.length) * 100)
+    : progressPercent(student, courses, batch);
 
   // Upcoming deadlines
   const upcoming = myAssignments

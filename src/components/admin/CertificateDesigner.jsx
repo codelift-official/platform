@@ -506,9 +506,9 @@ export default function CertificateDesigner() {
     const studentBatch = batches.find(b => b.id === st.batchId);
     const course = courses.find(c => c.batchId === st.batchId) || courses[0];
     const allTopics = Array.isArray(course?.modules) ? course.modules.flatMap(m => Array.isArray(m.topics) ? m.topics : []) : [];
-    const completedTopics = allTopics.filter(t => st?.progress?.[t.id] === 'completed');
+    const completedTopics = allTopics.filter(t => st?.progress?.[t.id] === 'completed' || st?.progress?.[t.id] === true || st?.quizAttempts?.[t.id]?.passed);
     const progressPct = allTopics.length ? Math.round((completedTopics.length / allTopics.length) * 100) : 0;
-    const existingCert = certificates.find(c => c.studentId === st.id && c.courseName === course?.title && !c.isRevoked);
+    const existingCert = certificates.find(c => (c.studentId === st.id || (st.legacyId && c.studentId === st.legacyId)) && c.courseName === course?.title && !c.isRevoked && (c.status === 'issued' || c.status === 'approved'));
     const isEligible = progressPct === 100 && !existingCert;
 
     return {

@@ -65,7 +65,7 @@ export default function CurriculumNavigator({
         const prev = topicList[i - 1];
         const isPassed = Boolean(quizAttempts[prev.id]?.passed);
         const isProgressMarked = studentProgress[prev.id] === 'completed' || studentProgress[prev.id] === true;
-        const isPrevDone = prev.hasQuiz ? isPassed : (isProgressMarked || isPassed);
+        const isPrevDone = prev.hasQuiz ? (isPassed || isProgressMarked) : (isProgressMarked || isPassed);
         if (unlocked.has(prev.id) && isPrevDone) {
           unlocked.add(item.id);
         } else {
