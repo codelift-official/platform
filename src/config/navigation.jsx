@@ -35,7 +35,7 @@ export const ADMIN_NAV_ITEMS = [
   { id: 'certificates', to: '/admin/certificates', route: '/admin/certificates', icon: <FiAward />, label: 'Certificates' },
   { id: 'reviews', to: '/admin/reviews', route: '/admin/reviews', icon: <FiStar />, label: 'Reviews' },
   { id: 'completed-batches', to: '/admin/completed-batches', route: '/admin/completed-batches', icon: <FiCheckCircle />, label: 'Completed Batches' },
-  // { id: 'settings', to: '/admin/settings', route: '/admin/settings', icon: <FiSettings />, label: 'Platform Settings' },
+  { id: 'settings', to: '/admin/settings', route: '/admin/settings', icon: <FiSettings />, label: 'Platform Settings' },
   { id: 'reports', to: '/admin/reports', route: '/admin/reports', icon: <FiBarChart2 />, label: 'Revenue Reports' },
   { id: 'data', to: '/admin/data', route: '/admin/data', icon: <FiDatabase />, label: 'Data Backup' },
   { id: 'logs', to: '/admin/logs', route: '/admin/logs', icon: <FiAlertTriangle />, label: 'Error Logs' },
