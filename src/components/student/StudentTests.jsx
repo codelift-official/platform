@@ -126,7 +126,7 @@ export default function StudentTests() {
     toast.success(`Test submitted! Score: ${percentage}%`);
     setActiveTest(null);
     setSubmitted(false);
-    navigate(`/student/test-result/${attempt.id}`);
+    navigate(`/student/test-result/${attempt.id}`, { state: { attempt } });
   };
 
   const answeredCount = Object.keys(answers).length;

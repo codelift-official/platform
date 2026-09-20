@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Card, Button, Badge, Collapse } from 'react-bootstrap';
 import { useData } from '../../contexts/DataContext';
 import AnimatedScore from '../common/AnimatedScore';
@@ -21,12 +21,18 @@ import { FaStar, FaRegStar, FaSearch, FaTrophy, FaChartBar, FaBullseye } from 'r
 export default function ResultPage() {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { testAttempts = [], tests = [] } = useData();
 
   const [showReview, setShowReview] = useState(false);
 
-  // Find attempt
-  const attempt = testAttempts.find((a) => String(a.id) === String(attemptId));
+  // Find attempt — prefer context state (live), fall back to router navigation state
+  // The router state is populated immediately on navigate() so there's no flash
+  const attempt =
+    testAttempts.find((a) => String(a.id) === String(attemptId)) ||
+    (location.state?.attempt && String(location.state.attempt.id) === String(attemptId)
+      ? location.state.attempt
+      : null);
   const test = attempt ? tests.find((t) => String(t.id) === String(attempt.testId)) : null;
 
   if (!attempt) {

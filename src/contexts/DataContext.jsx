@@ -809,6 +809,11 @@ export function DataProvider({ children }) {
         (s) => s.batchId === batchId || (Array.isArray(s.batchIds) && s.batchIds.includes(batchId))
       );
       if (batchStudents.length > 0) {
+        const emailConfig = {
+          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
+          ...(platformSettings?.emailSettings || {}),
+          instituteName: platformSettings?.instituteName
+        };
         sendBatchNotificationEmail(
           'course_allotment_batch',
           batchStudents,
@@ -816,7 +821,7 @@ export function DataProvider({ children }) {
             batch_name: targetBatch?.name || 'Your Cohort',
             course_title: targetCourse?.title || 'Course Curriculum'
           },
-          platformSettings?.emailSettings
+          emailConfig
         ).catch((err) => console.warn('[EmailJS] course_allotment_batch notification failed:', err));
       }
     } catch (notifyErr) {
@@ -890,6 +895,11 @@ export function DataProvider({ children }) {
         (s) => s.batchId === batchId || (Array.isArray(s.batchIds) && s.batchIds.includes(batchId))
       );
       if (batchStudents.length > 0) {
+        const emailConfig = {
+          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
+          ...(platformSettings?.emailSettings || {}),
+          instituteName: platformSettings?.instituteName
+        };
         sendBatchNotificationEmail(
           'test_allotment_batch',
           batchStudents,
@@ -897,7 +907,7 @@ export function DataProvider({ children }) {
             batch_name: targetBatch?.name || 'Your Cohort',
             test_title: targetTest?.title || 'Assessment'
           },
-          platformSettings?.emailSettings
+          emailConfig
         ).catch((err) => console.warn('[EmailJS] test_allotment_batch notification failed:', err));
       }
     } catch (notifyErr) {
@@ -1735,6 +1745,11 @@ export function DataProvider({ children }) {
       const studentObj = students.find((s) => s.id === newAttempt.studentId || s.legacyId === newAttempt.studentId);
       const testObj = tests.find((t) => t.id === newAttempt.testId);
       if (studentObj) {
+        const emailConfig = {
+          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
+          ...(platformSettings?.emailSettings || {}),
+          instituteName: platformSettings?.instituteName
+        };
         sendNotificationEmail(
           'test_submission',
           studentObj,
@@ -1745,7 +1760,7 @@ export function DataProvider({ children }) {
             percentage: percentage,
             status: percentage >= newAttempt.passingPercentage ? 'Passed' : 'Needs Review'
           },
-          platformSettings?.emailSettings
+          emailConfig
         ).catch((err) => console.warn('[EmailJS] test_submission email failed:', err));
       }
     } catch (testErr) {
@@ -1772,6 +1787,11 @@ export function DataProvider({ children }) {
       const test = tests.find((t) => t.id === targetAttempt.testId);
 
       if (student) {
+        const emailConfig = {
+          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
+          ...(platformSettings?.emailSettings || {}),
+          instituteName: platformSettings?.instituteName
+        };
         sendNotificationEmail(
           'test_retake',
           student,
@@ -1779,7 +1799,7 @@ export function DataProvider({ children }) {
             test_title: test?.title || 'Assessment',
             student_name: student?.name || 'Student'
           },
-          platformSettings?.emailSettings
+          emailConfig
         ).catch((err) => console.warn('[EmailJS] test_retake email failed:', err));
       }
     } catch (retakeErr) {
@@ -1835,6 +1855,11 @@ export function DataProvider({ children }) {
 
     try {
       if (student) {
+        const emailConfig = {
+          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
+          ...(platformSettings?.emailSettings || {}),
+          instituteName: platformSettings?.instituteName
+        };
         sendNotificationEmail(
           'assignment_submission',
           student,
@@ -1843,7 +1868,7 @@ export function DataProvider({ children }) {
             submission_url: submissionUrl || 'Direct Link / Solution File',
             notes: notes || 'No extra notes provided.'
           },
-          platformSettings?.emailSettings
+          emailConfig
         ).catch((err) => console.warn('[EmailJS] assignment_submission email failed:', err));
       }
     } catch (subErr) {
@@ -1865,6 +1890,11 @@ export function DataProvider({ children }) {
         const student = students.find((s) => s.id === sub.studentId || s.legacyId === sub.studentId);
         const assignment = assignments.find((a) => a.id === sub.assignmentId);
         if (student) {
+          const emailConfig = {
+            ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
+            ...(platformSettings?.emailSettings || {}),
+            instituteName: platformSettings?.instituteName
+          };
           sendNotificationEmail(
             'assignment_graded',
             student,
@@ -1874,7 +1904,7 @@ export function DataProvider({ children }) {
               max_marks: assignment?.maxMarks || assignment?.maxScore || 100,
               feedback: feedback || 'Evaluated by faculty.'
             },
-            platformSettings?.emailSettings
+            emailConfig
           ).catch((err) => console.warn('[EmailJS] assignment_graded email failed:', err));
         }
       }
