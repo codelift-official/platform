@@ -11,7 +11,15 @@
  */
 
 import emailjs from '@emailjs/browser';
-import { supabase, isSupabaseConfigured } from './supabaseClient.js';
+import * as _supabaseClient from './supabaseClient.js';
+
+// Lazy value accessors: defer reading exported bindings until call-time.
+// This avoids `Cannot access 'X' before initialization` (TDZ) when Vite/Rollup
+// evaluates this module before supabaseClient has finished initializing its
+// exports (circular chunk ordering on /admin/fees and /admin/batches routes).
+function getSupabase() {
+  return { supabase: _supabaseClient.supabase, isSupabaseConfigured: _supabaseClient.isSupabaseConfigured };
+}
 
 export const MONTHLY_EMAIL_QUOTA = 200;
 export const QUOTA_WARNING_THRESHOLD = 160; // 80%
@@ -368,6 +376,7 @@ export function interpolateString(template = '', data = {}) {
  * Fetch total emails dispatched in the current calendar month
  */
 export async function getMonthlyEmailUsage() {
+  const { supabase, isSupabaseConfigured } = getSupabase();
   if (!isSupabaseConfigured) {
     try {
       const cached = JSON.parse(localStorage.getItem('codelift_email_quota_cache') || '{"count":0,"month":""}');
@@ -411,6 +420,7 @@ async function logEmailDispatch({ eventType, recipientEmail, recipientName, subj
     localStorage.setItem('codelift_email_quota_cache', JSON.stringify({ count: nextCount, month: currentMonth }));
   } catch (_) {}
 
+  const { supabase, isSupabaseConfigured } = getSupabase();
   if (!isSupabaseConfigured) return;
 
   try {

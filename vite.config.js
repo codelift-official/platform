@@ -35,5 +35,32 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        // Pin vendor libraries into stable named chunks.
+        // Without this Vite hashes chunk names by content, so every redeploy
+        // produces a new hash (e.g. Container-Bv9PAxVU.js → Container-AbCdEfGh.js).
+        // Cached browser tabs then 404 on the old filename.
+        manualChunks(id) {
+          if (id.includes('node_modules/react-bootstrap') || id.includes('node_modules/bootstrap')) {
+            return 'vendor-bootstrap';
+          }
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@supabase')) {
+            return 'vendor-supabase';
+          }
+          if (id.includes('node_modules/@emailjs')) {
+            return 'vendor-emailjs';
+          }
+          if (id.includes('node_modules/react-router') || id.includes('node_modules/react-router-dom')) {
+            return 'vendor-router';
+          }
+        }
+      }
+    }
   }
 });

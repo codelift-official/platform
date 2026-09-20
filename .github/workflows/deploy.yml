@@ -35,11 +35,19 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_ADMIN_WHATSAPP: ${{ secrets.VITE_ADMIN_WHATSAPP }}
           VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH || '/platform/' }}
+          VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
+          VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
+          VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
         run: |
           if [ -n "$VITE_SUPABASE_URL" ] && [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
             echo "✅ Supabase build variables detected in CI environment"
           else
             echo "ℹ️ Supabase secrets not detected in CI environment. Building with resilient offline seed fallback."
+          fi
+          if [ -n "$VITE_EMAILJS_SERVICE_ID" ] && [ -n "$VITE_EMAILJS_PUBLIC_KEY" ]; then
+            echo "✅ EmailJS credentials detected — email notifications will be active"
+          else
+            echo "ℹ️ EmailJS secrets not set — emails disabled until configured in Admin Settings"
           fi
           set +e
           output=$(npm run build 2>&1)

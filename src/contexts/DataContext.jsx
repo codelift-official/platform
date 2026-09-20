@@ -85,10 +85,10 @@ const DEFAULT_PLATFORM_SETTINGS = {
     autoCertificates: false
   },
   emailSettings: {
-    enabled: false,
-    serviceId: '',
-    templateId: '',
-    publicKey: '',
+    enabled: Boolean(import.meta.env.VITE_EMAILJS_SERVICE_ID && import.meta.env.VITE_EMAILJS_PUBLIC_KEY),
+    serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || '',
+    templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '',
+    publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '',
     supportEmail: 'codelift.official@gmail.com',
     emailEventTemplates: DEFAULT_EMAIL_TEMPLATES
   }

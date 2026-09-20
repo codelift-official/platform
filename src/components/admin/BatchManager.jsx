@@ -201,7 +201,7 @@ export default function BatchManager() {
       });
     });
     if (batchStudents.length > 0) {
-      toast.info(`Updated batch fee (₹${newFee.toLocaleString('en-IN')}) for ${batchStudents.length} student(s) in this cohort.`);
+      toast.success(`Updated batch fee (₹${newFee.toLocaleString('en-IN')}) for ${batchStudents.length} student(s) in this cohort.`);
     }
     toast.success('Batch details updated successfully.');
   };

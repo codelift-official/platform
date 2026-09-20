@@ -14,7 +14,8 @@ import {
   FaBell,
   FaSearch,
   FaReceipt,
-  FaInfoCircle
+  FaInfoCircle,
+  FaCopy
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import NotificationModal from '../common/NotificationModal';
