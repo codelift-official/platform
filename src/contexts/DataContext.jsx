@@ -104,9 +104,34 @@ const DEFAULT_PLATFORM_SETTINGS = {
  * Rule: if all 3 credentials are present in the merged config, treat emails as enabled.
  */
 function buildEmailConfig(platformSettings) {
+  const mergedTemplates = {};
+  const dbTemplates = platformSettings?.emailSettings?.emailEventTemplates || {};
+
+  Object.keys(DEFAULT_EMAIL_TEMPLATES).forEach((key) => {
+    const def = DEFAULT_EMAIL_TEMPLATES[key];
+    const saved = dbTemplates[key] || {};
+
+    let body = saved.body || def.body;
+    if (key === 'student_welcome' && (!body.includes('{{password}}') && !body.includes('{{default_password}}') || !body.includes('{{student_email}}'))) {
+      body = def.body;
+    }
+    if (key === 'password_reset' && (!body.includes('{{password}}') && !body.includes('{{new_password}}') || !body.includes('{{student_email}}'))) {
+      body = def.body;
+    }
+
+    mergedTemplates[key] = {
+      ...def,
+      ...saved,
+      body,
+      emailType: def.emailType,
+      subject: saved.subject || def.subject
+    };
+  });
+
   const merged = {
     ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
     ...(platformSettings?.emailSettings || {}),
+    emailEventTemplates: mergedTemplates,
     instituteName: platformSettings?.instituteName
   };
   // Credentials are the source of truth — auto-enable when fully configured

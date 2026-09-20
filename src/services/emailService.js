@@ -511,9 +511,9 @@ export function buildEmailTemplateParams({ eventType, recipient, dynamicData = {
     receipt_no: dynamicData.receipt_no || dynamicData.receiptNo || dynamicData.receiptId || '',
     certificate_id: dynamicData.certificate_id || dynamicData.certificateId || '',
     phone: dynamicData.phone || dynamicData.mobile || dynamicData.whatsapp || '',
-    password: dynamicData.password || dynamicData.new_password || dynamicData.newPassword || dynamicData.defaultPassword || dynamicData.default_password || (eventType === 'student_welcome' ? 'codelift123' : ''),
+    password: dynamicData.password || dynamicData.new_password || dynamicData.newPassword || dynamicData.defaultPassword || dynamicData.default_password || (eventType === 'student_welcome' || eventType === 'password_reset' ? 'codelift123' : ''),
     default_password: dynamicData.default_password || dynamicData.defaultPassword || 'codelift123',
-    new_password: dynamicData.new_password || dynamicData.newPassword || dynamicData.password || '',
+    new_password: dynamicData.new_password || dynamicData.newPassword || dynamicData.password || (eventType === 'password_reset' ? 'codelift123' : ''),
     updated_at: dynamicData.updated_at || dynamicData.updatedAt || new Date().toLocaleString('en-IN')
   };
 
@@ -555,12 +555,47 @@ export function buildEmailTemplateParams({ eventType, recipient, dynamicData = {
   const heading = interpolateString(eventConfig.heading || DEFAULT_EMAIL_TEMPLATES[eventType]?.heading || 'Important Update', mergedData);
   let rawBody = dynamicData?.message || eventConfig.body || DEFAULT_EMAIL_TEMPLATES[eventType]?.body || 'You have a new update from CodeLift Academy.';
 
-  // Guarantee password is in student_welcome and password_reset bodies even if customized without placeholders
-  if (eventType === 'student_welcome' && !rawBody.includes('{{password}}') && !rawBody.includes('{{default_password}}')) {
-    rawBody += '\nPassword: {{password}}';
+  // Guarantee credentials (email and password) are in student_welcome and password_reset bodies even if customized or stored in DB without placeholders
+  if (eventType === 'student_welcome') {
+    if (!rawBody.includes('{{student_email}}') && !rawBody.includes('{{email}}')) {
+      rawBody += '\n\nRegistered Email: {{student_email}}';
+    }
+    if (!rawBody.includes('{{password}}') && !rawBody.includes('{{default_password}}')) {
+      rawBody += '\nPassword: {{password}}';
+    }
   }
-  if (eventType === 'password_reset' && !rawBody.includes('{{password}}') && !rawBody.includes('{{new_password}}')) {
-    rawBody += '\nPassword: {{password}}';
+  if (eventType === 'password_reset') {
+    const hasEmail = rawBody.includes('{{student_email}}') || rawBody.includes('{{email}}');
+    const hasPassword = rawBody.includes('{{password}}') || rawBody.includes('{{new_password}}');
+
+    if (!hasEmail && !hasPassword) {
+      if (rawBody.includes('If you did not authorize')) {
+        rawBody = rawBody.replace(
+          'If you did not authorize',
+          'Registered Email: {{student_email}}\nPassword: {{password}}\n\nIf you did not authorize'
+        );
+      } else {
+        rawBody += '\n\nRegistered Email: {{student_email}}\nPassword: {{password}}';
+      }
+    } else {
+      if (!hasEmail) {
+        if (rawBody.includes('Password:')) {
+          rawBody = rawBody.replace('Password:', 'Registered Email: {{student_email}}\nPassword:');
+        } else {
+          rawBody += '\nRegistered Email: {{student_email}}';
+        }
+      }
+      if (!hasPassword) {
+        if (rawBody.includes('If you did not authorize')) {
+          rawBody = rawBody.replace(
+            'If you did not authorize',
+            'Password: {{password}}\n\nIf you did not authorize'
+          );
+        } else {
+          rawBody += '\nPassword: {{password}}';
+        }
+      }
+    }
   }
 
   const message = cleanEmailMessage(interpolateString(rawBody, mergedData));

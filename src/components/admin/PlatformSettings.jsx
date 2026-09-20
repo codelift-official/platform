@@ -77,9 +77,17 @@ export default function PlatformSettings() {
         !ex.subject.includes('{{student_name}}') &&
         !ex.subject.includes('{{to_name}}')
       );
+      let body = ex.body || def.body;
+      if (evtKey === 'student_welcome' && (!body.includes('{{password}}') && !body.includes('{{default_password}}') || !body.includes('{{student_email}}'))) {
+        body = def.body;
+      }
+      if (evtKey === 'password_reset' && (!body.includes('{{password}}') && !body.includes('{{new_password}}') || !body.includes('{{student_email}}'))) {
+        body = def.body;
+      }
       merged[evtKey] = {
         ...def,
         ...ex,
+        body,
         subject: isLegacy || !ex.subject ? def.subject : ex.subject,
         emailType: def.emailType
       };

@@ -452,6 +452,36 @@ export async function runEmailNotificationEngineTests() {
 
     assert.strictEqual(resetDefaultParams.password, 'codelift123');
     assert.ok(resetDefaultParams.message.includes('Password: codelift123'), 'password_reset message must contain Password: codelift123');
+
+    // 4. Legacy DB template test (where DB template lacked password and email placeholders)
+    const { templateParams: legacyWelcomeParams } = buildEmailTemplateParams({
+      eventType: 'student_welcome',
+      recipient: { name: 'Milan Soni', email: 'milan@example.com' },
+      dynamicData: { batch_name: 'FullStack 8:30 Evn', password: 'codelift123' },
+      settings: {
+        emailEventTemplates: {
+          student_welcome: {
+            body: 'Your student portal account has been provisioned for {{batch_name}}.\n\nYou can now log in to access your course syllabus, assignments, coding arena, and live assessments.\n\nRegistered Email: {{student_email}}'
+          }
+        }
+      }
+    });
+    assert.ok(legacyWelcomeParams.message.includes('Password: codelift123'), 'Legacy welcome template must auto-inject Password: codelift123');
+
+    const { templateParams: legacyResetParams } = buildEmailTemplateParams({
+      eventType: 'password_reset',
+      recipient: { name: 'Milan Soni', email: 'milan@example.com' },
+      dynamicData: { password: 'myNewSecurePassword123', updated_at: '20/9/2026, 9:16:43 pm' },
+      settings: {
+        emailEventTemplates: {
+          password_reset: {
+            body: 'Your CodeLift student portal password was successfully updated on {{updated_at}}.\n\nIf you did not authorize this change, please contact academic administration immediately.'
+          }
+        }
+      }
+    });
+    assert.ok(legacyResetParams.message.includes('Registered Email: milan@example.com'), 'Legacy reset template must auto-inject Registered Email');
+    assert.ok(legacyResetParams.message.includes('Password: myNewSecurePassword123'), 'Legacy reset template must auto-inject Password');
   });
 
   console.log(`\n🎉 SUITE PASSED: ${passed}/${total} assertions successful.`);
