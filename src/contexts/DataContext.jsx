@@ -94,6 +94,28 @@ const DEFAULT_PLATFORM_SETTINGS = {
   }
 };
 
+/**
+ * Build a fully-resolved email config for sendNotificationEmail / sendBatchNotificationEmail.
+ *
+ * Problem: The DB may store emailSettings.enabled = false (saved before credentials were
+ * configured). Merged naively, that false overrides the env-var default of true, silently
+ * blocking all real emails (test emails bypass this by forcing enabled:true themselves).
+ *
+ * Rule: if all 3 credentials are present in the merged config, treat emails as enabled.
+ */
+function buildEmailConfig(platformSettings) {
+  const merged = {
+    ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
+    ...(platformSettings?.emailSettings || {}),
+    instituteName: platformSettings?.instituteName
+  };
+  // Credentials are the source of truth — auto-enable when fully configured
+  if (merged.serviceId && merged.templateId && merged.publicKey) {
+    merged.enabled = true;
+  }
+  return merged;
+}
+
 function normalizeCourse(c) {
   if (!c) return c;
   const courseId = c.id || c.slug;
@@ -809,11 +831,7 @@ export function DataProvider({ children }) {
         (s) => s.batchId === batchId || (Array.isArray(s.batchIds) && s.batchIds.includes(batchId))
       );
       if (batchStudents.length > 0) {
-        const emailConfig = {
-          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
-          ...(platformSettings?.emailSettings || {}),
-          instituteName: platformSettings?.instituteName
-        };
+        const emailConfig = buildEmailConfig(platformSettings);
         sendBatchNotificationEmail(
           'course_allotment_batch',
           batchStudents,
@@ -895,11 +913,7 @@ export function DataProvider({ children }) {
         (s) => s.batchId === batchId || (Array.isArray(s.batchIds) && s.batchIds.includes(batchId))
       );
       if (batchStudents.length > 0) {
-        const emailConfig = {
-          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
-          ...(platformSettings?.emailSettings || {}),
-          instituteName: platformSettings?.instituteName
-        };
+        const emailConfig = buildEmailConfig(platformSettings);
         sendBatchNotificationEmail(
           'test_allotment_batch',
           batchStudents,
@@ -1391,7 +1405,7 @@ export function DataProvider({ children }) {
             institute_name: newCert.instituteName || platformSettings?.instituteName || 'CodeLift Academy',
             signatory_name: newCert.signatoryName || platformSettings?.signatoryName || 'Academic Director'
           },
-          platformSettings?.emailSettings
+          buildEmailConfig(platformSettings)
         ).catch((err) => console.warn('[EmailJS] certificate_issued email failed:', err));
       }
     } catch (certErr) {
@@ -1745,11 +1759,7 @@ export function DataProvider({ children }) {
       const studentObj = students.find((s) => s.id === newAttempt.studentId || s.legacyId === newAttempt.studentId);
       const testObj = tests.find((t) => t.id === newAttempt.testId);
       if (studentObj) {
-        const emailConfig = {
-          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
-          ...(platformSettings?.emailSettings || {}),
-          instituteName: platformSettings?.instituteName
-        };
+        const emailConfig = buildEmailConfig(platformSettings);
         sendNotificationEmail(
           'test_submission',
           studentObj,
@@ -1787,11 +1797,7 @@ export function DataProvider({ children }) {
       const test = tests.find((t) => t.id === targetAttempt.testId);
 
       if (student) {
-        const emailConfig = {
-          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
-          ...(platformSettings?.emailSettings || {}),
-          instituteName: platformSettings?.instituteName
-        };
+        const emailConfig = buildEmailConfig(platformSettings);
         sendNotificationEmail(
           'test_retake',
           student,
@@ -1855,11 +1861,7 @@ export function DataProvider({ children }) {
 
     try {
       if (student) {
-        const emailConfig = {
-          ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
-          ...(platformSettings?.emailSettings || {}),
-          instituteName: platformSettings?.instituteName
-        };
+        const emailConfig = buildEmailConfig(platformSettings);
         sendNotificationEmail(
           'assignment_submission',
           student,
@@ -1890,11 +1892,7 @@ export function DataProvider({ children }) {
         const student = students.find((s) => s.id === sub.studentId || s.legacyId === sub.studentId);
         const assignment = assignments.find((a) => a.id === sub.assignmentId);
         if (student) {
-          const emailConfig = {
-            ...(DEFAULT_PLATFORM_SETTINGS.emailSettings),
-            ...(platformSettings?.emailSettings || {}),
-            instituteName: platformSettings?.instituteName
-          };
+          const emailConfig = buildEmailConfig(platformSettings);
           sendNotificationEmail(
             'assignment_graded',
             student,
@@ -1970,7 +1968,7 @@ export function DataProvider({ children }) {
                   ? batches.find((b) => b.id === normalizedBatchIds[0])?.name || 'Your Cohort'
                   : 'Your Cohort'
             },
-            platformSettings?.emailSettings
+            buildEmailConfig(platformSettings)
           ).catch((err) => console.warn('[EmailJS] assignment_allotment_batch email failed:', err));
         }
       } catch (batchErr) {
@@ -2053,10 +2051,7 @@ export function DataProvider({ children }) {
 
   const sendEmail = useCallback(async (eventType, recipient, dynamicData = {}) => {
     try {
-      const emailConfig = {
-        ...(platformSettings?.emailSettings || DEFAULT_PLATFORM_SETTINGS.emailSettings),
-        instituteName: platformSettings?.instituteName
-      };
+      const emailConfig = buildEmailConfig(platformSettings);
       return await sendNotificationEmail(eventType, recipient, dynamicData, emailConfig);
     } catch (err) {
       console.warn(`[DataContext] sendEmail failed for ${eventType}:`, err);
@@ -2066,10 +2061,7 @@ export function DataProvider({ children }) {
 
   const sendBatchEmail = useCallback(async (eventType, studentsList, dynamicData = {}) => {
     try {
-      const emailConfig = {
-        ...(platformSettings?.emailSettings || DEFAULT_PLATFORM_SETTINGS.emailSettings),
-        instituteName: platformSettings?.instituteName
-      };
+      const emailConfig = buildEmailConfig(platformSettings);
       return await sendBatchNotificationEmail(eventType, studentsList, dynamicData, emailConfig);
     } catch (err) {
       console.warn(`[DataContext] sendBatchEmail failed for ${eventType}:`, err);
