@@ -156,7 +156,32 @@ export default function Login() {
         <div className="login-card-col">
           <div className="login-glass-card">
             <div className="login-brand-header">
-              <div className="login-brand-logo">🚀 CodeLift</div>
+              <Link
+                to="/"
+                className="d-inline-flex align-items-center justify-content-center gap-2 text-decoration-none mb-1 login-brand-link"
+              >
+                <img
+                  src={`${import.meta.env.BASE_URL}brand.png`}
+                  alt="CodeLift"
+                  className="brand-logo"
+                  width={44}
+                  height={44}
+                  onError={(e) => {
+                    if (!e.currentTarget.src.includes('logo.jpg')) {
+                      e.currentTarget.src = `${import.meta.env.BASE_URL}logo.jpg?v=2`;
+                    } else if (!e.currentTarget.src.includes('logo.png')) {
+                      e.currentTarget.src = `${import.meta.env.BASE_URL}logo.png?v=2`;
+                    } else {
+                      e.currentTarget.style.display = 'none';
+                    }
+                  }}
+                />
+                <span className="brand-text fw-extrabold d-flex align-items-center">
+                  <span style={{ color: 'var(--text-primary)' }}>Code</span>
+                  <span className="brand-text-accent" style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+                  <span style={{ color: 'var(--text-primary)' }}>ft</span>
+                </span>
+              </Link>
               <div className="login-brand-sub">Student Learning Portal</div>
             </div>
 

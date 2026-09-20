@@ -1105,11 +1105,13 @@ export default function LandingPage() {
       {/* -------------------- FOOTER -------------------- */}
       <footer className="landing-footer">
         <div>
-          <h4> CodeLift Engineering Academy</h4>
+          <h4>
+            Code<span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>ft Engineering Academy
+          </h4>
           <p> Sector 62, Knowledge Park III, Tech Hub</p>
           <p> +91 7796895137 • admissions@codelift.dev</p>
           <p style={{ marginTop: '8px', fontSize: '12px', opacity: 0.8 }}>
-            © {new Date().getFullYear()} CodeLift Platform. Full Stack Python, SQL, Web & Generative AI.
+            © {new Date().getFullYear()} Code<span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>ft Platform. Full Stack Python, SQL, Web & Generative AI.
           </p>
         </div>
 

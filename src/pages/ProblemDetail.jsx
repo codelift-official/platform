@@ -483,9 +483,9 @@ export default function ProblemDetail() {
             <Link
               to={arenaHomeUrl}
               className="cl-back-link"
-              title="Back to Problem Arena"
+              title="Back to Code Arena"
             >
-              <FaArrowLeft /> Problem Arena
+              <FaArrowLeft /> Code Arena
             </Link>
 
             {/* Prev / Next navigation */}

@@ -49,13 +49,15 @@ export default function Layout({
           <div className="d-flex align-items-center gap-2">
             <Navbar.Brand as={Link} to={brandLink} className="navbar-brand d-flex align-items-center gap-2 m-0 ms-1 text-decoration-none">
               <img
-                src={`${import.meta.env.BASE_URL}logo.jpg?v=2`}
+                src={`${import.meta.env.BASE_URL}brand.png`}
                 alt="CodeLift"
                 className="brand-logo"
                 width={41}
                 height={41}
                 onError={(e) => {
-                  if (!e.currentTarget.src.includes('logo.png')) {
+                  if (!e.currentTarget.src.includes('logo.jpg')) {
+                    e.currentTarget.src = `${import.meta.env.BASE_URL}logo.jpg?v=2`;
+                  } else if (!e.currentTarget.src.includes('logo.png')) {
                     e.currentTarget.src = `${import.meta.env.BASE_URL}logo.png?v=2`;
                   } else {
                     e.currentTarget.style.display = 'none';

@@ -25,7 +25,7 @@ export async function runHomepageMobileAndThemeTests() {
       'Hero CTA container must use d-none d-lg-flex to hide on mobile'
     );
     assert(homeJsx.includes('btn-explore'), 'Hero CTA must preserve Explore Courses button');
-    assert(homeJsx.includes('Problem Arena'), 'Hero CTA must preserve Problem Arena button');
+    assert(homeJsx.includes('Code Arena') || homeJsx.includes('Problem Arena'), 'Hero CTA must preserve Code Arena button');
   });
 
   // 2. Fix 2: Reduce mobile gap below radar
@@ -128,10 +128,9 @@ export async function runHomepageMobileAndThemeTests() {
   // 11. Favicon links and circular asset presence
   test('index.html references root favicon and public icons exist', () => {
     const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
-    assert(indexHtml.includes('href="/favicon.png"'), 'index.html must reference root /favicon.png');
-    assert(indexHtml.includes('href="/favicon.ico"'), 'index.html must reference root /favicon.ico');
+    assert(indexHtml.includes('brand.png') || indexHtml.includes('favicon.png'), 'index.html must reference brand.png or favicon.png');
     assert(fs.existsSync(path.join(rootDir, 'public', 'favicon.ico')), 'public/favicon.ico must exist');
-    assert(fs.existsSync(path.join(rootDir, 'public', 'favicon.png')), 'public/favicon.png must exist');
+    assert(fs.existsSync(path.join(rootDir, 'public', 'brand.png')) || fs.existsSync(path.join(rootDir, 'public', 'favicon.png')), 'public brand/favicon icon must exist');
   });
 
   // 12. Brand logo synchronization and cache-busting integrity

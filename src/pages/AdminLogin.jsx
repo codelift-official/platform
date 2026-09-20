@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { FiShield, FiLock, FiUser, FiEye, FiEyeOff, FiArrowRight, FiArrowLeft, FiSun, FiMoon } from 'react-icons/fi';
+import PublicThemeSelector from '../components/common/PublicThemeSelector';
+import { FiLock, FiUser, FiEye, FiEyeOff, FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 import { PLATFORM_VERSION } from '../config/version';
 import toast from 'react-hot-toast';
+import './Login.css';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -14,7 +15,6 @@ export default function AdminLogin() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const { loginAdmin } = useAuth();
-  const { currentTheme, setTheme, themes } = useTheme();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -65,56 +65,15 @@ export default function AdminLogin() {
           <span>Home / Student Portal</span>
         </Link>
 
-        {/* Theme selector */}
+        {/* Proper Dropdown Theme selector */}
         <div className="d-flex align-items-center gap-2">
-          <select
-            value={currentTheme}
-            onChange={(e) => setTheme(e.target.value)}
-            className="form-select form-select-sm rounded-pill shadow-sm"
-            style={{
-              background: 'var(--card-bg, #ffffff)',
-              color: 'var(--text-primary, #0f172a)',
-              borderColor: 'var(--border-color, #e2e8f0)',
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              maxWidth: 160
-            }}
-            aria-label="Select Theme"
-          >
-            {themes.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
+          <PublicThemeSelector />
         </div>
       </div>
 
       {/* Centered Login Card Container */}
-      <div className="w-100 my-auto py-5" style={{ maxWidth: '440px', zIndex: 5 }}>
-        {/* Brand & Security Header */}
-        <div className="text-center mb-4">
-          <div
-            className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-sm"
-            style={{
-              width: '68px',
-              height: '68px',
-              background: 'linear-gradient(135deg, var(--bs-primary, #15803d) 0%, color-mix(in srgb, var(--bs-primary, #15803d) 80%, #000) 100%)',
-              color: '#ffffff',
-              boxShadow: '0 8px 24px color-mix(in srgb, var(--bs-primary, #15803d) 35%, transparent)'
-            }}
-          >
-            <FiShield size={32} />
-          </div>
-          <h2 className="fw-bold tracking-tight mb-1" style={{ color: 'var(--text-primary, #0f172a)', letterSpacing: '-0.025em' }}>
-            Code<span style={{ color: 'var(--bs-primary, #15803d)' }}>Lift</span> Admin
-          </h2>
-          <p className="small mb-0" style={{ color: 'var(--text-secondary, #64748b)' }}>
-            Restricted Institutional Infrastructure Portal
-          </p>
-        </div>
-
-        {/* Login Card */}
+      <div className="w-100 my-auto py-5" style={{ maxWidth: '460px', zIndex: 5 }}>
+        {/* Login Card with Brand Header inside */}
         <div
           className="card border rounded-4 shadow-lg p-4 p-md-5"
           style={{
@@ -125,6 +84,52 @@ export default function AdminLogin() {
             boxShadow: '0 20px 50px rgba(0,0,0,0.08)'
           }}
         >
+          {/* Brand Header Inside Form */}
+          <div className="text-center mb-4 d-flex flex-column align-items-center login-brand-header">
+            <Link
+              to="/"
+              className="d-inline-flex align-items-center justify-content-center gap-2 text-decoration-none mb-1 login-brand-link"
+            >
+              <img
+                src={`${import.meta.env.BASE_URL}brand.png`}
+                alt="CodeLift"
+                className="brand-logo"
+                width={48}
+                height={48}
+                onError={(e) => {
+                  if (!e.currentTarget.src.includes('logo.jpg')) {
+                    e.currentTarget.src = `${import.meta.env.BASE_URL}logo.jpg?v=2`;
+                  } else if (!e.currentTarget.src.includes('logo.png')) {
+                    e.currentTarget.src = `${import.meta.env.BASE_URL}logo.png?v=2`;
+                  } else {
+                    e.currentTarget.style.display = 'none';
+                  }
+                }}
+              />
+              <span className="brand-text fw-extrabold d-flex align-items-center" style={{ fontSize: '1.75rem' }}>
+                <span style={{ color: 'var(--text-primary)' }}>Code</span>
+                <span className="brand-text-accent" style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+                <span style={{ color: 'var(--text-primary)' }}>ft</span>
+                <span
+                  className="ms-2 badge rounded-pill"
+                  style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    background: 'color-mix(in srgb, var(--bs-primary, #15803d) 14%, transparent)',
+                    color: 'var(--bs-primary, #15803d)',
+                    border: '1px solid color-mix(in srgb, var(--bs-primary, #15803d) 30%, transparent)',
+                    padding: '4px 8px',
+                    verticalAlign: 'middle'
+                  }}
+                >
+                  ADMIN
+                </span>
+              </span>
+            </Link>
+            <div className="login-brand-sub">Restricted Institutional Administrator Portal</div>
+          </div>
+
           {errorMsg && (
             <div
               className="alert border-0 py-2.5 px-3 rounded-3 mb-4 small d-flex align-items-center gap-2"
@@ -256,8 +261,10 @@ export default function AdminLogin() {
             <div className="small mb-2" style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.74rem' }}>
               🔒 Protected by 256-bit encrypted security definer RPC
             </div>
-            <span className="badge rounded-pill" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.04))', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.70rem' }}>
-              {PLATFORM_VERSION}
+            <span className="badge rounded-pill d-inline-flex align-items-center gap-1" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.04))', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.70rem', fontWeight: 600 }}>
+              <span>Code</span>
+              <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+              <span>ft Platform 1.9</span>
             </span>
           </div>
         </div>

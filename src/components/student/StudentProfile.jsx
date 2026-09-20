@@ -140,7 +140,7 @@ export default function StudentProfile() {
       const emailLower = (email || '').toLowerCase();
       const targetStudentId = student?.id || auth?.studentId || auth?.userId || auth?.id || student?.legacyId;
 
-      // 1. Verify current password with a single live DB call (verify_student_password RPC)
+      // 1. Verify current password with a single live DB call (verify_student_password RPC, default: codelift123)
       let currentVerified = false;
       try {
         const { data: verifyData, error: verifyError } = await supabase.rpc('verify_student_password', {
@@ -148,7 +148,7 @@ export default function StudentProfile() {
           p_password: String(currentPassword)
         });
         currentVerified = !verifyError && verifyData?.success === true;
-      } catch (_) {}
+      } catch (_) { }
 
       if (!currentVerified && emailLower) {
         // Secondary live check against Supabase Auth
@@ -158,7 +158,7 @@ export default function StudentProfile() {
             password: currentPassword
           });
           currentVerified = !sErr && !!sData?.user;
-        } catch (_) {}
+        } catch (_) { }
       }
 
       if (!currentVerified) {
@@ -176,14 +176,14 @@ export default function StudentProfile() {
           p_new_password: String(newPassword)
         });
         updateApplied = !rpcError && rpcData?.success === true;
-      } catch (_) {}
+      } catch (_) { }
 
       if (updateApplied) {
         // Refresh in-memory/reactive state from the live DB (single direct write already applied)
         if (typeof refreshData === 'function') {
           try {
             await refreshData();
-          } catch (_) {}
+          } catch (_) { }
         }
 
         toast.success('Password updated successfully');
@@ -660,10 +660,7 @@ export default function StudentProfile() {
                 </Row>
 
                 <div className="d-flex justify-content-between align-items-center gap-3 mt-1">
-                  <div className="text-muted small">
-                    Forgot your current password? Admin can reset it to the default password{' '}
-                    <code className="fw-semibold" style={{ color: 'var(--text-secondary)' }}>codelift123</code>.
-                  </div>
+
                   <Button
                     type="submit"
                     variant="success"

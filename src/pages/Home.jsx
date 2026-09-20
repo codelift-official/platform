@@ -156,7 +156,7 @@ export default function Home() {
                   Explore Courses <FaArrowRight style={{ fontSize: '0.8rem' }} />
                 </button>
                 <Link to="/problems" className="btn btn-outline-success rounded-pill px-4 fw-bold d-inline-flex align-items-center gap-2" style={{ textDecoration: 'none' }}>
-                  <FaTerminal size={13} /> Problem Arena
+                  <FaTerminal size={13} /> Code Arena
                 </Link>
               </div>
             </div>
@@ -346,7 +346,7 @@ export default function Home() {
             <div className="col-lg-6 text-center text-lg-start d-flex flex-column align-items-center align-items-lg-start">
               <div className="cl-eyebrow" style={{ color: 'var(--bs-primary)' }}>Interactive Learning</div>
               <h2 className="cl-section-title fw-bold mb-3">
-                Problem Solving{' '}
+                Code{' '}
                 <span style={{ color: 'var(--bs-primary)' }}>Arena</span>
               </h2>
 
@@ -445,7 +445,7 @@ export default function Home() {
       >
         <div className="container">
           <p className="mb-0" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-            © {new Date().getFullYear()} CodeLift
+            © {new Date().getFullYear()} Code<span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>ft
           </p>
         </div>
       </footer>

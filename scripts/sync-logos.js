@@ -16,6 +16,19 @@ export function syncLogos() {
 
   let updated = false;
 
+  const rootBrand = path.join(rootDir, 'brand.png');
+  const pubBrand = path.join(publicDir, 'brand.png');
+
+  if (fs.existsSync(rootBrand)) {
+    const rootStat = fs.statSync(rootBrand);
+    const pubStat = fs.existsSync(pubBrand) ? fs.statSync(pubBrand) : null;
+    if (!pubStat || rootStat.size !== pubStat.size || rootStat.mtimeMs > pubStat.mtimeMs) {
+      fs.copyFileSync(rootBrand, pubBrand);
+      console.log('  ✓ Synchronized root brand.png -> public/brand.png');
+      updated = true;
+    }
+  }
+
   if (fs.existsSync(rootJpg)) {
     const rootStat = fs.statSync(rootJpg);
     const pubStat = fs.existsSync(pubJpg) ? fs.statSync(pubJpg) : null;

@@ -5,11 +5,20 @@ from PIL import Image, ImageDraw
 rootDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 pubDir = os.path.join(rootDir, 'public')
 
-pngPath = os.path.join(pubDir, 'logo.png')
-if not os.path.exists(pngPath):
-    pngPath = os.path.join(rootDir, 'logo.png')
+pngPath = None
+for candidate in [
+    os.path.join(pubDir, 'brand.png'),
+    os.path.join(rootDir, 'brand.png'),
+    os.path.join(pubDir, 'logo.png'),
+    os.path.join(rootDir, 'logo.png'),
+    os.path.join(pubDir, 'logo.jpg'),
+    os.path.join(rootDir, 'logo.jpg')
+]:
+    if os.path.exists(candidate):
+        pngPath = candidate
+        break
 
-if os.path.exists(pngPath):
+if pngPath and os.path.exists(pngPath):
     source = Image.open(pngPath).convert('RGBA')
     w, h = source.size
     dim = min(w, h)
