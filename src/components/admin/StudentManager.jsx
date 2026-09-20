@@ -140,27 +140,47 @@ export default function StudentManager() {
       }
 
       toast((t) => (
-        <div className="d-flex align-items-center justify-content-between gap-3">
-          <span>Student <strong>{data.name}</strong> added!</span>
-          <Button
-            variant="success"
-            size="sm"
-            className="d-inline-flex align-items-center gap-1 py-1 px-2.5 text-nowrap"
-            onClick={() => {
-              openAdminWhatsApp(
-                buildAdminNotification('student_added', {
-                  name: data.name,
-                  email: data.email,
-                })
-              );
-              toast.dismiss(t.id);
-            }}
-          >
-            <FaWhatsapp size={14} />
-            <span>Notify Admin</span>
-          </Button>
+        <div className="d-flex flex-column gap-2 py-1">
+          <div className="d-flex align-items-center justify-content-between gap-3">
+            <span>Student <strong>{data.name}</strong> added! (Password: <code>codelift123</code>)</span>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            {data.phone && (
+              <Button
+                variant="success"
+                size="sm"
+                className="d-inline-flex align-items-center gap-1 py-1 px-2.5 text-nowrap"
+                onClick={() => {
+                  const studentWa = `Hello ${data.name},\n\nWelcome to CodeLift Academy!\n\nYour student portal account has been created.\n\nLogin Details:\nEmail: ${data.email}\nPassword: *codelift123*\n\nLogin URL: ${window.location.origin}/platform/login\n\nHappy coding!`;
+                  window.open(buildWhatsAppUrl(data.phone, studentWa), '_blank');
+                  toast.dismiss(t.id);
+                }}
+              >
+                <FaWhatsapp size={14} />
+                <span>Share Creds (WhatsApp)</span>
+              </Button>
+            )}
+            <Button
+              variant="outline-success"
+              size="sm"
+              className="d-inline-flex align-items-center gap-1 py-1 px-2 text-nowrap"
+              onClick={() => {
+                openAdminWhatsApp(
+                  buildAdminNotification('student_added', {
+                    name: data.name,
+                    email: data.email,
+                    password: 'codelift123'
+                  })
+                );
+                toast.dismiss(t.id);
+              }}
+            >
+              <FaWhatsapp size={14} />
+              <span>Notify Admin</span>
+            </Button>
+          </div>
         </div>
-      ), { duration: 8000 });
+      ), { duration: 9000 });
     } catch (err) {
       toast.error(err.message || 'Failed to add student. Please try again.');
     }

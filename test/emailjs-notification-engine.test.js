@@ -425,7 +425,7 @@ export async function runEmailNotificationEngineTests() {
     });
 
     assert.strictEqual(welcomeParams.password, 'codelift123', 'student_welcome must default password to codelift123');
-    assert.ok(welcomeParams.message.includes('Default Password: codelift123'), 'student_welcome message must contain Default Password: codelift123');
+    assert.ok(welcomeParams.message.includes('Password: codelift123'), 'student_welcome message must contain Password: codelift123');
 
     // 2. password_reset test (with custom updated password)
     const { templateParams: resetCustomParams } = buildEmailTemplateParams({
@@ -438,7 +438,7 @@ export async function runEmailNotificationEngineTests() {
     });
 
     assert.strictEqual(resetCustomParams.password, 'customNewPassword456');
-    assert.ok(resetCustomParams.message.includes('Updated Password: customNewPassword456'), 'password_reset message must contain the updated password');
+    assert.ok(resetCustomParams.message.includes('Password: customNewPassword456'), 'password_reset message must contain Password: customNewPassword456');
 
     // 3. password_reset test (with default reset password codelift123)
     const { templateParams: resetDefaultParams } = buildEmailTemplateParams({
@@ -451,7 +451,7 @@ export async function runEmailNotificationEngineTests() {
     });
 
     assert.strictEqual(resetDefaultParams.password, 'codelift123');
-    assert.ok(resetDefaultParams.message.includes('Updated Password: codelift123'), 'password_reset message must contain Updated Password: codelift123');
+    assert.ok(resetDefaultParams.message.includes('Password: codelift123'), 'password_reset message must contain Password: codelift123');
   });
 
   console.log(`\n🎉 SUITE PASSED: ${passed}/${total} assertions successful.`);

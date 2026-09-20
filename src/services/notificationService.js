@@ -20,7 +20,7 @@ export function buildAdminNotification(type, data) {
     fee_recorded: `Fee of ₹${data.amount} recorded for ${data.studentName} on ${data.date}`,
     enrolment_verified: `Enrolment verified for ${data.studentName} in ${data.courseTitle}`,
     certificate_issued: `Certificate issued to ${data.studentName} for ${data.courseTitle}`,
-    student_added: `New student added: ${data.name} (${data.email})`,
+    student_added: `New student added: ${data.name} (${data.email})\nPassword: ${data.password || 'codelift123'}`,
     password_reset_request: `🔑 CodeLift Password Reset Complaint\nTicket: ${data.ticketId || 'PWD-REQ'}\nStudent: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone || 'Not provided'}\nReason: ${data.reason || 'Forgot student password'}\n\nPlease reset my student portal password to default.`,
     password_reset_resolved: `✅ CodeLift Password Reset\nHello ${data.name},\nYour student portal password has been reset by Admin to default: ${data.defaultPassword || 'codelift123'}\nEmail: ${data.email}\nPortal URL: ${window.location.origin}/login\n\nPlease log in and continue your coding learning!`,
   };

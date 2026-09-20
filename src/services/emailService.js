@@ -188,7 +188,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     emailtype: 'Welcome to CodeLift',
     subject: '{{emailtype}} — {{studentname}}',
     heading: 'Welcome Aboard, {{student_name}}!',
-    body: 'Your student portal account has been provisioned for {{batch_name}}.\n\nYou can now log in to access your course syllabus, assignments, coding arena, and live assessments.\n\nRegistered Email: {{student_email}}\nDefault Password: {{password}}',
+    body: 'Your student portal account has been provisioned for {{batch_name}}.\n\nYou can now log in to access your course syllabus, assignments, coding arena, and live assessments.\n\nRegistered Email: {{student_email}}\nPassword: {{password}}',
     actionText: 'Log In to Student Portal',
     actionUrl: '/login'
   },
@@ -272,7 +272,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     emailtype: 'Password Reset',
     subject: '{{emailtype}} — {{studentname}}',
     heading: 'Password Updated Successfully',
-    body: 'Your CodeLift student portal password was successfully updated on {{updated_at}}.\n\nRegistered Email: {{student_email}}\nUpdated Password: {{password}}\n\nIf you did not authorize this change, please contact academic administration immediately.',
+    body: 'Your CodeLift student portal password was successfully updated on {{updated_at}}.\n\nRegistered Email: {{student_email}}\nPassword: {{password}}\n\nIf you did not authorize this change, please contact academic administration immediately.',
     actionText: 'Sign In to Portal',
     actionUrl: '/login'
   },
@@ -553,7 +553,16 @@ export function buildEmailTemplateParams({ eventType, recipient, dynamicData = {
 
   // 6. Body & Message Processing (cleaned of redundant greetings)
   const heading = interpolateString(eventConfig.heading || DEFAULT_EMAIL_TEMPLATES[eventType]?.heading || 'Important Update', mergedData);
-  const rawBody = dynamicData?.message || eventConfig.body || DEFAULT_EMAIL_TEMPLATES[eventType]?.body || 'You have a new update from CodeLift Academy.';
+  let rawBody = dynamicData?.message || eventConfig.body || DEFAULT_EMAIL_TEMPLATES[eventType]?.body || 'You have a new update from CodeLift Academy.';
+
+  // Guarantee password is in student_welcome and password_reset bodies even if customized without placeholders
+  if (eventType === 'student_welcome' && !rawBody.includes('{{password}}') && !rawBody.includes('{{default_password}}')) {
+    rawBody += '\nPassword: {{password}}';
+  }
+  if (eventType === 'password_reset' && !rawBody.includes('{{password}}') && !rawBody.includes('{{new_password}}')) {
+    rawBody += '\nPassword: {{password}}';
+  }
+
   const message = cleanEmailMessage(interpolateString(rawBody, mergedData));
   const actionText = interpolateString(eventConfig.actionText || DEFAULT_EMAIL_TEMPLATES[eventType]?.actionText || 'Open Portal', mergedData) || 'Open Portal';
 
