@@ -322,7 +322,7 @@ export default function CourseDetail() {
                 </div>
                 <div>
                   <div className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>CodeLift Institute Faculty</div>
-                  <div className="text-muted small">support@codelift.dev</div>
+                  <div className="text-muted small">codelift.official@gmail.com</div>
                 </div>
               </div>
               <div className="d-flex gap-2 flex-wrap">
