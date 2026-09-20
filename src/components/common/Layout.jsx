@@ -44,7 +44,7 @@ export default function Layout({
     <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: 'var(--bg-body, #F8FAFC)' }}>
 
       {/* ── Top Navbar ── */}
-      <Navbar className="navbar border-bottom sticky-top py-2 px-3 shadow-sm" style={{ zIndex: 1050 }}>
+      <Navbar className="cl-navbar navbar border-bottom sticky-top py-2 px-3 shadow-sm" style={{ zIndex: 1050 }}>
         <Container fluid className="px-md-3">
           <div className="d-flex align-items-center gap-2">
             <Navbar.Brand as={Link} to={brandLink} className="navbar-brand d-flex align-items-center gap-2 m-0 ms-1 text-decoration-none">
@@ -64,8 +64,10 @@ export default function Layout({
                   }
                 }}
               />
-              <span className="brand-text fw-bold d-flex align-items-center">
-                Code<span className="brand-text-accent" style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>ft
+              <span className="brand-text fw-extrabold d-flex align-items-center">
+                <span style={{ color: 'var(--text-primary)' }}>Code</span>
+                <span className="brand-text-accent" style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
+                <span style={{ color: 'var(--text-primary)' }}>ft</span>
               </span>
             </Navbar.Brand>
 

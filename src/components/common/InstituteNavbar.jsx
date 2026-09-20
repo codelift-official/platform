@@ -67,9 +67,9 @@ export default function InstituteNavbar() {
               }
             }}
           />
-          <span className="brand-text fw-bold d-flex align-items-center">
+          <span className="brand-text fw-extrabold d-flex align-items-center">
             <span style={{ color: 'var(--text-primary)' }}>Code</span>
-            <span className="brand-text-accent cl-nav-brand-accent" style={{ color: 'var(--bs-primary)' }}>Li</span>
+            <span className="brand-text-accent cl-nav-brand-accent" style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
             <span style={{ color: 'var(--text-primary)' }}>ft</span>
           </span>
         </Link>
