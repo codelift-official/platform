@@ -148,6 +148,9 @@ export default function FeeManager() {
       return;
     }
 
+    const targetStudent = studentList.find((s) => s.id === formStudentId);
+    const targetBatch = batchList.find((b) => b.id === targetStudent?.batchId);
+
     const feePayload = {
       studentId: formStudentId,
       batchId: targetStudent?.batchId || null,
@@ -162,8 +165,12 @@ export default function FeeManager() {
     recordFee(feePayload);
     setShowRecordModal(false);
 
-    const targetStudent = studentList.find((s) => s.id === formStudentId);
-    const targetBatch = batchList.find((b) => b.id === targetStudent?.batchId);
+    // Calculate pending tuition balance after this payment
+    const targetBatchFee = typeof targetBatch?.feeAmount === 'number' ? targetBatch.feeAmount : (Number(targetStudent?.totalFee) || 0);
+    const targetPaid = feeList
+      .filter((f) => (f.studentId === formStudentId || (targetStudent?.legacyId && f.studentId === targetStudent.legacyId)) && f.status === 'PAID')
+      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+    const remainingDue = Math.max(0, targetBatchFee - (targetPaid + numAmount));
 
     // Trigger EmailJS fee_collected receipt notification
     if (formStatus === 'PAID' && targetStudent?.email && sendEmail) {
@@ -175,15 +182,12 @@ export default function FeeManager() {
         payment_mode: formMode,
         date: feePayload.paidAt,
         batch_name: targetBatch?.name || 'CodeLift Program',
-        remaining_due: `₹${Math.max(0, selectedStudentPending - numAmount).toLocaleString('en-IN')}`
+        remaining_due: `₹${remainingDue.toLocaleString('en-IN')}`
       })
         .then((res) => {
           if (res?.success) toast.success('Payment recorded & receipt emailed to student! 📧');
-          else toast.success('Payment recorded successfully.');
         })
-        .catch(() => toast.success('Payment recorded successfully.'));
-    } else {
-      toast.success('Payment recorded successfully.');
+        .catch(() => {});
     }
   };
 
