@@ -23,6 +23,7 @@ import {
   QUOTA_WARNING_THRESHOLD,
   QUOTA_BLOCK_THRESHOLD,
   DEFAULT_EMAIL_TEMPLATES,
+  UNIVERSAL_EMAIL_TEMPLATE,
   getMonthlyEmailUsage,
   testEmailConfiguration
 } from '../../services/emailService';
@@ -54,7 +55,7 @@ export default function PlatformSettings() {
     serviceId: '',
     templateId: '',
     publicKey: '',
-    supportEmail: 'support@codelift.dev',
+    supportEmail: 'codelift.official@gmail.com',
     emailEventTemplates: DEFAULT_EMAIL_TEMPLATES
   };
 
@@ -62,16 +63,25 @@ export default function PlatformSettings() {
   const [serviceId, setServiceId] = useState(initialEmailSettings.serviceId || '');
   const [templateId, setTemplateId] = useState(initialEmailSettings.templateId || '');
   const [publicKey, setPublicKey] = useState(initialEmailSettings.publicKey || '');
-  const [supportEmail, setSupportEmail] = useState(initialEmailSettings.supportEmail || 'support@codelift.dev');
+  const [supportEmail, setSupportEmail] = useState(initialEmailSettings.supportEmail || 'codelift.official@gmail.com');
 
   // Per-Event Templates Dictionary State
   const [eventTemplates, setEventTemplates] = useState(() => {
     const existing = initialEmailSettings.emailEventTemplates || {};
     const merged = {};
     Object.keys(DEFAULT_EMAIL_TEMPLATES).forEach((evtKey) => {
+      const def = DEFAULT_EMAIL_TEMPLATES[evtKey];
+      const ex = existing[evtKey] || {};
+      const isLegacy = ex.subject && (
+        !ex.subject.includes('{{studentname}}') &&
+        !ex.subject.includes('{{student_name}}') &&
+        !ex.subject.includes('{{to_name}}')
+      );
       merged[evtKey] = {
-        ...DEFAULT_EMAIL_TEMPLATES[evtKey],
-        ...(existing[evtKey] || {})
+        ...def,
+        ...ex,
+        subject: isLegacy || !ex.subject ? def.subject : ex.subject,
+        emailType: def.emailType
       };
     });
     return merged;
@@ -88,24 +98,7 @@ export default function PlatformSettings() {
   const [expandedEvent, setExpandedEvent] = useState(null);
 
   // Universal HTML template to copy into EmailJS dashboard
-  const UNIVERSAL_HTML_CODE = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; color: #1e293b; border-radius: 12px; border: 1px solid #e2e8f0;">
-  <div style="padding-bottom: 16px; margin-bottom: 20px; border-bottom: 2px solid #15803d;">
-    <h2 style="margin: 0; color: #15803d; font-size: 20px;">{{heading}}</h2>
-  </div>
-  <p style="font-size: 15px; margin-bottom: 16px;">Hi <strong>{{to_name}}</strong>,</p>
-  <div style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 24px; white-space: pre-line;">
-{{message}}
-  </div>
-  <div style="text-align: center; margin-bottom: 24px;">
-    <a href="{{action_url}}" style="display: inline-block; padding: 12px 28px; background: #15803d; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 14px;">
-      {{action_text}}
-    </a>
-  </div>
-  <div style="padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.5;">
-    <p style="margin: 0 0 4px 0;">Best regards,<br><strong>{{platform_name}}</strong></p>
-    <p style="margin: 8px 0 0 0; font-size: 11px; color: #94a3b8;">You received this automated notification regarding your enrollment and student portal activities.</p>
-  </div>
-</div>`;
+  const UNIVERSAL_HTML_CODE = UNIVERSAL_EMAIL_TEMPLATE;
 
   // Fetch monthly quota count
   const refreshQuotaCount = async () => {
@@ -510,17 +503,17 @@ export default function PlatformSettings() {
                   <p className="small text-muted mb-2">
                     In <strong>Email Templates</strong> → <strong>Create New Template</strong>:
                     <br />
-                    • Set <strong>Subject</strong>: <code>&#123;&#123;subject&#125;&#125;</code>
+                    • Set <strong>Subject</strong>: <code>&#123;&#123;emailtype&#125;&#125; — &#123;&#123;studentname&#125;&#125;</code> (or <code>&#123;&#123;subject&#125;&#125;</code>)
                     <br />
-                    • Set <strong>To Email</strong>: <code>&#123;&#123;to_email&#125;&#125;</code>
+                    • Set <strong>To Email</strong>: <code>&#123;&#123;email&#125;&#125;</code> (or <code>&#123;&#123;to_email&#125;&#125;</code>)
                     <br />
-                    • Set <strong>To Name</strong>: <code>&#123;&#123;to_name&#125;&#125;</code>
+                    • Set <strong>To Name</strong>: <code>&#123;&#123;to_name&#125;&#125;</code> (or <code>&#123;&#123;studentname&#125;&#125;</code>)
                     <br />
                     • Switch Content to <strong>HTML source code</strong> and paste the copied snippet below.
                   </p>
                   <textarea
                     className="form-control font-monospace small"
-                    rows={4}
+                    rows={6}
                     readOnly
                     value={UNIVERSAL_HTML_CODE}
                   />
@@ -587,7 +580,7 @@ export default function PlatformSettings() {
                   className="form-control"
                   value={supportEmail}
                   onChange={(e) => setSupportEmail(e.target.value)}
-                  placeholder="support@codelift.dev"
+                  placeholder="codelift.official@gmail.com"
                 />
               </div>
             </div>
@@ -714,7 +707,30 @@ export default function PlatformSettings() {
                     <div className="mt-3 pt-3 border-top">
                       <div className="row g-3 mb-3">
                         <div className="col-12 col-md-6">
-                          <label className="form-label small fw-semibold text-muted">Email Subject Line</label>
+                          <div className="d-flex justify-content-between align-items-center mb-1">
+                            <label className="form-label small fw-semibold text-muted mb-0">Email Subject Line</label>
+                            <span className="small text-muted" style={{ fontSize: '0.72rem' }}>
+                              Format: <code>&#123;&#123;emailtype&#125;&#125; — &#123;&#123;studentname&#125;&#125;</code>
+                            </span>
+                          </div>
+                          <div className="d-flex gap-1 mb-1">
+                            <button
+                              type="button"
+                              className="badge bg-light text-dark border px-2 py-0.5 text-decoration-none"
+                              style={{ cursor: 'pointer', fontSize: '0.7rem' }}
+                              onClick={() => handleInsertTag(evtKey, 'subject', 'emailtype')}
+                            >
+                              + &#123;&#123;emailtype&#125;&#125;
+                            </button>
+                            <button
+                              type="button"
+                              className="badge bg-light text-dark border px-2 py-0.5 text-decoration-none"
+                              style={{ cursor: 'pointer', fontSize: '0.7rem' }}
+                              onClick={() => handleInsertTag(evtKey, 'subject', 'studentname')}
+                            >
+                              + &#123;&#123;studentname&#125;&#125;
+                            </button>
+                          </div>
                           <input
                             type="text"
                             className="form-control form-control-sm"
@@ -742,7 +758,7 @@ export default function PlatformSettings() {
                           {/* Variable Tag Badges */}
                           <div className="d-flex flex-wrap gap-1 mb-2">
                             {[
-                              'student_name', 'student_email', 'batch_name', 'course_title',
+                              'studentname', 'student_name', 'student_email', 'batch_name', 'course_title',
                               'test_title', 'score', 'percentage', 'assignment_title',
                               'marks', 'max_marks', 'due_amount', 'amount_paid',
                               'receipt_no', 'certificate_id', 'platform_name'

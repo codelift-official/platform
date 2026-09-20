@@ -89,7 +89,7 @@ const DEFAULT_PLATFORM_SETTINGS = {
     serviceId: '',
     templateId: '',
     publicKey: '',
-    supportEmail: 'support@codelift.dev',
+    supportEmail: 'codelift.official@gmail.com',
     emailEventTemplates: DEFAULT_EMAIL_TEMPLATES
   }
 };

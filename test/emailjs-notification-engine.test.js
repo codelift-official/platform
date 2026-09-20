@@ -9,6 +9,9 @@
  * 5. Partial failure handling & report aggregation in batch dispatch
  * 6. Selective fee reminder recipient filtering
  * 7. Non-blocking error handling & resilience
+ * 8. Universal HTML template integrity & correct domain/contact links
+ * 9. Standardized email subject format: {{emailtype}} — {{studentname}}
+ * 10. Robust model binding across heterogeneous data structures
  */
 
 import assert from 'assert';
@@ -17,7 +20,13 @@ import {
   QUOTA_WARNING_THRESHOLD,
   QUOTA_BLOCK_THRESHOLD,
   DEFAULT_EMAIL_TEMPLATES,
-  interpolateString
+  UNIVERSAL_EMAIL_TEMPLATE,
+  interpolateString,
+  renderEmailHtml,
+  cleanEmailMessage,
+  formatEventType,
+  buildEmailTemplateParams,
+  sendNotificationEmail
 } from '../src/services/emailService.js';
 
 export async function runEmailNotificationEngineTests() {
@@ -30,6 +39,18 @@ export async function runEmailNotificationEngineTests() {
     total++;
     try {
       fn();
+      passed++;
+      console.log(`  ✓ ${desc}`);
+    } catch (err) {
+      console.error(`  ✗ ${desc}:`, err.message);
+      throw err;
+    }
+  }
+
+  async function testAsync(desc, fn) {
+    total++;
+    try {
+      await fn();
       passed++;
       console.log(`  ✓ ${desc}`);
     } catch (err) {
@@ -77,8 +98,8 @@ export async function runEmailNotificationEngineTests() {
     assert.strictEqual(remaining, 35, 'Remaining should be 35 emails');
   });
 
-  // 3. Template Catalog & Default Categorization
-  test('All 16 required notification event types exist in DEFAULT_EMAIL_TEMPLATES', () => {
+  // 3. Template Catalog & Subject Standardization
+  test('All 16 required notification event types exist in DEFAULT_EMAIL_TEMPLATES with {{emailtype}} — {{studentname}}', () => {
     const requiredEvents = [
       'signup_request',
       'student_welcome',
@@ -100,10 +121,25 @@ export async function runEmailNotificationEngineTests() {
 
     requiredEvents.forEach((evt) => {
       assert.ok(DEFAULT_EMAIL_TEMPLATES[evt], `Missing required event template: ${evt}`);
-      assert.ok(DEFAULT_EMAIL_TEMPLATES[evt].subject, `Event ${evt} must have a subject template`);
+      assert.strictEqual(
+        DEFAULT_EMAIL_TEMPLATES[evt].subject,
+        '{{emailtype}} — {{studentname}}',
+        `Event ${evt} must strictly have subject: {{emailtype}} — {{studentname}}`
+      );
+      assert.ok(DEFAULT_EMAIL_TEMPLATES[evt].emailType, `Event ${evt} must have a defined emailType`);
       assert.ok(DEFAULT_EMAIL_TEMPLATES[evt].heading, `Event ${evt} must have a heading template`);
       assert.ok(DEFAULT_EMAIL_TEMPLATES[evt].body, `Event ${evt} must have a body template`);
     });
+  });
+
+  test('Subject interpolation correctly formats as {{emailtype}} — {{studentname}}', () => {
+    const subjectTemplate = '{{emailtype}} — {{studentname}}';
+    const data = {
+      emailtype: 'Test Submission',
+      studentname: 'Milan Soni'
+    };
+    const rendered = interpolateString(subjectTemplate, data);
+    assert.strictEqual(rendered, `Test Submission — ${data.studentname}`);
   });
 
   test('Bulk events are default OFF to prevent quota exhaustion; transactional are default ON', () => {
@@ -140,7 +176,72 @@ export async function runEmailNotificationEngineTests() {
     });
   });
 
-  // 4. Batch Partial Failure Handling Simulation
+  // 4. Universal Email Template & Link Integrity
+  test('UNIVERSAL_EMAIL_TEMPLATE contains correct platform URL, support email, phone, and placeholders', () => {
+    assert.ok(
+      UNIVERSAL_EMAIL_TEMPLATE.includes('https://codelift-official.github.io/platform/'),
+      'Must link to correct CodeLift platform URL'
+    );
+    assert.ok(
+      !UNIVERSAL_EMAIL_TEMPLATE.includes('https://rishabhsanjaychoudhari.github.io/CodeLift_Platform/'),
+      'Must NOT contain deprecated rishabhsanjaychoudhari URL'
+    );
+    assert.ok(
+      UNIVERSAL_EMAIL_TEMPLATE.includes('codelift.official@gmail.com'),
+      'Must contain official support email'
+    );
+    assert.ok(
+      UNIVERSAL_EMAIL_TEMPLATE.includes('https://wa.me/919834671940'),
+      'Must contain official WhatsApp link'
+    );
+    assert.ok(
+      UNIVERSAL_EMAIL_TEMPLATE.includes('Hi {{to_name}},'),
+      'Must contain standard recipient greeting'
+    );
+    assert.ok(
+      UNIVERSAL_EMAIL_TEMPLATE.includes('{{message}}'),
+      'Must contain message body placeholder'
+    );
+    assert.ok(
+      UNIVERSAL_EMAIL_TEMPLATE.includes('{{action_url}}'),
+      'Must contain action link placeholder'
+    );
+    assert.ok(
+      UNIVERSAL_EMAIL_TEMPLATE.includes('{{action_text}}'),
+      'Must contain action text placeholder'
+    );
+  });
+
+  test('renderEmailHtml produces valid HTML with dynamic placeholders replaced', () => {
+    const html = renderEmailHtml({
+      to_name: 'Ananya Roy',
+      message: 'Your practical assignment was graded.',
+      action_url: 'https://codelift-official.github.io/platform/student/assignments',
+      action_text: 'View Marks'
+    });
+
+    assert.ok(html.includes('Hi Ananya Roy,'), 'Rendered HTML contains recipient greeting');
+    assert.ok(html.includes('Your practical assignment was graded.'), 'Rendered HTML contains body text');
+    assert.ok(html.includes('https://codelift-official.github.io/platform/student/assignments'), 'Rendered HTML contains action URL');
+    assert.ok(html.includes('View Marks'), 'Rendered HTML contains action button text');
+  });
+
+  test('cleanEmailMessage strips redundant leading "Hi ...," to prevent duplicate greetings', () => {
+    const rawMsg = 'Hi Rohan Sharma,\n\nYour certificate has been issued.';
+    const cleaned = cleanEmailMessage(rawMsg);
+    assert.strictEqual(cleaned, 'Your certificate has been issued.');
+
+    const plainMsg = 'Payment of ₹10,000 confirmed.';
+    assert.strictEqual(cleanEmailMessage(plainMsg), 'Payment of ₹10,000 confirmed.');
+  });
+
+  // 5. Heterogeneous Model Binding & Normalization
+  test('formatEventType creates clean capitalized titles', () => {
+    assert.strictEqual(formatEventType('assignment_graded'), 'Assignment Graded');
+    assert.strictEqual(formatEventType('student_welcome'), 'Student Welcome');
+  });
+
+  // 6. Batch Partial Failure Handling Simulation
   test('Batch notification simulation tracks sent, failed, and skipped recipients without crashing', async () => {
     const mockStudents = [
       { id: 's1', name: 'Valid User 1', email: 'user1@example.com' },
@@ -184,7 +285,7 @@ export async function runEmailNotificationEngineTests() {
     assert.strictEqual(results.skipped[0].student.id, 's2');
   });
 
-  // 5. Selective Fee Reminder Filtering
+  // 7. Selective Fee Reminder Filtering
   test('Selective fee reminder correctly identifies pending dues and excludes paid students', () => {
     const cohortStudents = [
       { id: 's1', name: 'Alok', email: 'alok@test.com', totalFee: 30000, paidFee: 30000, feeStatus: 'Paid' },
@@ -208,27 +309,108 @@ export async function runEmailNotificationEngineTests() {
     assert.strictEqual(recipients[0].name, 'Dev');
   });
 
-  // 6. Non-blocking Fail-Safe Resilience
-  test('Email failures do not disrupt primary business operations', async () => {
+  // 8. Total Non-blocking Fail-Safe Isolation
+  await testAsync('sendNotificationEmail never throws unhandled errors when credentials fail or are disabled', async () => {
+    // Calling with disabled settings
+    const resDisabled = await sendNotificationEmail('student_welcome', { email: 'test@example.com' }, {}, { enabled: false });
+    assert.strictEqual(resDisabled.success, false);
+    assert.strictEqual(resDisabled.reason, 'Email notifications globally disabled');
+
+    // Calling with missing credentials
+    const resNoCreds = await sendNotificationEmail('student_welcome', { email: 'test@example.com' }, {}, { enabled: true });
+    assert.strictEqual(resNoCreds.success, false);
+    assert.strictEqual(resNoCreds.reason, 'EmailJS credentials not fully configured');
+
+    // Calling with null recipient
+    const resNoRecipient = await sendNotificationEmail('student_welcome', null, {}, { enabled: true, serviceId: 's', templateId: 't', publicKey: 'k' });
+    assert.strictEqual(resNoRecipient.success, false);
+    assert.strictEqual(resNoRecipient.reason, 'Invalid or missing recipient email address');
+  });
+
+  test('Primary business operations proceed unaffected by email dispatch failures', async () => {
     let operationCompleted = false;
 
     const mockBusinessAction = async () => {
-      // 1. Primary action
+      // 1. Primary action succeeds
       operationCompleted = true;
 
       // 2. Email trigger in try-catch
       try {
-        throw new Error('Network error connecting to email service');
+        const result = await sendNotificationEmail(
+          'fee_collected',
+          { email: 'student@example.com', name: 'Student' },
+          { amount_paid: '₹5,000' },
+          { enabled: false }
+        );
+        // Result is false, but operation continues
+        assert.strictEqual(result.success, false);
       } catch (emailErr) {
-        // Logged but never re-thrown
+        assert.fail('sendNotificationEmail should never throw uncaught exceptions');
       }
 
-      return { success: true };
+      return { success: true, studentId: 'stu-101' };
     };
 
-    const result = await mockBusinessAction();
-    assert.strictEqual(result.success, true);
+    const res = await mockBusinessAction();
+    assert.strictEqual(res.success, true);
     assert.strictEqual(operationCompleted, true, 'Primary operation must complete regardless of email status');
+  });
+
+  // 9. Comprehensive Cross-Check: The 6 Core Parameters
+  test('Cross-check: All 6 required template parameters (emailtype, studentname, message, action_url, action_text, to_email) are non-empty and valid across all 16 events', () => {
+    const events = Object.keys(DEFAULT_EMAIL_TEMPLATES);
+    assert.strictEqual(events.length, 16, 'Must verify all 16 platform event types');
+
+    const sampleStudent = {
+      name: 'Milan Soni',
+      email: 'milan.soni@gmail.com'
+    };
+
+    events.forEach((eventType) => {
+      const { templateParams } = buildEmailTemplateParams({
+        eventType,
+        recipient: sampleStudent,
+        dynamicData: {
+          course_title: 'Full Stack Java',
+          batch_name: 'Cohort Alpha',
+          test_title: 'Java Fundamentals',
+          assignment_title: 'Spring Boot REST API',
+          score: 18,
+          total_questions: 20,
+          percentage: 90,
+          due_amount: '₹15,000',
+          amount_paid: '₹15,000',
+          total_fee: '₹30,000',
+          receipt_no: 'REC-2026-001',
+          certificate_id: 'CERT-2026-001'
+        }
+      });
+
+      // 1. emailtype
+      assert.ok(templateParams.emailtype, `[${eventType}] emailtype must be non-empty string`);
+      assert.strictEqual(typeof templateParams.emailtype, 'string');
+
+      // 2. studentname
+      assert.ok(templateParams.studentname, `[${eventType}] studentname must be non-empty string`);
+      assert.strictEqual(templateParams.studentname, 'Milan Soni');
+
+      // 3. message
+      assert.ok(templateParams.message, `[${eventType}] message must be non-empty string`);
+      assert.ok(templateParams.message.length > 5);
+
+      // 4. action_url
+      assert.ok(templateParams.action_url, `[${eventType}] action_url must be non-empty string`);
+      assert.ok(templateParams.action_url.startsWith('https://') || templateParams.action_url.startsWith('http://'));
+      assert.ok(templateParams.action_url.includes('/platform'), `[${eventType}] action_url must include /platform`);
+
+      // 5. action_text
+      assert.ok(templateParams.action_text, `[${eventType}] action_text must be non-empty string`);
+
+      // 6. to_email
+      assert.ok(templateParams.to_email, `[${eventType}] to_email must be non-empty string`);
+      assert.strictEqual(templateParams.to_email, 'milan.soni@gmail.com');
+      assert.strictEqual(templateParams.email, 'milan.soni@gmail.com');
+    });
   });
 
   console.log(`\n🎉 SUITE PASSED: ${passed}/${total} assertions successful.`);

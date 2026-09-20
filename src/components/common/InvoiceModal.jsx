@@ -25,7 +25,7 @@ export default function InvoiceModal({ payment, enrollment, course, onClose }) {
                   CodeLift Academy
                 </div>
                 <div className="text-muted small">CodeLift Online Engineering Institute</div>
-                <div className="text-muted small">Web: https://codelift.dev | Email: billing@codelift.dev</div>
+                <div className="text-muted small">Web: https://codelift-official.github.io/platform/ | Email: codelift.official@gmail.com</div>
               </div>
               <div className="text-end">
                 <span className="badge bg-success px-3 py-2 fs-6 mb-2">
