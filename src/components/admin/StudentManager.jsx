@@ -125,6 +125,8 @@ export default function StudentManager() {
           student_name: data.name,
           student_email: data.email,
           batch_name: batchName,
+          password: data.password || 'codelift123',
+          default_password: 'codelift123',
           login_url: `${window.location.origin}/platform/login`
         }).catch((e) => console.warn('[StudentManager] Welcome email skipped:', e));
 
@@ -271,6 +273,17 @@ export default function StudentManager() {
 
     toast.success(`Password reset to default "${defaultPwd}" for ${student.name}!`);
 
+    // Trigger EmailJS password_reset security receipt with the updated password
+    if (student.email && sendEmail) {
+      sendEmail('password_reset', { email: student.email, name: student.name }, {
+        student_name: student.name,
+        student_email: student.email,
+        password: defaultPwd,
+        new_password: defaultPwd,
+        updated_at: new Date().toLocaleString('en-IN')
+      }).catch((e) => console.warn('[StudentManager] password_reset email skipped:', e));
+    }
+
     // Offer WhatsApp confirmation
     const waText = `Hello ${student.name},\n\nWelcome to the CodeLift Student Portal!\n\nYour account has been set up successfully by the Administration. You can use the following details to log in:\n\nEmail: ${student.email}\nPassword: *${defaultPwd}*\n\nLogin URL: ${window.location.origin}/platform/login\n\nWe’re excited to have you with us. Happy learning!`;
 
@@ -317,11 +330,13 @@ export default function StudentManager() {
 
     toast.success(`New password updated for ${passwordEditStudent.name}!`);
 
-    // Trigger EmailJS password_reset security receipt
+    // Trigger EmailJS password_reset security receipt with the updated custom password
     if (passwordEditStudent.email && sendEmail) {
       sendEmail('password_reset', { email: passwordEditStudent.email, name: passwordEditStudent.name }, {
         student_name: passwordEditStudent.name,
         student_email: passwordEditStudent.email,
+        password: newPwd,
+        new_password: newPwd,
         updated_at: new Date().toLocaleString('en-IN')
       }).catch((e) => console.warn('[StudentManager] password_reset email skipped:', e));
     }
@@ -1099,8 +1114,20 @@ export default function StudentManager() {
                               resolvePasswordResetRequest(req.studentId, 'codelift123');
                               toast.success(`Password reset to codelift123 for ${req.studentName}!`);
 
-                              // Send WhatsApp notification to student if phone available
+                              // Trigger EmailJS password_reset notification to student
                               const student = students.find((s) => s.id === req.studentId);
+                              const targetEmail = req.studentEmail || student?.email;
+                              if (targetEmail && sendEmail) {
+                                sendEmail('password_reset', { email: targetEmail, name: req.studentName }, {
+                                  student_name: req.studentName,
+                                  student_email: targetEmail,
+                                  password: 'codelift123',
+                                  new_password: 'codelift123',
+                                  updated_at: new Date().toLocaleString('en-IN')
+                                }).catch((e) => console.warn('[StudentManager] password_reset email skipped:', e));
+                              }
+
+                              // Send WhatsApp notification to student if phone available
                               const targetPhone = req.studentPhone || student?.phone;
                               if (targetPhone) {
                                 const waMsg = `Hello ${req.studentName},\n\nWelcome to the CodeLift Student Portal!\n\nYour account has been set up successfully by the Administration. You can use the following details to log in:\n\nEmail: ${req.studentEmail}\nPassword: codelift123\n\nLogin URL: ${window.location.origin}/platform/login\n\nWe’re excited to have you with us. Happy learning!`;

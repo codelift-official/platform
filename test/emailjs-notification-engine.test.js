@@ -413,6 +413,47 @@ export async function runEmailNotificationEngineTests() {
     });
   });
 
+  // 10. Student Welcome and Password Reset Email Password Integrity
+  test('student_welcome template includes default password "codelift123" and password_reset contains updated password', () => {
+    // 1. student_welcome test
+    const { templateParams: welcomeParams } = buildEmailTemplateParams({
+      eventType: 'student_welcome',
+      recipient: { name: 'Milan Soni', email: 'milan@example.com' },
+      dynamicData: {
+        batch_name: 'Cohort Alpha'
+      }
+    });
+
+    assert.strictEqual(welcomeParams.password, 'codelift123', 'student_welcome must default password to codelift123');
+    assert.ok(welcomeParams.message.includes('Default Password: codelift123'), 'student_welcome message must contain Default Password: codelift123');
+
+    // 2. password_reset test (with custom updated password)
+    const { templateParams: resetCustomParams } = buildEmailTemplateParams({
+      eventType: 'password_reset',
+      recipient: { name: 'Milan Soni', email: 'milan@example.com' },
+      dynamicData: {
+        password: 'customNewPassword456',
+        updated_at: '20/09/2026, 8:00:00 pm'
+      }
+    });
+
+    assert.strictEqual(resetCustomParams.password, 'customNewPassword456');
+    assert.ok(resetCustomParams.message.includes('Updated Password: customNewPassword456'), 'password_reset message must contain the updated password');
+
+    // 3. password_reset test (with default reset password codelift123)
+    const { templateParams: resetDefaultParams } = buildEmailTemplateParams({
+      eventType: 'password_reset',
+      recipient: { name: 'Milan Soni', email: 'milan@example.com' },
+      dynamicData: {
+        password: 'codelift123',
+        updated_at: '20/09/2026, 8:00:00 pm'
+      }
+    });
+
+    assert.strictEqual(resetDefaultParams.password, 'codelift123');
+    assert.ok(resetDefaultParams.message.includes('Updated Password: codelift123'), 'password_reset message must contain Updated Password: codelift123');
+  });
+
   console.log(`\n🎉 SUITE PASSED: ${passed}/${total} assertions successful.`);
   return { passedCount: passed, totalCount: total };
 }

@@ -199,6 +199,9 @@ export default function StudentProfile() {
               { name: student?.name || 'Student', email: emailLower },
               {
                 student_name: student?.name || 'Student',
+                student_email: emailLower,
+                password: newPassword,
+                new_password: newPassword,
                 updated_at: new Date().toLocaleString('en-IN')
               }
             ).catch((err) => console.warn('[EmailJS] password_reset email failed:', err));
@@ -227,6 +230,9 @@ export default function StudentProfile() {
                   { name: student?.name || 'Student', email: emailLower },
                   {
                     student_name: student?.name || 'Student',
+                    student_email: emailLower,
+                    password: newPassword,
+                    new_password: newPassword,
                     updated_at: new Date().toLocaleString('en-IN')
                   }
                 ).catch((err) => console.warn('[EmailJS] password_reset email failed:', err));

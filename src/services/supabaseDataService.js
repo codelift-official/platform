@@ -737,14 +737,15 @@ export async function addStudent(studentData) {
     reset_requested: Boolean(studentData.reset_requested)
   };
 
-  if (studentData.password) {
+  const studentPassword = studentData.password || 'codelift123';
+  if (studentPassword) {
     if (isStudentPasswordColumnSupported) {
-      insertPayload.password = studentData.password;
+      insertPayload.password = studentPassword;
     }
     // Also backup in progress jsonb for universal cross-device persistence
     insertPayload.progress = {
       ...(studentData.progress || {}),
-      __auth_pwd: studentData.password
+      __auth_pwd: studentPassword
     };
   }
 

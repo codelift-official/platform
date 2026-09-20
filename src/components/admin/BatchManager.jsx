@@ -64,7 +64,8 @@ export default function BatchManager() {
     assignTestToBatch,
     unassignTestFromBatch,
     assignStudentToBatch,
-    removeStudentFromBatch
+    removeStudentFromBatch,
+    sendEmail
   } = useData();
 
   // Modals state
@@ -245,9 +246,12 @@ export default function BatchManager() {
     }
 
     try {
+      const studentEmail = newStudentData.email.trim().toLowerCase();
+      const studentName = newStudentData.name.trim();
+
       await addStudent({
-        name: newStudentData.name.trim(),
-        email: newStudentData.email.trim().toLowerCase(),
+        name: studentName,
+        email: studentEmail,
         phone: newStudentData.phone?.trim() || '',
         batchId: currentBatch.id,
         totalFee: Number(currentBatch.feeAmount || 0),
@@ -255,8 +259,28 @@ export default function BatchManager() {
         paidFee: 0,
         feeStatus: 'Pending',
         enrolledDate: new Date().toISOString().split('T')[0],
-        progress: {}
+        progress: {},
+        password: 'codelift123'
       });
+
+      if (studentEmail && sendEmail) {
+        sendEmail('student_welcome', { email: studentEmail, name: studentName }, {
+          student_name: studentName,
+          student_email: studentEmail,
+          batch_name: currentBatch?.name || 'CodeLift Specialized Cohort',
+          password: 'codelift123',
+          default_password: 'codelift123',
+          login_url: `${window.location.origin}/platform/login`
+        }).catch((err) => console.warn('[BatchManager] Welcome email skipped:', err));
+
+        if (currentBatch?.id) {
+          sendEmail('batch_allotment', { email: studentEmail, name: studentName }, {
+            student_name: studentName,
+            batch_name: currentBatch?.name || 'CodeLift Specialized Cohort',
+            start_date: currentBatch?.startDate || 'Immediate'
+          }).catch((err) => console.warn('[BatchManager] Batch allotment email skipped:', err));
+        }
+      }
 
       toast.success(`Student "${newStudentData.name}" enrolled into ${currentBatch.name}.`);
       setNewStudentData({ name: '', email: '', phone: '' });

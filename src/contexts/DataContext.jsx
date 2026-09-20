@@ -342,6 +342,7 @@ export function DataProvider({ children }) {
       baseFee: 0,
       concessionAmount: 0,
       concessionReason: '',
+      password: studentData.password || 'codelift123',
       ...studentData,
       id: assignedId,
       ...(legacyId ? { legacyId } : {})
@@ -360,13 +361,15 @@ export function DataProvider({ children }) {
         feeStatus: created.fee_status || newStudent.feeStatus,
         baseFee: created.base_fee !== undefined ? Number(created.base_fee) : (newStudent.baseFee || 0),
         concessionAmount: created.concession_amount !== undefined ? Number(created.concession_amount) : (newStudent.concessionAmount || 0),
-        concessionReason: created.concession_reason !== undefined ? created.concession_reason : (newStudent.concessionReason || '')
+        concessionReason: created.concession_reason !== undefined ? created.concession_reason : (newStudent.concessionReason || ''),
+        password: created.password || newStudent.password || 'codelift123'
       } : newStudent;
 
-      if (studentData.password && studentData.password !== 'codelift123' && studentData.password !== 'password') {
-        // Ensure auth.users stays in sync for newly created custom passwords (live server call)
+      const passwordToSet = studentData.password || 'codelift123';
+      if (passwordToSet) {
+        // Ensure auth.users stays in sync (live server call)
         if (supabaseDataService.setStudentPasswordRPC) {
-          supabaseDataService.setStudentPasswordRPC(finalized.email || finalized.id || assignedId, studentData.password).catch(() => {});
+          supabaseDataService.setStudentPasswordRPC(finalized.email || finalized.id || assignedId, passwordToSet).catch(() => {});
         }
       }
 

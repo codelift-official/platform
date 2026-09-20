@@ -758,7 +758,8 @@ export default function PlatformSettings() {
                           {/* Variable Tag Badges */}
                           <div className="d-flex flex-wrap gap-1 mb-2">
                             {[
-                              'studentname', 'student_name', 'student_email', 'batch_name', 'course_title',
+                              'studentname', 'student_name', 'student_email', 'password', 'default_password',
+                              'updated_at', 'batch_name', 'course_title',
                               'test_title', 'score', 'percentage', 'assignment_title',
                               'marks', 'max_marks', 'due_amount', 'amount_paid',
                               'receipt_no', 'certificate_id', 'platform_name'

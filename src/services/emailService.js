@@ -188,7 +188,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     emailtype: 'Welcome to CodeLift',
     subject: '{{emailtype}} — {{studentname}}',
     heading: 'Welcome Aboard, {{student_name}}!',
-    body: 'Your student portal account has been provisioned for {{batch_name}}.\n\nYou can now log in to access your course syllabus, assignments, coding arena, and live assessments.\n\nRegistered Email: {{student_email}}',
+    body: 'Your student portal account has been provisioned for {{batch_name}}.\n\nYou can now log in to access your course syllabus, assignments, coding arena, and live assessments.\n\nRegistered Email: {{student_email}}\nDefault Password: {{password}}',
     actionText: 'Log In to Student Portal',
     actionUrl: '/login'
   },
@@ -272,7 +272,7 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     emailtype: 'Password Reset',
     subject: '{{emailtype}} — {{studentname}}',
     heading: 'Password Updated Successfully',
-    body: 'Your CodeLift student portal password was successfully updated on {{updated_at}}.\n\nIf you did not authorize this change, please contact academic administration immediately.',
+    body: 'Your CodeLift student portal password was successfully updated on {{updated_at}}.\n\nRegistered Email: {{student_email}}\nUpdated Password: {{password}}\n\nIf you did not authorize this change, please contact academic administration immediately.',
     actionText: 'Sign In to Portal',
     actionUrl: '/login'
   },
@@ -510,7 +510,11 @@ export function buildEmailTemplateParams({ eventType, recipient, dynamicData = {
     total_fee: dynamicData.total_fee !== undefined ? dynamicData.total_fee : (dynamicData.totalFee !== undefined ? `₹${Number(dynamicData.totalFee).toLocaleString('en-IN')}` : ''),
     receipt_no: dynamicData.receipt_no || dynamicData.receiptNo || dynamicData.receiptId || '',
     certificate_id: dynamicData.certificate_id || dynamicData.certificateId || '',
-    phone: dynamicData.phone || dynamicData.mobile || dynamicData.whatsapp || ''
+    phone: dynamicData.phone || dynamicData.mobile || dynamicData.whatsapp || '',
+    password: dynamicData.password || dynamicData.new_password || dynamicData.newPassword || dynamicData.defaultPassword || dynamicData.default_password || (eventType === 'student_welcome' ? 'codelift123' : ''),
+    default_password: dynamicData.default_password || dynamicData.defaultPassword || 'codelift123',
+    new_password: dynamicData.new_password || dynamicData.newPassword || dynamicData.password || '',
+    updated_at: dynamicData.updated_at || dynamicData.updatedAt || new Date().toLocaleString('en-IN')
   };
 
   // 4. Resolve Email Type (e.g. "Welcome to CodeLift", "Test Submission")
@@ -600,6 +604,12 @@ export function buildEmailTemplateParams({ eventType, recipient, dynamicData = {
     studentemail: recipientEmail,
     to: recipientEmail,
     recipient: recipientEmail,
+
+    // 7. Dynamic credential & entity parameters
+    password: mergedData.password,
+    new_password: mergedData.new_password,
+    default_password: mergedData.default_password,
+    updated_at: mergedData.updated_at,
 
     // Additional standard fields
     subject,
