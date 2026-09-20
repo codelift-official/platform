@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PublicThemeSelector from '../components/common/PublicThemeSelector';
+import BrandVersionBadge from '../components/common/BrandVersionBadge';
 import { FiLock, FiUser, FiEye, FiEyeOff, FiArrowRight, FiArrowLeft } from 'react-icons/fi';
-import { PLATFORM_VERSION } from '../config/version';
 import toast from 'react-hot-toast';
 import './Login.css';
 
@@ -261,11 +261,7 @@ export default function AdminLogin() {
             <div className="small mb-2" style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.74rem' }}>
               🔒 Protected by 256-bit encrypted security definer RPC
             </div>
-            <span className="badge rounded-pill d-inline-flex align-items-center gap-1" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.04))', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.70rem', fontWeight: 600 }}>
-              <span>Code</span>
-              <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
-              <span>ft Platform 1.9</span>
-            </span>
+            <BrandVersionBadge />
           </div>
         </div>
       </div>

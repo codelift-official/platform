@@ -33,22 +33,19 @@ try {
   if (isInitialRelease) {
     nextNum = 1.0;
     console.log(`\n🚀 [CodeLift Build] Initializing baseline version: CodeLift Platform 1.0`);
-  } else {
-    // Increment by 0.1, preventing upgrade to 2.0 until instructed by user
+  } else if (process.env.FORCE_BUMP || process.env.BUMP_VERSION) {
+    // Increment by 0.1 on explicit bump requests
     nextNum = Math.round((currentNum + 0.1) * 10) / 10;
-    if (nextNum >= 2.0 && !process.env.UPGRADE_V2) {
-      nextNum = 1.9;
-      console.log(`\n⚠️ [CodeLift Build] Capped at 1.9 (Waiting for user confirmation before upgrading to 2.0)`);
-    } else {
-      console.log(`\n🚀 [CodeLift Build] Bumped version from ${currentNum.toFixed(1)} -> ${nextNum.toFixed(1)}`);
-    }
+    console.log(`\n🚀 [CodeLift Build] Bumped version from ${currentNum.toFixed(1)} -> ${nextNum.toFixed(1)}`);
+  } else {
+    console.log(`\n🚀 [CodeLift Build] Building CodeLift Platform ${nextNum.toFixed(1)}`);
   }
 
   const nextVersionStr = `CodeLift Platform ${nextNum.toFixed(1)}`;
   const timestamp = new Date().toISOString();
 
   const newFileContent = `// CodeLift Platform Version Configuration
-// Auto-incremented by 0.1 on each production build via scripts/bump-version.js
+// Auto-incremented on production releases
 export const PLATFORM_VERSION_NAME = "CodeLift Platform";
 export const PLATFORM_VERSION_NUMBER = ${nextNum.toFixed(1)};
 export const PLATFORM_VERSION = "${nextVersionStr}";

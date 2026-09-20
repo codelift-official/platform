@@ -4,8 +4,8 @@ import { Button, Modal, Form, Alert, OverlayTrigger, Tooltip } from 'react-boots
 import { FiChevronLeft, FiChevronRight, FiX, FiLock } from 'react-icons/fi';
 import { ADMIN_NAV_ITEMS, STUDENT_NAV_ITEMS } from '../../config/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import BrandVersionBadge from './BrandVersionBadge';
 import { supabase } from '../../services/supabaseClient';
-import { PLATFORM_VERSION } from '../../config/version';
 import toast from 'react-hot-toast';
 
 // Re-export navigation configs for backward compatibility
@@ -451,11 +451,7 @@ export default function Sidebar({
                 })}
               </nav>
               <div className="p-2 border-top text-center mt-auto flex-shrink-0" style={{ borderColor: 'var(--border-color)' }}>
-                <span className="badge rounded-pill d-inline-flex align-items-center gap-1" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.03))', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.70rem', fontWeight: 600 }}>
-                  <span>Code</span>
-                  <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
-                  <span>ft {PLATFORM_VERSION}</span>
-                </span>
+                <BrandVersionBadge />
               </div>
             </div>
           )}
@@ -596,11 +592,7 @@ export default function Sidebar({
           })}
         </nav>
         <div className="p-2 border-top text-center mt-auto flex-shrink-0" style={{ borderColor: 'var(--border-color)' }}>
-          <span className="badge rounded-pill d-inline-flex align-items-center gap-1" style={{ background: 'var(--card-bg-alt, rgba(0,0,0,0.03))', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontSize: '0.70rem', fontWeight: 600 }}>
-            <span>Code</span>
-            <span style={{ color: 'var(--bs-primary, #15803D)' }}>Li</span>
-            <span>ft Platform 1.9</span>
-          </span>
+          <BrandVersionBadge />
         </div>
       </aside>
       {renderFeesModal()}

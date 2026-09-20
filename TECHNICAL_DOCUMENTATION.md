@@ -1,6 +1,6 @@
 # CodeLift Platform — Comprehensive Technical Documentation & Architecture Reference
 
-> **Version**: 1.9.0  
+> **Version**: 1.0.0  
 > **Target Audience**: Core Engineers, DevOps, System Architects, and Technical Maintainers  
 > **Last Updated**: September 2026  
 > **Repository**: `codelift-official/platform`  
@@ -109,7 +109,7 @@ d:/PROD/CodeLift/
 ├── .env.example                       # Reference environment variables
 ├── .env.local                         # Local environment secrets (ignored by git)
 ├── index.html                         # SPA mount point with meta tags & preloader
-├── package.json                       # Scripts, dependencies, version info (1.9.0)
+├── package.json                       # Scripts, dependencies, version info (1.0.0)
 ├── vite.config.js                     # Vite build configuration, base URL /platform/
 ├── vercel.json                        # Optional Vercel SPA routing redirects
 ├── supabase/

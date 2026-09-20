@@ -147,6 +147,21 @@ export async function runHomepageMobileAndThemeTests() {
     }
     const navJsx = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'Navbar.jsx'), 'utf8');
     assert(navJsx.includes('logo.jpg?v='), 'Navbar.jsx must include cache buster on logo.jpg');
+    const layoutJsx = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'Layout.jsx'), 'utf8');
+    assert(!layoutJsx.includes('Code</span>'), 'Layout must not split CodeLift letters into separate spaced flex elements');
+  });
+
+  // 13. Dynamic BrandVersionBadge verification
+  test('BrandVersionBadge dynamically extracts version without hardcoding or repeating CodeLift', () => {
+    const badgeJsx = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'BrandVersionBadge.jsx'), 'utf8');
+    const adminLoginJsx = fs.readFileSync(path.join(rootDir, 'src', 'pages', 'AdminLogin.jsx'), 'utf8');
+    const sidebarJsx = fs.readFileSync(path.join(rootDir, 'src', 'components', 'common', 'Sidebar.jsx'), 'utf8');
+
+    assert(badgeJsx.includes('PLATFORM_VERSION'), 'BrandVersionBadge must reference dynamic PLATFORM_VERSION');
+    assert(badgeJsx.includes('replace(/^CodeLift\\s*/i'), 'BrandVersionBadge must sanitize leading CodeLift to prevent duplication');
+    assert(badgeJsx.includes("color: 'var(--bs-primary, #15803D)'"), 'BrandVersionBadge must highlight Li in active primary color');
+    assert(adminLoginJsx.includes('<BrandVersionBadge'), 'AdminLogin must use BrandVersionBadge');
+    assert(sidebarJsx.includes('<BrandVersionBadge'), 'Sidebar must use BrandVersionBadge');
   });
 
   for (const { name, fn } of tests) {
