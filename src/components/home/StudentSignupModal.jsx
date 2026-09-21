@@ -1,8 +1,8 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import {
   FiX, FiUser, FiMail, FiPhone, FiLock, FiEye, FiEyeOff,
-  FiCheckCircle, FiCompass, FiArrowRight, FiInfo
+  FiCheckCircle, FiCompass
 } from 'react-icons/fi';
 import { FaGraduationCap, FaWhatsapp } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -18,7 +18,6 @@ const INTERESTS = [
   'Not Sure Yet'
 ];
 
-/* â”€â”€â”€ Shared button styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const primaryBtnStyle = {
   borderRadius: 50,
   padding: '10px 26px',
@@ -147,9 +146,6 @@ export default function StudentSignupModal({ show, onHide }) {
                 <FaGraduationCap style={{ color: 'var(--bs-primary, #15803d)', marginRight: 8 }} />
                 Create Your Student Account
               </h3>
-              <p className="interest-modal-subtitle">
-                Register now â€” our team will assign you to a batch and course shortly.
-              </p>
             </div>
             <button type="button" className="interest-modal-close-btn" onClick={handleClose} aria-label="Close">
               <FiX size={20} />
@@ -264,19 +260,7 @@ export default function StudentSignupModal({ show, onHide }) {
                 {errors.confirmPassword && <div className="interest-field-error">{errors.confirmPassword}</div>}
               </div>
 
-              {/* Info note */}
-              <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: 10,
-                background: 'rgba(21,128,61,0.06)',
-                border: '1px solid rgba(21,128,61,0.18)',
-                borderRadius: 10, padding: '11px 13px',
-                fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)', lineHeight: 1.55
-              }}>
-                <FiInfo size={15} style={{ flexShrink: 0, marginTop: 1, color: 'var(--bs-primary, #15803d)' }} />
-                <span>
-                  After registration, our admissions team will reach out to assign you to the right batch and course.
-                </span>
-              </div>
+
 
             </div>
 
@@ -307,12 +291,11 @@ export default function StudentSignupModal({ show, onHide }) {
           </form>
         </>
       ) : (
-        /* â”€â”€ Success State â”€â”€ */
+        /* ── Success State ── */
         <>
           <div className="interest-modal-header">
             <div>
               <h3 className="interest-modal-title">Account Created</h3>
-              <p className="interest-modal-subtitle">You are now part of the CodeLift family.</p>
             </div>
             <button type="button" className="interest-modal-close-btn" onClick={handleClose} aria-label="Close">
               <FiX size={20} />
@@ -320,84 +303,42 @@ export default function StudentSignupModal({ show, onHide }) {
           </div>
 
           <div className="interest-modal-body">
-            {/* Success icon */}
-            <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
+            <div style={{ textAlign: 'center', padding: '20px 0 16px' }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 76, height: 76, borderRadius: '50%',
+                width: 68, height: 68, borderRadius: '50%',
                 background: 'rgba(21,128,61,0.1)', color: '#15803d', marginBottom: 14
               }}>
-                <FiCheckCircle size={42} />
+                <FiCheckCircle size={38} />
               </div>
-              <h5 style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-                Welcome, {form.name.split(' ')[0]}!
-              </h5>
-              <p style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.875rem', margin: 0 }}>
-                Your student account has been created successfully.
+              <p style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.9rem', margin: '0 0 4px' }}>
+                Welcome, <strong>{form.name.split(' ')[0]}</strong>! Your account has been created.
               </p>
+              <p style={{ color: 'var(--text-secondary, #64748b)', fontSize: '0.82rem', margin: '0 0 18px' }}>
+                Contact admin to get allotted to a batch and start your journey.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const msg = `Hi CodeLift Team! I just signed up.%0A%0AName: ${encodeURIComponent(form.name)}%0AEmail: ${encodeURIComponent(form.email)}%0AInterest: ${encodeURIComponent(form.interest)}%0A%0APlease allot me to a batch to start my journey. Thank you!`;
+                  window.open(`https://wa.me/${ADMIN_WA || '919834671940'}?text=${msg}`, '_blank', 'noopener,noreferrer');
+                }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '10px 22px', borderRadius: 50,
+                  background: '#25D366', border: 'none', color: '#fff',
+                  fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(37,211,102,0.35)', transition: 'opacity 0.2s'
+                }}
+              >
+                <FaWhatsapp size={17} />
+                Message Admin on WhatsApp
+              </button>
             </div>
-
-            {/* Next steps */}
-            <div style={{
-              background: 'rgba(21,128,61,0.05)',
-              border: '1px solid rgba(21,128,61,0.15)',
-              borderRadius: 12, padding: '14px 16px'
-            }}>
-              <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 12, color: 'var(--text-primary)' }}>
-                What happens next?
-              </div>
-              {[
-                'Check your email â€” a welcome message from CodeLift is on its way.',
-                'Our admissions team will review your registration and contact you.',
-                'You will be assigned to the right batch based on your interest.',
-                'Once assigned, you can log in and start learning.'
-              ].map((txt, i) => (
-                <div key={i} style={{
-                  display: 'flex', gap: 10, alignItems: 'flex-start',
-                  fontSize: '0.84rem', color: 'var(--text-secondary, #64748b)',
-                  marginBottom: i < 3 ? 10 : 0
-                }}>
-                  <span style={{
-                    flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
-                    background: '#15803d', color: '#fff',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.7rem', fontWeight: 700, marginTop: 1
-                  }}>{i + 1}</span>
-                  <span>{txt}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* WhatsApp CTA */}
-            <button
-              type="button"
-              onClick={() => {
-                const msg = `Hello CodeLift Team,\n\nI just created my student account.\n\nName: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}\nInterested In: ${form.interest}\n\nPlease guide me on the next steps and batch assignment. Thank you!`;
-                window.open(
-                  `https://wa.me/${ADMIN_WA || '919834671940'}?text=${encodeURIComponent(msg)}`,
-                  '_blank',
-                  'noopener,noreferrer'
-                );
-              }}
-              style={{
-                width: '100%', padding: '11px 20px', borderRadius: 50,
-                background: '#25D366', border: 'none', color: '#fff',
-                fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 8, boxShadow: '0 4px 14px rgba(37,211,102,0.3)', transition: 'all 0.2s'
-              }}
-            >
-              <FaWhatsapp size={17} />
-              Contact Us on WhatsApp
-            </button>
           </div>
 
-          <div className="interest-modal-footer" style={{ justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)' }}>
-              You can log in once your batch is assigned.
-            </span>
+          <div className="interest-modal-footer" style={{ justifyContent: 'flex-end' }}>
             <button type="button" onClick={handleClose} style={primaryBtnStyle}>
-              <FiArrowRight size={15} />
               Done
             </button>
           </div>
@@ -406,4 +347,5 @@ export default function StudentSignupModal({ show, onHide }) {
     </Modal>
   );
 }
+
 

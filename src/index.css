@@ -4449,3 +4449,44 @@ html {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ══════════════════════════════════════════════════════════
+   Mobile Modal Fixes — prevent clipping on small screens
+   ══════════════════════════════════════════════════════════ */
+
+/* Ensure modal always stacks above sidebar offcanvas and mobile header */
+.modal { z-index: 1060 !important; }
+.modal-backdrop { z-index: 1055 !important; }
+
+/* On mobile: let dialog use near-full viewport, cap height, enable body scroll */
+@media (max-width: 767.98px) {
+  .modal-dialog {
+    margin: 0.5rem auto !important;
+    max-width: calc(100vw - 1rem) !important;
+  }
+
+  /* Scrollable body inside modal */
+  .modal-content {
+    max-height: calc(100dvh - 1rem);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto;
+  }
+
+  /* Prevent modal header & footer from scrolling away */
+  .modal-header,
+  .modal-footer {
+    flex-shrink: 0;
+  }
+
+  /* Size overrides: lg/xl modals still fit mobile */
+  .modal-lg,
+  .modal-xl {
+    max-width: calc(100vw - 1rem) !important;
+  }
+}

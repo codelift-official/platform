@@ -602,7 +602,7 @@ export default function FeeManager() {
       </Card>
 
       {/* Record Payment Modal */}
-      <Modal show={showRecordModal} onHide={() => setShowRecordModal(false)} centered size="lg">
+      <Modal show={showRecordModal} onHide={() => setShowRecordModal(false)} centered scrollable size="lg">
         <Modal.Header closeButton>
           <Modal.Title className="fs-5 fw-bold d-flex align-items-center gap-2">
             <FaReceipt className="text-primary" />
@@ -831,7 +831,7 @@ export default function FeeManager() {
       </Modal>
 
       {/* Edit Fee Modal */}
-      <Modal show={Boolean(editingFee)} onHide={() => setEditingFee(null)} centered>
+      <Modal show={Boolean(editingFee)} onHide={() => setEditingFee(null)} centered scrollable>
         <Modal.Header closeButton>
           <Modal.Title className="fs-5 fw-bold">Edit Fee Record</Modal.Title>
         </Modal.Header>
@@ -925,6 +925,7 @@ export default function FeeManager() {
         show={showBatchReminderModal}
         onHide={() => setShowBatchReminderModal(false)}
         size="lg"
+        scrollable
         centered
       >
         <Modal.Header closeButton>

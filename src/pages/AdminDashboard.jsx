@@ -43,12 +43,12 @@ export default function AdminDashboard() {
           <AdminSidebar activeTab={activeTab} onSelectTab={handleSelectTab} />
         </Col>
 
-        {/* Mobile Offcanvas Sidebar */}
+        {/* Mobile Offcanvas Sidebar — z-index kept below Bootstrap Modal (1055+) */}
         <Offcanvas
           show={showMobileSidebar}
           onHide={() => setShowMobileSidebar(false)}
           responsive="md"
-          style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}
+          style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)', zIndex: 1040 }}
         >
           <Offcanvas.Header closeButton style={{ borderBottom: '1px solid var(--border-color)' }}>
             <Offcanvas.Title className="fw-bold fs-6">CodeLift Admin Menu</Offcanvas.Title>
@@ -57,6 +57,7 @@ export default function AdminDashboard() {
             <AdminSidebar activeTab={activeTab} onSelectTab={handleSelectTab} />
           </Offcanvas.Body>
         </Offcanvas>
+
 
         {/* Main Content Area */}
         <Col md={9} lg={10} className="p-3 p-md-4 p-lg-5 min-vh-100" style={{ backgroundColor: 'var(--bg-body)' }}>
