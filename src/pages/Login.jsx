@@ -18,7 +18,7 @@ import {
 } from 'react-icons/fa';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import LoginRadar from '../components/common/LoginRadar';
-import InterestFormModal from '../components/home/InterestFormModal';
+import StudentSignupModal from '../components/home/StudentSignupModal';
 import { supabase } from '../services/supabaseClient';
 import { openAdminWhatsApp, buildAdminNotification } from '../services/notificationService';
 import toast from 'react-hot-toast';
@@ -288,7 +288,7 @@ export default function Login() {
                   style={{ minHeight: 42, fontSize: '0.84rem' }}
                 >
                   <FaGraduationCap size={16} />
-                  <span>Sign Up / Register for Courses</span>
+                  <span>New Student? Create Your Account</span>
                 </button>
               </div>
 
@@ -485,13 +485,10 @@ export default function Login() {
         )}
       </Modal>
 
-      {/* Course Registration / Sign Up Modal */}
-      <InterestFormModal
+      {/* Student Self-Registration Modal */}
+      <StudentSignupModal
         show={showInterestModal}
         onHide={() => setShowInterestModal(false)}
-        title="🎓 Sign Up for Upcoming Cohort"
-        subtitle="Fill in your details to register. Our admissions team will receive your info directly on WhatsApp."
-        submitLabel="Send Details on WhatsApp"
       />
     </div>
   );

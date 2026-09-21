@@ -407,6 +407,80 @@ export function DataProvider({ children }) {
     }
   };
 
+  /**
+   * signupStudent — Student self-registration (no batch assigned).
+   * 1. Creates a Supabase auth user with email + chosen password.
+   * 2. Inserts a students row with batch_id = null.
+   * 3. Fires a warm signup_welcome email (no credentials — just a welcome note).
+   */
+  const signupStudent = async ({ name, email, phone, password, interest }) => {
+    if (!name || !email || !password) {
+      throw new Error('Name, email, and password are required to create an account.');
+    }
+
+    // 1. Create Supabase auth user
+    let authUserId;
+    if (isSupabaseConfigured) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          data: { name: name.trim(), role: 'student' }
+        }
+      });
+      if (signUpError) {
+        // Surface meaningful errors
+        if (signUpError.message?.toLowerCase().includes('already registered') ||
+            signUpError.message?.toLowerCase().includes('already been registered') ||
+            signUpError.message?.toLowerCase().includes('user already exists')) {
+          throw new Error('This email is already registered. Please log in instead.');
+        }
+        throw new Error(signUpError.message || 'Failed to create account. Please try again.');
+      }
+      authUserId = signUpData?.user?.id;
+      if (!authUserId) {
+        throw new Error('Account creation failed — no user ID returned. Please try again.');
+      }
+    } else {
+      // Offline / demo mode — generate a local UUID
+      authUserId = genUUID();
+    }
+
+    // 2. Insert student record with no batch
+    const studentRecord = await addStudent({
+      id: authUserId,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phone?.trim() || '',
+      batchId: null,
+      batch_id: null,
+      password,
+      feeStatus: 'PENDING',
+      totalFee: 0,
+      paidFee: 0,
+      isActive: true,
+      enrolledDate: new Date().toISOString().split('T')[0],
+      // Store interest in progress for admin visibility
+      progress: { interest: interest || '' }
+    });
+
+    // 3. Send welcome email (warm welcome only, no credentials)
+    try {
+      const emailConfig = buildEmailConfig(platformSettings);
+      await sendNotificationEmail(
+        'signup_welcome',
+        { email: email.trim(), name: name.trim() },
+        { student_name: name.trim(), student_email: email.trim() },
+        emailConfig
+      );
+    } catch (emailErr) {
+      // Non-fatal — account is created, email failure should not block signup
+      console.warn('[signupStudent] Welcome email skipped:', emailErr);
+    }
+
+    return studentRecord;
+  };
+
   const updateStudent = async (studentId, updates) => {
     if (updates.batchId !== undefined || updates.batch_id !== undefined) {
       try {
@@ -2259,6 +2333,7 @@ export function DataProvider({ children }) {
         addUser,
         updateUser,
         addStudent,
+        signupStudent,
         updateStudent,
         deleteStudent,
         toggleStudentActive,

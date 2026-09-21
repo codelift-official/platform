@@ -180,6 +180,18 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     actionText: 'Explore CodeLift Courses',
     actionUrl: '/courses'
   },
+  signup_welcome: {
+    enabled: true,
+    isBulk: false,
+    label: 'Self-Signup Welcome Email',
+    emailType: 'Welcome to CodeLift',
+    emailtype: 'Welcome to CodeLift',
+    subject: '{{emailtype}} — {{studentname}}',
+    heading: 'Welcome to CodeLift, {{student_name}}!',
+    body: 'We\'re thrilled to have you join the CodeLift community!\n\nYour student account has been successfully created. Our admissions team will review your registration and reach out to you shortly to help you get assigned to the right batch and course based on your interests.\n\nIn the meantime, feel free to explore our learning portal. If you have any questions or need assistance, please contact us on WhatsApp or email — our team is always happy to help.\n\nWe look forward to learning together!',
+    actionText: 'Go to Student Portal',
+    actionUrl: '/login'
+  },
   student_welcome: {
     enabled: true,
     isBulk: false,

@@ -23,19 +23,20 @@ import {
   FaInfoCircle,
   FaLock,
   FaUndo,
-  FaCopy
+  FaCopy,
+  FaUserClock
 } from 'react-icons/fa';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { supabase } from '../../services/supabaseClient';
 import { buildAdminNotification, openAdminWhatsApp, buildWhatsAppUrl, ADMIN_WA } from '../../services/notificationService';
 
-// Zod schema for student form validation
+// Zod schema for student form validation (batch is optional for admin-add)
 const studentSchema = z.object({
   name: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please provide a valid email address'),
   phone: z.string().min(8, 'Phone number must be at least 8 digits'),
-  batchId: z.string().min(1, 'Please select a batch')
+  batchId: z.string().optional()
 });
 
 export default function StudentManager() {
@@ -117,19 +118,20 @@ export default function StudentManager() {
       resetAdd();
       setShowAddModal(false);
 
-      // Trigger EmailJS student_welcome & batch_allotment
+      // Trigger EmailJS student_welcome
       if (data.email && sendEmail) {
         const assignedBatch = batchList.find((b) => b.id === data.batchId);
         const batchName = assignedBatch?.name || 'CodeLift Specialized Cohort';
         sendEmail('student_welcome', { email: data.email, name: data.name }, {
           student_name: data.name,
           student_email: data.email,
-          batch_name: batchName,
+          batch_name: data.batchId ? batchName : 'Unassigned — batch will be notified separately',
           password: data.password || 'codelift123',
           default_password: 'codelift123',
           login_url: `${window.location.origin}/platform/login`
         }).catch((e) => console.warn('[StudentManager] Welcome email skipped:', e));
 
+        // Only send batch_allotment email if a batch is actually assigned
         if (data.batchId) {
           sendEmail('batch_allotment', { email: data.email, name: data.name }, {
             student_name: data.name,
@@ -382,9 +384,13 @@ export default function StudentManager() {
   };
 
   // Filter students based on batch selection and search term
+  const unassignedStudents = studentList.filter((s) => !s.batchId && s.batchId !== 'undefined');
+
   const filteredStudents = studentList.filter((s) => {
     if (!s) return false;
-    const matchesBatch = selectedBatchFilter === 'ALL' || s.batchId === selectedBatchFilter;
+    const matchesBatch =
+      selectedBatchFilter === 'ALL' ||
+      (selectedBatchFilter === 'UNASSIGNED' ? (!s.batchId || s.batchId === '') : s.batchId === selectedBatchFilter);
     const nameStr = s.name || '';
     const emailStr = s.email || '';
     const phoneStr = s.phone || '';
@@ -397,6 +403,41 @@ export default function StudentManager() {
 
   return (
     <div>
+      {/* Unassigned Students Banner */}
+      {unassignedStudents.length > 0 && (
+        <div className="alert border-0 d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 rounded-3 shadow-sm"
+          style={{
+            background: 'linear-gradient(135deg, rgba(234,179,8,0.12), rgba(234,179,8,0.05))',
+            border: '1px solid rgba(234,179,8,0.3) !important',
+            borderLeft: '4px solid #eab308 !important'
+          }}
+        >
+          <div className="d-flex align-items-center gap-2">
+            <FaUserClock className="text-warning fs-5 flex-shrink-0" />
+            <div>
+              <strong style={{ color: 'var(--text-primary)' }}>
+                {unassignedStudents.length} Student{unassignedStudents.length > 1 ? 's' : ''} Awaiting Batch Assignment
+              </strong>
+              <div className="small text-muted">
+                {unassignedStudents.length > 1
+                  ? `${unassignedStudents.map(s => s.name.split(' ')[0]).slice(0, 3).join(', ')}${unassignedStudents.length > 3 ? ` +${unassignedStudents.length - 3} more` : ''} — signed up but not yet assigned to any batch.`
+                  : `${unassignedStudents[0]?.name} signed up but is not yet assigned to any batch.`
+                }
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="warning"
+            size="sm"
+            className="fw-bold d-inline-flex align-items-center gap-1 shadow-sm"
+            onClick={() => setSelectedBatchFilter('UNASSIGNED')}
+          >
+            <FaUserClock size={12} />
+            <span>View Unassigned ({unassignedStudents.length})</span>
+          </Button>
+        </div>
+      )}
+
       {/* Pending Password Reset Complaints Banner */}
       {pendingResetRequests.length > 0 && (
         <div className="alert alert-warning border-warning d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 rounded-3 shadow-sm">
@@ -517,6 +558,9 @@ export default function StudentManager() {
                   className="rounded-2"
                 >
                   <option value="ALL">All Batches ({studentList.length} students)</option>
+                  <option value="UNASSIGNED">
+                    Unassigned / Not in any batch ({unassignedStudents.length})
+                  </option>
                   {batchList.map((b) => {
                     const count = studentList.filter((s) => s.batchId === b.id).length;
                     return (
@@ -602,9 +646,16 @@ export default function StudentManager() {
                           <div className="small text-muted">{std.phone || 'No phone'}</div>
                         </td>
                         <td>
-                          <Badge className="badge-theme px-2 py-1 fw-semibold">
-                            {batch ? batch.name : std.batchId}
-                          </Badge>
+                          {std.batchId ? (
+                            <Badge className="badge-theme px-2 py-1 fw-semibold">
+                              {batch ? batch.name : std.batchId}
+                            </Badge>
+                          ) : (
+                            <Badge bg="warning" text="dark" className="px-2 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                              <FaUserClock size={10} />
+                              <span>Unassigned</span>
+                            </Badge>
+                          )}
                         </td>
                         <td>
                           <div>
@@ -786,13 +837,14 @@ export default function StudentManager() {
               </Form.Control.Feedback>
             </Form.Group>
 
-            {/* Mandatory Form.Select populated with existing Batches */}
+            {/* Batch — Optional */}
             <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold small">Select Batch (Mandatory)</Form.Label>
+              <Form.Label className="fw-semibold small">Select Batch (Optional)</Form.Label>
               <Form.Select
                 {...registerAdd('batchId')}
                 isInvalid={!!addErrors.batchId}
               >
+                <option value="">— No Batch (Unassigned for now) —</option>
                 {batchList.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name} (Fee: ₹{(b.feeAmount || 0).toLocaleString()})
