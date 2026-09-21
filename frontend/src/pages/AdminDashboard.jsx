@@ -162,7 +162,7 @@ export default function AdminDashboard() {
           <p className="text-2xl sm:text-3xl font-bold text-white font-mono">
             {stats?.totalBatches || batches.length}
           </p>
-          <p className="text-[11px] text-slate-500">Live cohorts</p>
+          <p className="text-[11px] text-slate-500">Live Courses</p>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-2">
@@ -194,21 +194,19 @@ export default function AdminDashboard() {
       <div className="flex border-b border-slate-800 space-x-4">
         <button
           onClick={() => setActiveTab('students')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${
-            activeTab === 'students'
+          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'students'
               ? 'border-brand-500 text-brand-400'
               : 'border-transparent text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           Students Directory ({students.length})
         </button>
         <button
           onClick={() => setActiveTab('grading')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 ${
-            activeTab === 'grading'
+          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 ${activeTab === 'grading'
               ? 'border-brand-500 text-brand-400'
               : 'border-transparent text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <span>Grading Queue</span>
           {submissions.filter((s) => s.grade === null).length > 0 && (
@@ -217,11 +215,10 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab('batches')}
-          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${
-            activeTab === 'batches'
+          className={`pb-3 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all ${activeTab === 'batches'
               ? 'border-brand-500 text-brand-400'
               : 'border-transparent text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           Batches ({batches.length})
         </button>
@@ -260,11 +257,10 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`px-2 py-0.5 rounded-full font-mono text-[10px] ${
-                          std.isActive
+                        className={`px-2 py-0.5 rounded-full font-mono text-[10px] ${std.isActive
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                        }`}
+                          }`}
                       >
                         {std.isActive ? 'Active' : 'Suspended'}
                       </span>
@@ -469,7 +465,7 @@ export default function AdminDashboard() {
       <Modal
         isOpen={batchModalOpen}
         onClose={() => setBatchModalOpen(false)}
-        title="Create New Cohort Batch"
+        title="Create New Batch"
       >
         <form onSubmit={handleCreateBatch} className="space-y-4">
           <div>

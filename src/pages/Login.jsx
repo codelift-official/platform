@@ -288,7 +288,7 @@ export default function Login() {
                   style={{ minHeight: 42, fontSize: '0.84rem' }}
                 >
                   <FaGraduationCap size={16} />
-                  <span>Sign Up / Register for Cohort</span>
+                  <span>Sign Up / Register for Courses</span>
                 </button>
               </div>
 

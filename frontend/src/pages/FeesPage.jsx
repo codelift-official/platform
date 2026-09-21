@@ -149,7 +149,7 @@ export default function FeesPage() {
           {/* Breakdown Table */}
           <div className="space-y-3 pt-4 border-t border-slate-800 text-xs">
             <div className="flex justify-between text-slate-300">
-              <span>Standard Cohort Tuition Fee</span>
+              <span>Batch Tuition Fee</span>
               <span className="font-mono text-white font-semibold">₹{baseFee.toLocaleString()}</span>
             </div>
 

@@ -276,7 +276,7 @@ export default function CourseManager() {
                 className={`btn btn-sm ${courseFilter === 'cohort' ? 'btn-primary' : 'btn-outline-secondary'}`}
                 onClick={() => setCourseFilter('cohort')}
               >
-                Cohorts ({cohortCourses.length})
+                Courses ({cohortCourses.length})
               </button>
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function CourseManager() {
               <thead>
                 <tr>
                   <th style={{ width: '35%' }}>Course Title & Description</th>
-                  <th>Assigned Cohort Batch</th>
+                  <th>Assigned Batch</th>
                   <th>Curriculum</th>
                   <th>Status</th>
                   <th className="text-end">Actions</th>
@@ -654,7 +654,7 @@ export default function CourseManager() {
             <Row className="g-3 mb-3">
               <Col md={8}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Associate Cohort Batch</Form.Label>
+                  <Form.Label className="fw-semibold small">Associate Batch</Form.Label>
                   <Form.Select
                     value={batchId}
                     onChange={(e) => setBatchId(e.target.value)}
