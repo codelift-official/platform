@@ -32,6 +32,9 @@ import {
   FaRocket,
   FaColumns,
   FaTextWidth,
+  FaMinus,
+  FaPlus,
+  FaKeyboard,
 } from 'react-icons/fa';
 import '../styles/ProblemArena.css';
 
@@ -1126,37 +1129,42 @@ export default function ProblemDetail() {
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
-                  {/* Font Size & Word Wrap controls (visible on all screens) */}
-                  <div className="d-flex align-items-center gap-1 me-2">
+                  {/* Font Size & Word Wrap controls */}
+                  <div className="cl-font-controls d-flex align-items-center gap-1 me-2">
                     <button
                       type="button"
                       className="cl-arena-btn-icon"
                       onClick={() => setFontSize((s) => Math.max(12, s - 1))}
                       title="Decrease Editor Font Size"
+                      aria-label="Decrease font size"
                     >
-                      A-
+                      <FaMinus size={9} />
                     </button>
-                    <span className="cl-font-size-label" aria-live="polite">{fontSize}</span>
+                    <span className="cl-font-size-pill" aria-live="polite">
+                      {fontSize}px
+                    </span>
                     <button
                       type="button"
                       className="cl-arena-btn-icon"
                       onClick={() => setFontSize((s) => Math.min(20, s + 1))}
                       title="Increase Editor Font Size"
+                      aria-label="Increase font size"
                     >
-                      A+
+                      <FaPlus size={9} />
                     </button>
                     <button
                       type="button"
                       className={`cl-arena-btn-icon ${wrapEnabled ? 'active' : ''}`}
                       onClick={() => setWrapEnabled((w) => !w)}
                       title={wrapEnabled ? 'Disable word wrap' : 'Enable word wrap'}
+                      aria-label="Toggle word wrap"
                     >
-                      <FaTextWidth size={12} />
+                      <FaTextWidth size={11} />
                     </button>
                   </div>
 
-                  <span className="d-none d-md-inline small text-secondary font-monospace me-2">
-                    Ctrl + Enter to run
+                  <span className="cl-kbd-hint d-none d-md-inline-flex">
+                    <kbd>Ctrl</kbd> + <kbd>Enter</kbd> <span className="cl-kbd-hint-action">to Run</span>
                   </span>
 
                   {/* Reset to starter code */}
